@@ -1,5 +1,6 @@
 use crate::common::c1;
 use crate::common::c2;
+use crate::common::l;
 use crate::common::p;
 
 #[allow(unused_comparisons)]
@@ -104,5 +105,7 @@ pub fn bosses(rsn: &str) -> Result<Vec<String>, ()> {
         }
     }
 
-    Ok(boss_kills)
+    let output = format!("{} {}", l("Boss"), boss_kills.join(&c1(" | ")));
+
+    Ok(vec![output])
 }
