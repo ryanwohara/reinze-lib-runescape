@@ -11,13 +11,13 @@ pub extern "C" fn exported(command: &str, query: &str) -> Result<Vec<String>, ()
     match command {
         "players" => players::players(),
         "params" => params::params(query),
-        "prices" => prices::prices(query),
+        "price" => prices::prices(query),
         "ge" => ge::ge(query),
         "boss" => bosses::bosses(query),
         "" => Ok(vec![
             "players".to_string(),
             "params".to_string(),
-            "prices".to_string(),
+            "price".to_string(),
             "ge".to_string(),
             "boss".to_string(),
         ]),
