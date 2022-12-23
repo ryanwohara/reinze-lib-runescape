@@ -5,6 +5,7 @@ mod items;
 pub mod params;
 pub mod players;
 pub mod prices;
+pub mod xp;
 
 #[no_mangle]
 pub extern "C" fn exported(command: &str, query: &str) -> Result<Vec<String>, ()> {
@@ -14,12 +15,14 @@ pub extern "C" fn exported(command: &str, query: &str) -> Result<Vec<String>, ()
         "price" => prices::prices(query),
         "ge" => ge::ge(query),
         "boss" => bosses::bosses(query),
+        "xp" => xp::xp(query),
         "" => Ok(vec![
             "players".to_string(),
             "params".to_string(),
             "price".to_string(),
             "ge".to_string(),
             "boss".to_string(),
+            "xp".to_string(),
         ]),
         _ => Ok(vec![]),
     }
@@ -48,4 +51,9 @@ pub extern "C" fn ge(query: &str) -> Result<Vec<String>, ()> {
 #[no_mangle]
 pub extern "C" fn boss(rsn: &str) -> Result<Vec<String>, ()> {
     bosses::bosses(rsn)
+}
+
+#[no_mangle]
+pub extern "C" fn xp(rsn: &str) -> Result<Vec<String>, ()> {
+    xp::xp(rsn)
 }

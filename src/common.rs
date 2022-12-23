@@ -50,3 +50,27 @@ pub fn l(s: &str) -> String {
 pub fn p(s: &str) -> String {
     format!("{}{}{}", c1("("), c2(s), c1(")"))
 }
+
+// Converts a level to experience
+pub fn level_to_xp(level: u32) -> u32 {
+    let mut xp = 0;
+
+    for i in 1..level {
+        let x = i as f32;
+
+        xp += (x + 300.0 * 2.0_f32.powf(x / 7.0)).floor() as u32 / 4;
+    }
+
+    xp
+}
+
+// Converts experience to a level
+pub fn xp_to_level(xp: u32) -> u32 {
+    for level in 1..=127 {
+        if xp <= level_to_xp(level) {
+            return level;
+        }
+    }
+
+    0
+}
