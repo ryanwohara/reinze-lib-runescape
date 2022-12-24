@@ -67,8 +67,8 @@ pub fn level_to_xp(level: u32) -> u32 {
 // Converts experience to a level
 pub fn xp_to_level(xp: u32) -> u32 {
     for level in 1..=127 {
-        if xp <= level_to_xp(level) {
-            return level;
+        if xp < level_to_xp(level) {
+            return level - 1;
         }
     }
 
