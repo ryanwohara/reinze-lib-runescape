@@ -8,20 +8,20 @@ pub mod prices;
 pub mod xp;
 
 #[no_mangle]
-pub extern "C" fn exported(command: &str, query: &str) -> Result<Vec<String>, ()> {
+pub extern "C" fn exported(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()> {
     match command {
-        "players" => players::players(),
-        "params" => params::params(query),
-        "price" => prices::prices(query),
-        "ge" => ge::ge(query),
         "boss" => bosses::bosses(query),
+        "ge" => ge::ge(query),
+        "params" => params::params(query),
+        "players" => players::players(),
+        "price" => prices::prices(query),
         "xp" => xp::xp(query),
         "" => Ok(vec![
-            "players".to_string(),
-            "params".to_string(),
-            "price".to_string(),
-            "ge".to_string(),
             "boss".to_string(),
+            "ge".to_string(),
+            "params".to_string(),
+            "players".to_string(),
+            "price".to_string(),
             "xp".to_string(),
         ]),
         _ => Ok(vec![]),
@@ -29,18 +29,8 @@ pub extern "C" fn exported(command: &str, query: &str) -> Result<Vec<String>, ()
 }
 
 #[no_mangle]
-pub extern "C" fn players() -> Result<Vec<String>, ()> {
-    players::players()
-}
-
-#[no_mangle]
-pub extern "C" fn params(query: &str) -> Result<Vec<String>, ()> {
-    params::params(query)
-}
-
-#[no_mangle]
-pub extern "C" fn prices(query: &str) -> Result<Vec<String>, ()> {
-    prices::prices(query)
+pub extern "C" fn boss(rsn: &str) -> Result<Vec<String>, ()> {
+    bosses::bosses(rsn)
 }
 
 #[no_mangle]
@@ -49,8 +39,18 @@ pub extern "C" fn ge(query: &str) -> Result<Vec<String>, ()> {
 }
 
 #[no_mangle]
-pub extern "C" fn boss(rsn: &str) -> Result<Vec<String>, ()> {
-    bosses::bosses(rsn)
+pub extern "C" fn params(query: &str) -> Result<Vec<String>, ()> {
+    params::params(query)
+}
+
+#[no_mangle]
+pub extern "C" fn players() -> Result<Vec<String>, ()> {
+    players::players()
+}
+
+#[no_mangle]
+pub extern "C" fn prices(query: &str) -> Result<Vec<String>, ()> {
+    prices::prices(query)
 }
 
 #[no_mangle]
