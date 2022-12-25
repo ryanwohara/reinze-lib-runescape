@@ -3,6 +3,12 @@ use crate::common::c2;
 use crate::common::l;
 
 pub fn patch(query: &str) -> Result<Vec<String>, ()> {
+    let prefix = l("Patch");
+
+    if query.len() == 0 {
+        return Ok(vec![format!("{}: {}", prefix, c1("No query provided"))]);
+    }
+
     let underscored = query.replace(" ", "_");
 
     let patch = match ini::Ini::load_from_file("lib/patch.ini") {
@@ -21,8 +27,6 @@ pub fn patch(query: &str) -> Result<Vec<String>, ()> {
         }
     };
 
-    let prefix = l("Patch");
-
     let mut found_params: Vec<String> = vec![];
 
     for (k, v) in section.iter() {
@@ -30,9 +34,6 @@ pub fn patch(query: &str) -> Result<Vec<String>, ()> {
             .contains(&underscored.to_ascii_lowercase())
         {
             found_params.push(format!("{}: {}", c1(&k.replace("_", " ")), c2(v)));
-        }
-
-        if found_params.len() >= 10 {
             break;
         }
     }
