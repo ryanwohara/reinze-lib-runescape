@@ -6,7 +6,7 @@ pub fn patch(query: &str) -> Result<Vec<String>, ()> {
     let prefix = l("Patch");
 
     if query.len() == 0 {
-        return Ok(vec![format!("{}: {}", prefix, c1("No query provided"))]);
+        return Ok(vec![format!("{} {}", prefix, c1("No query provided"))]);
     }
 
     let underscored = query.replace(" ", "_");
