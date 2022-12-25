@@ -1,3 +1,5 @@
+use format_num::NumberFormat;
+
 pub fn capitalize(s: &str) -> String {
     let mut c = s.chars();
     match c.next() {
@@ -73,4 +75,11 @@ pub fn xp_to_level(xp: u32) -> u32 {
     }
 
     0
+}
+
+// Adds commas to a number
+pub fn commas(n: u32) -> String {
+    let num = NumberFormat::new();
+
+    num.format(",d", n)
 }

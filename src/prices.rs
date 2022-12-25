@@ -1,9 +1,9 @@
-use super::common::c1;
-use super::common::c2;
-use super::common::l;
-use super::items::Data;
-use super::items::Mapping;
-use format_num::NumberFormat;
+use crate::common::c1;
+use crate::common::c2;
+use crate::common::commas;
+use crate::common::l;
+use crate::items::Data;
+use crate::items::Mapping;
 use regex::Regex;
 use serde_json;
 use std::fs::read_to_string;
@@ -50,8 +50,6 @@ pub fn prices(query: &str) -> Result<Vec<String>, ()> {
 
     let ge_data = ge_json.data;
 
-    let num = NumberFormat::new();
-
     for item in mapping_json.iter() {
         let regex_string = format!(r"(?i){}", query);
         let re = match Regex::new(&regex_string) {
@@ -75,7 +73,7 @@ pub fn prices(query: &str) -> Result<Vec<String>, ()> {
                 "{}: {}{}",
                 c1(&item.name),
                 match item_values.high {
-                    Some(value) => c2(&num.format(",d", value)),
+                    Some(value) => c2(&commas(value)),
                     None => c2("0"),
                 },
                 c1("gp")

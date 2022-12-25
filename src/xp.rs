@@ -1,8 +1,8 @@
 use super::common::c1;
 use super::common::c2;
+use super::common::commas;
 use super::common::l;
 use super::common::level_to_xp;
-// use super::common::xp_to_level;
 
 pub fn xp(query: &str) -> Result<Vec<String>, ()> {
     let split: Vec<&str> = query.split("-").collect();
@@ -21,10 +21,11 @@ pub fn xp(query: &str) -> Result<Vec<String>, ()> {
         };
 
         let output = vec![format!(
-            "{}-{}: {}xp",
-            start,
+            "{} {}->{} = {} xp",
+            l("Level->XP"),
+            c1(&start.to_string()),
             end,
-            level_to_xp(end) - level_to_xp(start)
+            c2(&commas(level_to_xp(end) - level_to_xp(start)).to_string())
         )];
 
         return Ok(output);
@@ -35,10 +36,10 @@ pub fn xp(query: &str) -> Result<Vec<String>, ()> {
         };
 
         let output = vec![format!(
-            "{} {} = {}xp",
+            "{} {} = {} xp",
             l("Level->XP"),
             c1(&level.to_string()),
-            c2(&level_to_xp(level).to_string())
+            c2(&commas(level_to_xp(level)))
         )];
 
         return Ok(output);
