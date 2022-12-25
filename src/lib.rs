@@ -4,6 +4,7 @@ mod ge;
 mod items;
 mod level;
 mod params;
+mod patch;
 mod players;
 mod prices;
 mod xp;
@@ -18,6 +19,7 @@ pub extern "C" fn exported(command: &str, query: &str, author: &str) -> Result<V
         "level" => level::level(query),
         "lvl" => level::level(query),
         "params" => params::params(query),
+        "patch" => patch::patch(query),
         "players" => players::players(),
         "price" => prices::prices(query),
         "xp" => xp::xp(query),
@@ -29,6 +31,7 @@ pub extern "C" fn exported(command: &str, query: &str, author: &str) -> Result<V
             "level".to_string(),
             "lvl".to_string(),
             "params".to_string(),
+            "patch".to_string(),
             "players".to_string(),
             "price".to_string(),
             "xp".to_string(),
@@ -55,6 +58,11 @@ pub extern "C" fn level(query: &str) -> Result<Vec<String>, ()> {
 #[no_mangle]
 pub extern "C" fn params(query: &str) -> Result<Vec<String>, ()> {
     params::params(query)
+}
+
+#[no_mangle]
+pub extern "C" fn patch(query: &str) -> Result<Vec<String>, ()> {
+    patch::patch(query)
 }
 
 #[no_mangle]

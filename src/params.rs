@@ -38,7 +38,7 @@ pub fn params(query: &str) -> Result<Vec<String>, ()> {
 
     let underscored = param.replace(" ", "_");
 
-    let mut output = l(&capitalize(skill)).to_string();
+    let prefix = l(&capitalize(skill)).to_string();
 
     let mut found_params: Vec<String> = vec![];
 
@@ -62,7 +62,7 @@ pub fn params(query: &str) -> Result<Vec<String>, ()> {
         return Err(());
     }
 
-    output = format!("{} {}", output, found_params.join(&c1(" | ")));
+    let output = format!("{} {}", prefix, found_params.join(&c1(" | ")));
 
     let output_vec: Vec<String> = vec![output];
 
