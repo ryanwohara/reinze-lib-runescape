@@ -48,7 +48,18 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
             let split: Vec<&str> = line.split(',').collect();
 
             if split[0] == "-1" {
-                continue;
+                return Ok(vec![format!(
+                    "{} {} {} {} {} {} {} {} {}",
+                    common::l(&skill),
+                    common::c1("Level"),
+                    common::c2("N/A"),
+                    common::c2("|"),
+                    common::c1("XP"),
+                    common::c2("N/A"),
+                    common::c2("|"),
+                    common::c1("Rank"),
+                    common::c2("N/A")
+                )]);
             }
 
             let rank = split[0];
@@ -72,5 +83,16 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
         }
     }
 
-    Ok(vec![])
+    Ok(vec![format!(
+        "{} {} {} {} {} {} {} {} {}",
+        common::l(&skill),
+        common::c1("Level"),
+        common::c2("N/A"),
+        common::c2("|"),
+        common::c1("XP"),
+        common::c2("N/A"),
+        common::c2("|"),
+        common::c1("Rank"),
+        common::c2("N/A")
+    )])
 }
