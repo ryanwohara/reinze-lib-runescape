@@ -7,35 +7,89 @@ mod params;
 mod patch;
 mod players;
 mod prices;
+mod skill;
 mod xp;
 
 #[no_mangle]
 pub extern "C" fn exported(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()> {
     match command {
         "boss" => bosses::bosses(query),
-        "exp" => xp::xp(query),
-        "experience" => xp::xp(query),
+        "experience" | "exp" | "xp" => xp::xp(query),
         "ge" => ge::ge(query),
-        "level" => level::level(query),
-        "lvl" => level::level(query),
-        "params" => params::params(query),
+        "level" | "lvl" => level::level(query),
+        "param" | "params" => params::params(query),
         "patch" => patch::patch(query),
         "players" => players::players(),
         "price" => prices::prices(query),
-        "xp" => xp::xp(query),
-        "" => Ok(vec![
-            "boss".to_string(),
-            "exp".to_string(),
-            "experience".to_string(),
-            "ge".to_string(),
-            "level".to_string(),
-            "lvl".to_string(),
-            "params".to_string(),
-            "patch".to_string(),
-            "players".to_string(),
-            "price".to_string(),
-            "xp".to_string(),
-        ]),
+        "overall" | "total" | "attack" | "att" | "defence" | "def" | "strength" | "str"
+        | "hitpoints" | "hp" | "ranged" | "range" | "prayer" | "pray" | "magic" | "mage"
+        | "cooking" | "cook" | "woodcutting" | "wc" | "fletching" | "fletch" | "fishing"
+        | "fish" | "firemaking" | "fm" | "crafting" | "craft" | "smithing" | "smith" | "mining"
+        | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving" | "thief" | "slayer"
+        | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter" | "hunt" | "construction"
+        | "con" => skill::stats(command, query, author),
+        "" => Ok("boss
+ge
+level
+lvl
+params
+patch
+players
+price
+xp
+exp
+experience
+overall
+total
+attack
+att
+defence
+def
+strength
+str
+hitpoints
+hp
+ranged
+range
+prayer
+pray
+magic
+mage
+cooking
+cook
+woodcutting
+wc
+fletching
+fletch
+fishing
+fish
+firemaking
+fm
+crafting
+craft
+smithing
+smith
+mining
+mine
+herblore
+herb
+agility
+agil
+thieving
+thief
+slayer
+slay
+farming
+farm
+runecraft
+rc
+hunter
+hunt
+construction
+con"
+        .split("\n")
+        .map(|s| s.to_string())
+        .collect::<Vec<String>>()),
         _ => Ok(vec![]),
     }
 }
