@@ -99,7 +99,7 @@ pub fn commas_from_string(n: &str) -> String {
 // Catches shorthand skill names and returns the full name
 pub fn skill(s: &str) -> String {
     match s.to_lowercase().as_str() {
-        "overall" | "total" => "Overall".to_string(),
+        "overall" | "stats" | "total" => "Overall".to_string(),
         "attack" | "att" => "Attack".to_string(),
         "defence" | "def" => "Defence".to_string(),
         "strength" | "str" => "Strength".to_string(),

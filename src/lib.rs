@@ -7,7 +7,7 @@ mod params;
 mod patch;
 mod players;
 mod prices;
-mod skill;
+mod stats;
 mod xp;
 
 #[no_mangle]
@@ -21,13 +21,13 @@ pub extern "C" fn exported(command: &str, query: &str, author: &str) -> Result<V
         "patch" => patch::patch(query),
         "players" => players::players(),
         "price" => prices::prices(query),
-        "overall" | "total" | "attack" | "att" | "defence" | "def" | "strength" | "str"
-        | "hitpoints" | "hp" | "ranged" | "range" | "prayer" | "pray" | "magic" | "mage"
-        | "cooking" | "cook" | "woodcutting" | "wc" | "fletching" | "fletch" | "fishing"
-        | "fish" | "firemaking" | "fm" | "crafting" | "craft" | "smithing" | "smith" | "mining"
-        | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving" | "thief" | "slayer"
-        | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter" | "hunt" | "construction"
-        | "con" => skill::stats(command, query, author),
+        "overall" | "stats" | "total" | "attack" | "att" | "defence" | "def" | "strength"
+        | "str" | "hitpoints" | "hp" | "ranged" | "range" | "prayer" | "pray" | "magic"
+        | "mage" | "cooking" | "cook" | "woodcutting" | "wc" | "fletching" | "fletch"
+        | "fishing" | "fish" | "firemaking" | "fm" | "crafting" | "craft" | "smithing"
+        | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
+        | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
+        | "hunt" | "construction" | "con" => stats::stats(command, query, author),
         "" => Ok("boss
 ge
 level
@@ -39,6 +39,7 @@ price
 xp
 exp
 experience
+stats
 overall
 total
 attack

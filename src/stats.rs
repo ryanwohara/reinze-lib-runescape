@@ -8,9 +8,21 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
         Some(index) => index,
         None => 0,
     };
+    let not_found = vec![format!(
+        "{} {} {} {} {} {} {} {} {}",
+        common::l(&skill),
+        common::c1("Level"),
+        common::c2("N/A"),
+        common::c2("|"),
+        common::c1("XP"),
+        common::c2("N/A"),
+        common::c2("|"),
+        common::c1("Rank"),
+        common::c2("N/A")
+    )];
 
     let split: Vec<&str> = query.split(" ").collect();
-    let mut rsn = String::new();
+    let rsn: String;
 
     if split.len() == 0 {
         rsn = author.to_string();
@@ -47,19 +59,8 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
         if index as usize == skill_id {
             let split: Vec<&str> = line.split(',').collect();
 
-            if split[0] == "-1" {
-                return Ok(vec![format!(
-                    "{} {} {} {} {} {} {} {} {}",
-                    common::l(&skill),
-                    common::c1("Level"),
-                    common::c2("N/A"),
-                    common::c2("|"),
-                    common::c1("XP"),
-                    common::c2("N/A"),
-                    common::c2("|"),
-                    common::c1("Rank"),
-                    common::c2("N/A")
-                )]);
+            if split[0] == "-1" || split[0] == "<!DOCTYPE html><html><head><title>404 - Page not found</title> <meta charset=\"UTF-8\"/><meta name=\"viewport\" content=\"width=device-width"{
+                return Ok(not_found);
             }
 
             let rank = split[0];
@@ -83,16 +84,5 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
         }
     }
 
-    Ok(vec![format!(
-        "{} {} {} {} {} {} {} {} {}",
-        common::l(&skill),
-        common::c1("Level"),
-        common::c2("N/A"),
-        common::c2("|"),
-        common::c1("XP"),
-        common::c2("N/A"),
-        common::c2("|"),
-        common::c1("Rank"),
-        common::c2("N/A")
-    )])
+    Ok(not_found)
 }
