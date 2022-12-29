@@ -12,13 +12,13 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
         "{} {} {} {} {} {} {} {} {}",
         common::l(&skill),
         common::c1("Level"),
-        common::c2("N/A"),
+        common::p("N/A"),
         common::c2("|"),
         common::c1("XP"),
-        common::c2("N/A"),
+        common::p("N/A"),
         common::c2("|"),
         common::c1("Rank"),
-        common::c2("N/A")
+        common::p("N/A")
     )];
 
     let split: Vec<&str> = query.split(" ").collect();
