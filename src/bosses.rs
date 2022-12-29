@@ -1,5 +1,6 @@
 use crate::common::c1;
 use crate::common::c2;
+use crate::common::commas_from_string;
 use crate::common::l;
 use crate::common::p;
 
@@ -63,9 +64,7 @@ pub fn bosses(rsn: &str) -> Result<Vec<String>, ()> {
         rsn
     );
 
-    let rt = tokio::runtime::Runtime::new().unwrap();
-
-    let resp = match rt.block_on(reqwest::get(&url)) {
+    let resp = match reqwest::blocking::get(url) {
         Ok(resp) => resp,
         Err(e) => {
             println!("Error making HTTP request: {}", e);
@@ -73,7 +72,7 @@ pub fn bosses(rsn: &str) -> Result<Vec<String>, ()> {
         }
     };
 
-    let string = match rt.block_on(resp.text()) {
+    let string = match resp.text() {
         Ok(string) => string,
         Err(e) => {
             println!("Error getting text: {}", e);
@@ -100,7 +99,12 @@ pub fn bosses(rsn: &str) -> Result<Vec<String>, ()> {
             let kills = split[1];
 
             if bosses.contains(&name) {
-                boss_kills.push(format!("{}: {} {}", c1(name), c2(kills), p(rank)));
+                boss_kills.push(format!(
+                    "{}: {} {}",
+                    c1(name),
+                    c2(&commas_from_string(kills)),
+                    p(&commas_from_string(rank))
+                ));
             }
         }
     }
