@@ -28,6 +28,17 @@ pub extern "C" fn exported(command: &str, query: &str, author: &str) -> Result<V
         | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
         | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
         | "hunt" | "construction" | "con" => stats::stats(command, query, author),
+        "help" => Ok("boss
+ge
+level
+xp
+params
+players
+price
+stats"
+            .split("\n")
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>()),
         "" => Ok("boss
 ge
 level
