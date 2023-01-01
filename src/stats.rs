@@ -32,12 +32,10 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
         rsn = query.to_string();
     }
 
-    let rt = tokio::runtime::Runtime::new().unwrap();
-
-    let resp = match rt.block_on(reqwest::get(&format!(
+    let resp = match reqwest::blocking::get(&format!(
         "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player={}",
         rsn
-    ))) {
+    )) {
         Ok(resp) => resp,
         Err(e) => {
             println!("Error making HTTP request: {}", e);
@@ -45,7 +43,7 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
         }
     };
 
-    let string = match rt.block_on(resp.text()) {
+    let string = match resp.text() {
         Ok(string) => string,
         Err(e) => {
             println!("Error getting text: {}", e);
