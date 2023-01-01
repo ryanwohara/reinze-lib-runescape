@@ -8,9 +8,11 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
         Some(index) => index,
         None => 0,
     };
+
+    let prefix = common::l(&skill);
     let not_found = vec![format!(
         "{} {} {} {} {} {} {} {} {}",
-        common::l(&skill),
+        prefix,
         common::c1("Level"),
         common::p("N/A"),
         common::c2("|"),
@@ -64,23 +66,44 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
             }
 
             let rank = split[0];
-            let level = split[1];
+            let _level = split[1];
             let xp = split[2];
+            let actual_level = common::xp_to_level(xp.parse::<u32>().unwrap());
+            let next_level = actual_level + 1;
+            let next_level_xp = common::level_to_xp(next_level);
+            let xp_difference = next_level_xp - xp.parse::<u32>().unwrap();
 
-            let output = format!(
-                "{} {} {} {} {} {} {} {} {}",
-                common::l(&skill),
+            let mut output: Vec<String> = Vec::new();
+
+            output.push(format!(
+                "{} {}",
                 common::c1("Level"),
-                common::c2(&common::commas_from_string(level)),
-                common::c2("|"),
+                common::c2(&common::commas(actual_level))
+            ));
+
+            output.push(format!(
+                "{} {}",
                 common::c1("XP"),
-                common::c2(&common::commas_from_string(xp)),
-                common::c2("|"),
+                common::c2(&common::commas_from_string(xp))
+            ));
+
+            if next_level < 127 {
+                output.push(format!(
+                    "{} {}",
+                    common::c1(&format!("XP to {}", next_level)),
+                    common::c2(&common::commas_from_string(&xp_difference.to_string()))
+                ));
+            }
+
+            output.push(format!(
+                "{} {}",
                 common::c1("Rank"),
                 common::c2(&common::commas_from_string(rank))
-            );
+            ));
 
-            return Ok(vec![output]);
+            let message = format!("{} {}", prefix, output.join(&common::c1(" | ")));
+
+            return Ok(vec![message]);
         }
     }
 
