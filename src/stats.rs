@@ -64,7 +64,7 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
             }
 
             let rank = split[0];
-            let _level = split[1];
+            let level = split[1];
             let xp = split[2];
             let actual_level = common::xp_to_level(xp.parse::<u32>().unwrap());
             let next_level = actual_level + 1;
@@ -73,10 +73,19 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
 
             let mut output: Vec<String> = Vec::new();
 
+            let mut actual_level_string = String::new();
+
+            if skill != "Overall" && actual_level > level.parse::<u32>().unwrap() {
+                actual_level_string = format!(" {}", common::p(&actual_level.to_string()));
+            } else {
+                actual_level_string = "".to_string();
+            }
+
             output.push(format!(
-                "{} {}",
+                "{} {}{}",
                 common::c1("Level"),
-                common::c2(&common::commas(actual_level))
+                common::c2(&common::commas_from_string(level)),
+                actual_level_string
             ));
 
             output.push(format!(
@@ -85,7 +94,7 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
                 common::c2(&common::commas_from_string(xp))
             ));
 
-            if next_level < 127 {
+            if skill != "Overall" && next_level < 127 {
                 output.push(format!(
                     "{} {}",
                     common::c1(&format!("XP to {}", next_level)),
