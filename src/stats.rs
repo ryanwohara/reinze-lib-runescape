@@ -51,15 +51,19 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
         }
     };
 
-    let hiscores_split = string.split('\n').collect::<Vec<&str>>();
+    let hiscores_split = string.split('\n').collect::<Vec<&str>>()[0..=23] // 23 skills
+        .iter()
+        .map(|x| x.split(',').collect::<Vec<&str>>())
+        .collect::<Vec<Vec<&str>>>();
+
+    println!("{:?}", hiscores_split);
+
     let mut index = 0 - 1 as isize;
-    for line in hiscores_split {
+    for split in hiscores_split {
         index += 1;
 
         if index as usize == skill_id {
-            let split: Vec<&str> = line.split(',').collect();
-
-            if split[0] == "-1" || split[0] == "<!DOCTYPE html><html><head><title>404 - Page not found</title> <meta charset=\"UTF-8\"/><meta name=\"viewport\" content=\"width=device-width"{
+            if split[1] == "-1" || split[0] == "<!DOCTYPE html><html><head><title>404 - Page not found</title> <meta charset=\"UTF-8\"/><meta name=\"viewport\" content=\"width=device-width"{
                 return Ok(not_found);
             }
 
@@ -73,8 +77,7 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
 
             let mut output: Vec<String> = Vec::new();
 
-            let mut actual_level_string = String::new();
-
+            let actual_level_string;
             if skill != "Overall" && actual_level > level.parse::<u32>().unwrap() {
                 actual_level_string = format!(" {}", common::p(&actual_level.to_string()));
             } else {
