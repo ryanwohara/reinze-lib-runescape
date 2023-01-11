@@ -6,7 +6,7 @@ use crate::common::p;
 
 #[allow(unused_comparisons)]
 pub fn bosses(rsn: &str) -> Result<Vec<String>, ()> {
-    let bosses: [&str; 50] = [
+    let bosses: [&str; 51] = [
         "Abyssal Sire",
         "Alchemical Hydra",
         "Barrows Chests",
@@ -36,6 +36,7 @@ pub fn bosses(rsn: &str) -> Result<Vec<String>, ()> {
         "Mimic",
         "Nex",
         "Nightmare",
+        "Phantom Muspah",
         "Phosani's Nightmare",
         "Obor",
         "Sarachnis",
