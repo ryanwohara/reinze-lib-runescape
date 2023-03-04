@@ -106,8 +106,8 @@ price
 pvparena[N]
 rifts[N]
 sw[N]
+stats
 wiki"
-            //stats"
             .split("\n")
             .map(|s| s.to_string())
             .collect::<Vec<String>>()),
@@ -127,56 +127,56 @@ rifts?\d*
 s(oul)?w(ar)?s?\d*
 zeal\d*
 e?xp(erience)?
+stats
+overall
+total
+attack
+att
+defence
+def
+strength
+str
+hitpoints
+hp
+ranged
+range
+prayer
+pray
+magic
+mage
+cooking
+cook
+woodcutting
+wc
+fletching
+fletch
+fishing
+fish
+firemaking
+fm
+crafting
+craft
+smithing
+smith
+mining
+mine
+herblore
+herb
+agility
+agil
+thieving
+thief
+slayer
+slay
+farming
+farm
+runecraft
+rc
+hunter
+hunt
+construction
+con
 wiki"
-            // stats
-            // overall
-            // total
-            // attack
-            // att
-            // defence
-            // def
-            // strength
-            // str
-            // hitpoints
-            // hp
-            // ranged
-            // range
-            // prayer
-            // pray
-            // magic
-            // mage
-            // cooking
-            // cook
-            // woodcutting
-            // wc
-            // fletching
-            // fletch
-            // fishing
-            // fish
-            // firemaking
-            // fm
-            // crafting
-            // craft
-            // smithing
-            // smith
-            // mining
-            // mine
-            // herblore
-            // herb
-            // agility
-            // agil
-            // thieving
-            // thief
-            // slayer
-            // slay
-            // farming
-            // farm
-            // runecraft
-            // rc
-            // hunter
-            // hunt
-            // construction
-            // con"
             .split("\n")
             .map(|s| s.to_string())
             .collect::<Vec<String>>()),
