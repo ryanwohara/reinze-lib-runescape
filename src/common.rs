@@ -1,6 +1,6 @@
 use crate::database;
 use format_num::NumberFormat;
-use mysql::{prelude::*, Error};
+use mysql::{prelude::*, *};
 
 pub fn capitalize(s: &str) -> String {
     let mut c = s.chars();
@@ -159,12 +159,7 @@ pub fn skills() -> Vec<String> {
     ]
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct Rsn {
-    pub rsn: String,
-}
-
-pub fn get_rsn(author: &str) -> Result<Vec<Rsn>, Error> {
+pub fn get_rsn(author: &str) -> core::result::Result<Vec<mysql::Row>, mysql::Error> {
     let mut conn = match database::connect() {
         Ok(conn) => conn,
         Err(e) => {
@@ -178,8 +173,12 @@ pub fn get_rsn(author: &str) -> Result<Vec<Rsn>, Error> {
         host = host.split("~").collect::<Vec<&str>>()[1];
     }
 
-    conn.query_map(
-        format!("SELECT rsn FROM rsn WHERE host = '{}'", host),
-        |rsn| Rsn { rsn },
-    )
+    match conn.exec_first("SELECT rsn FROM rsn WHERE host = :host", params! { host }) {
+        Ok(Some(rsn)) => Ok(vec![rsn]),
+        Ok(None) => Ok(vec![]),
+        Err(e) => {
+            println!("Error getting rsn: {}", e);
+            Err(e)
+        }
+    }
 }

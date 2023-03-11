@@ -4,21 +4,22 @@ use crate::common::commas_from_string;
 use crate::common::get_rsn;
 use crate::common::l;
 use crate::common::p;
-use crate::common::Rsn;
+use mysql::{from_row, Row};
 
 pub fn bosses(query: &str, author: &str) -> Result<Vec<String>, ()> {
-    let db_rsn: Vec<Rsn>;
+    let row: Vec<Row>;
     let mut rsn: String = query.to_string();
+    let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
 
     if rsn.len() == 0 {
-        db_rsn = match get_rsn(author) {
-            Ok(rsn) => rsn,
+        row = match get_rsn(author) {
+            Ok(db_rsn) => db_rsn,
             Err(_) => vec![],
         };
 
-        rsn = match db_rsn.first() {
-            Some(db_rsn) => db_rsn.rsn.to_string(),
-            None => author.split("!").collect::<Vec<&str>>()[0].to_string(), // Default to the user's IRC nickname
+        rsn = match row.first() {
+            Some(db_rsn) => from_row(db_rsn.to_owned()),
+            None => nick, // Default to the user's IRC nickname
         };
     }
 
