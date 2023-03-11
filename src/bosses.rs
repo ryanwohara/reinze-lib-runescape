@@ -1,11 +1,27 @@
 use crate::common::c1;
 use crate::common::c2;
 use crate::common::commas_from_string;
+use crate::common::get_rsn;
 use crate::common::l;
 use crate::common::p;
+use crate::common::Rsn;
 
-#[allow(unused_comparisons)]
-pub fn bosses(rsn: &str) -> Result<Vec<String>, ()> {
+pub fn bosses(query: &str, author: &str) -> Result<Vec<String>, ()> {
+    let db_rsn: Vec<Rsn>;
+    let mut rsn: String = query.to_string();
+
+    if rsn.len() == 0 {
+        db_rsn = match get_rsn(author) {
+            Ok(rsn) => rsn,
+            Err(_) => vec![],
+        };
+
+        rsn = match db_rsn.first() {
+            Some(db_rsn) => db_rsn.rsn.to_string(),
+            None => author.split("!").collect::<Vec<&str>>()[0].to_string(), // Default to the user's IRC nickname
+        };
+    }
+
     let bosses: [&str; 51] = [
         "Abyssal Sire",
         "Alchemical Hydra",

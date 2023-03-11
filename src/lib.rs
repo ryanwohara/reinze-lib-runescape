@@ -1,5 +1,6 @@
 mod bosses;
 mod common;
+mod database;
 mod ge;
 mod items;
 mod level;
@@ -13,7 +14,7 @@ mod xp;
 #[no_mangle]
 pub extern "C" fn exported(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()> {
     match command {
-        "boss" => bosses::bosses(query),
+        "boss" => bosses::bosses(query, author),
         "experience" | "exp" | "xp" => xp::xp(query),
         "ge" => ge::ge(query),
         "level" | "lvl" => level::level(query),

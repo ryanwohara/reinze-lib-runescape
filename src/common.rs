@@ -1,4 +1,6 @@
+use crate::database;
 use format_num::NumberFormat;
+use mysql::{prelude::*, Error};
 
 pub fn capitalize(s: &str) -> String {
     let mut c = s.chars();
@@ -155,4 +157,29 @@ pub fn skills() -> Vec<String> {
         "Hunter".to_string(),
         "Construction".to_string(),
     ]
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Rsn {
+    pub rsn: String,
+}
+
+pub fn get_rsn(author: &str) -> Result<Vec<Rsn>, Error> {
+    let mut conn = match database::connect() {
+        Ok(conn) => conn,
+        Err(e) => {
+            println!("Error connecting to database: {}", e);
+            return Err(e);
+        }
+    };
+
+    let mut host = author.split("!").collect::<Vec<&str>>()[1];
+    if host.starts_with("~") {
+        host = host.split("~").collect::<Vec<&str>>()[1];
+    }
+
+    conn.query_map(
+        format!("SELECT rsn FROM rsn WHERE host = '{}'", host),
+        |rsn| Rsn { rsn },
+    )
 }
