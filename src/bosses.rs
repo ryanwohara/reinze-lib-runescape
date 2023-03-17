@@ -6,13 +6,13 @@ use crate::common::l;
 use crate::common::p;
 use mysql::{from_row, Row};
 
-pub fn bosses(query: &str, author: &str) -> Result<Vec<String>, ()> {
+pub fn bosses(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
     let row: Vec<Row>;
     let mut rsn: String = query.to_string();
     let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
 
     if rsn.len() == 0 {
-        row = match get_rsn(author) {
+        row = match get_rsn(author, rsn_n) {
             Ok(db_rsn) => db_rsn,
             Err(_) => vec![],
         };

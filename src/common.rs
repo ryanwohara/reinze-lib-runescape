@@ -159,7 +159,7 @@ pub fn skills() -> Vec<String> {
     ]
 }
 
-pub fn get_rsn(author: &str) -> core::result::Result<Vec<mysql::Row>, mysql::Error> {
+pub fn get_rsn(author: &str, rsn_n: &str) -> core::result::Result<Vec<mysql::Row>, mysql::Error> {
     let mut conn = match database::connect() {
         Ok(conn) => conn,
         Err(e) => {
@@ -173,7 +173,10 @@ pub fn get_rsn(author: &str) -> core::result::Result<Vec<mysql::Row>, mysql::Err
         host = host.split("~").collect::<Vec<&str>>()[1];
     }
 
-    match conn.exec_first("SELECT rsn FROM rsn WHERE host = :host", params! { host }) {
+    match conn.exec_first(
+        "SELECT rsn FROM rsn WHERE host = :host AND rsn_ident = :rsn_n",
+        params! { host, rsn_n },
+    ) {
         Ok(Some(rsn)) => Ok(vec![rsn]),
         Ok(None) => Ok(vec![]),
         Err(e) => {

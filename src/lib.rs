@@ -11,10 +11,29 @@ mod prices;
 mod stats;
 mod xp;
 
+use regex::{Captures, Regex};
+
 #[no_mangle]
-pub extern "C" fn exported(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()> {
+pub extern "C" fn exported(
+    mut command: &str,
+    query: &str,
+    author: &str,
+) -> Result<Vec<String>, ()> {
+    let re = Regex::new(r"^([a-zA-Z]+)(\d+)$").unwrap();
+    let re_match = match re.captures(command) {
+        Some(captures) => vec![captures],
+        None => vec![],
+    };
+
+    let mut rsn_n = "0";
+
+    if re_match.len() > 0 {
+        command = re_match[0].get(1).unwrap().as_str();
+        rsn_n = re_match[0].get(2).unwrap().as_str();
+    }
+
     match command {
-        "boss" => bosses::bosses(query, author),
+        "boss" => bosses::bosses(query, author, rsn_n),
         "experience" | "exp" | "xp" => xp::xp(query),
         "ge" => ge::ge(query),
         "level" | "lvl" => level::level(query),
@@ -29,7 +48,7 @@ pub extern "C" fn exported(command: &str, query: &str, author: &str) -> Result<V
         // | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
         // | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
         // | "hunt" | "construction" | "con" => stats::stats(command, query, author),
-        "help" => Ok("boss
+        "help" => Ok(r"boss\d*
 ge
 level
 xp
@@ -40,7 +59,7 @@ price"
             .split("\n")
             .map(|s| s.to_string())
             .collect::<Vec<String>>()),
-        "" => Ok("boss
+        "" => Ok(r"boss\d*
 ge
 level
 lvl
