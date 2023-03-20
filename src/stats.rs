@@ -70,7 +70,7 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
         index += 1;
 
         if index as usize == skill_id {
-            if split[1] == "-1" || split[0] == "<!DOCTYPE html><html><head><title>404 - Page not found</title> <meta charset=\"UTF-8\"/><meta name=\"viewport\" content=\"width=device-width"{
+            if split[1] == "-1" || split[0].contains("404 - Page not found") {
                 return Ok(not_found);
             }
 
