@@ -48,7 +48,7 @@ pub extern "C" fn exported(
         // | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
         // | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
         // | "hunt" | "construction" | "con" => stats::stats(command, query, author),
-        "help" => Ok(r"boss\d*
+        "help" => Ok(r"boss[N]
 ge
 level
 xp

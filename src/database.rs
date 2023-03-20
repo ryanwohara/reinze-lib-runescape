@@ -35,30 +35,3 @@ fn get_connection_string() -> String {
 
     url
 }
-
-// fn connect() -> Result<Connection, Error> {
-//     let mut config = Config::default();
-//     config.set_group(Some("client".to_owned()));
-//     config.set_file(Some(PathBuf::from("config.ini")));
-//     let config = config.read().unwrap();
-
-//     let host = config.get_str("host").unwrap();
-//     let port = config.get_int("port").unwrap();
-//     let user = config.get_str("user").unwrap();
-//     let pass = config.get_str("pass").unwrap();
-//     let db = config.get_str("db").unwrap();
-
-//     let mut url = String::new();
-//     url.push_str("mysql://");
-//     url.push_str(user);
-//     url.push_str(":");
-//     url.push_str(pass);
-//     url.push_str("@");
-//     url.push_str(host);
-//     url.push_str(":");
-//     url.push_str(&port.to_string());
-//     url.push_str("/");
-//     url.push_str(db);
-
-//     Connection::connect(url, TlsMode::None)
-// }
