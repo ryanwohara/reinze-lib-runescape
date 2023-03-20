@@ -51,15 +51,22 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
         }
     };
 
-    let hiscores_split = string.split('\n').collect::<Vec<&str>>()[0..=23] // 23 skills
+    let hiscores_split = string.split('\n').collect::<Vec<&str>>();
+    let mut hiscores_len = hiscores_split.len() - 1;
+    if hiscores_len > 23 {
+        // 23 skills
+        hiscores_len = 23;
+    }
+
+    let hiscores_collected = hiscores_split[0..=hiscores_len]
         .iter()
         .map(|x| x.split(',').collect::<Vec<&str>>())
         .collect::<Vec<Vec<&str>>>();
 
-    println!("{:?}", hiscores_split);
+    println!("{:?}", hiscores_collected);
 
     let mut index = 0 - 1 as isize;
-    for split in hiscores_split {
+    for split in hiscores_collected {
         index += 1;
 
         if index as usize == skill_id {
