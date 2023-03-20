@@ -25,7 +25,7 @@ pub fn xp(query: &str) -> Result<Vec<String>, ()> {
             l("Level->XP"),
             c1(&start.to_string()),
             end,
-            c2(&commas(level_to_xp(end) - level_to_xp(start)).to_string())
+            c2(&commas((level_to_xp(end) - level_to_xp(start)) as f64).to_string())
         )];
 
         return Ok(output);
@@ -39,7 +39,7 @@ pub fn xp(query: &str) -> Result<Vec<String>, ()> {
             "{} {} = {} xp",
             l("Level->XP"),
             c1(&level.to_string()),
-            c2(&commas(level_to_xp(level)))
+            c2(&commas(level_to_xp(level as u32) as f64))
         )];
 
         return Ok(output);

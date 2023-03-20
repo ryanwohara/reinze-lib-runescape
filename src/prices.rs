@@ -73,7 +73,7 @@ pub fn prices(query: &str) -> Result<Vec<String>, ()> {
                 "{}: {}{}",
                 c1(&item.name),
                 match item_values.high {
-                    Some(value) => c2(&commas(value)),
+                    Some(value) => c2(&commas(value as f64)),
                     None => c2("0"),
                 },
                 c1("gp")
