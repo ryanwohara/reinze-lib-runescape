@@ -9,9 +9,10 @@ mod patch;
 mod players;
 mod prices;
 mod stats;
+mod wiki;
 mod xp;
 
-use regex::{Captures, Regex};
+use regex::Regex;
 
 #[no_mangle]
 pub extern "C" fn exported(
@@ -34,7 +35,7 @@ pub extern "C" fn exported(
 
     match command {
         "boss" => bosses::bosses(query, author, rsn_n),
-        "experience" | "exp" | "xp" => xp::xp(query),
+        "experience" | "xperience" | "exp" | "xp" => xp::xp(query),
         "ge" => ge::ge(query),
         "level" | "lvl" => level::level(query),
         "param" | "params" => params::params(query),
@@ -48,13 +49,15 @@ pub extern "C" fn exported(
         // | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
         // | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
         // | "hunt" | "construction" | "con" => stats::stats(command, query, author),
+        "wiki" => wiki::wiki(query),
         "help" => Ok(r"boss[N]
 ge
 level
 xp
 params
 players
-price"
+price
+wiki"
             //stats"
             .split("\n")
             .map(|s| s.to_string())
@@ -67,9 +70,8 @@ params
 patch
 players
 price
-xp
-exp
-experience"
+e?xp(erience)?
+wiki"
             // stats
             // overall
             // total
