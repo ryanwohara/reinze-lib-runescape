@@ -1,4 +1,5 @@
 mod bosses;
+mod clues;
 mod common;
 mod database;
 mod ge;
@@ -35,6 +36,7 @@ pub extern "C" fn exported(
 
     match command {
         "boss" => bosses::bosses(query, author, rsn_n),
+        "clue" | "clues" => clues::clue(query, author, rsn_n),
         "experience" | "xperience" | "exp" | "xp" => xp::xp(query),
         "ge" => ge::ge(query),
         "level" | "lvl" => level::level(query),
@@ -51,6 +53,7 @@ pub extern "C" fn exported(
         // | "hunt" | "construction" | "con" => stats::stats(command, query, author),
         "wiki" => wiki::wiki(query),
         "help" => Ok(r"boss[N]
+clues[N]
 ge
 level
 xp
@@ -63,6 +66,7 @@ wiki"
             .map(|s| s.to_string())
             .collect::<Vec<String>>()),
         "" => Ok(r"boss\d*
+clues?\d*
 ge
 level
 lvl
