@@ -63,6 +63,7 @@ boss[N]
 clues[N]
 ge
 level
+lms[N]
 xp
 params
 players
@@ -76,7 +77,7 @@ wiki"
 boss\d*
 clues?\d*
 ge
-l(ast)?m(an)?s(tanding)?
+l(ast)?m(an)?s(tanding)?\d*
 level
 lvl
 params
