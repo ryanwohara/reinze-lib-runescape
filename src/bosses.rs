@@ -2,6 +2,7 @@ use crate::common::c1;
 use crate::common::c2;
 use crate::common::commas_from_string;
 use crate::common::get_rsn;
+use crate::common::get_stats;
 use crate::common::l;
 use crate::common::p;
 use mysql::{from_row, Row};
@@ -77,44 +78,26 @@ pub fn bosses(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         "Zulrah",
     ];
 
-    let url = format!(
-        "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player={}",
-        rsn
-    );
-
-    let resp = match reqwest::blocking::get(url) {
-        Ok(resp) => resp,
-        Err(e) => {
-            println!("Error making HTTP request: {}", e);
-            return Err(());
-        }
-    };
-
-    let string = match resp.text() {
-        Ok(string) => string,
-        Err(e) => {
-            println!("Error getting text: {}", e);
-            return Err(());
-        }
+    let stats = match get_stats(&rsn) {
+        Ok(stats) => stats,
+        Err(_) => return Err(()),
     };
 
     let mut boss_kills: Vec<String> = Vec::new();
     let mut index = 0 - 1 as isize;
     let offset = 38;
 
-    for line in string.lines() {
+    for line in stats {
         index += 1;
 
         if index - offset >= 0 {
-            let split: Vec<&str> = line.split(',').collect();
-
-            if split[0] == "-1" {
+            if line[0] == "-1" {
                 continue;
             }
 
             let name: &str = bosses[(index - offset) as usize];
-            let rank = split[0];
-            let kills = split[1];
+            let rank = &line[0];
+            let kills = &line[1];
 
             if bosses.contains(&name) {
                 boss_kills.push(format!(
