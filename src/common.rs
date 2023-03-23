@@ -183,3 +183,48 @@ pub fn get_rsn(author: &str, rsn_n: &str) -> core::result::Result<Vec<mysql::Row
         }
     }
 }
+
+pub fn get_stats(rsn: &str) -> core::result::Result<Vec<Vec<String>>, ()> {
+    let mut stats = Vec::new();
+
+    let body = match query_stats(rsn) {
+        Ok(body) => body,
+        Err(_) => return Err(()),
+    };
+
+    for line in body.lines() {
+        let split = line
+            .split(",")
+            .map(|s| s.to_owned())
+            .collect::<Vec<String>>();
+
+        stats.push(split);
+    }
+
+    Ok(stats)
+}
+
+fn query_stats(rsn: &str) -> core::result::Result<String, ()> {
+    let url = format!(
+        "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player={}",
+        rsn
+    );
+
+    let resp = match reqwest::blocking::get(&url) {
+        Ok(resp) => resp,
+        Err(e) => {
+            println!("Error getting stats: {}", e);
+            return Err(());
+        }
+    };
+
+    let body = match resp.text() {
+        Ok(body) => body.to_owned(),
+        Err(e) => {
+            println!("Error getting stats: {}", e);
+            return Err(());
+        }
+    };
+
+    Ok(body)
+}
