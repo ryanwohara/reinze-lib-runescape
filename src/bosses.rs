@@ -7,7 +7,7 @@ use crate::common::l;
 use crate::common::p;
 use mysql::{from_row, Row};
 
-pub fn bosses(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
+pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
     let row: Vec<Row>;
     let mut rsn: String = query.to_string();
     let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();

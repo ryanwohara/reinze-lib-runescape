@@ -1,3 +1,4 @@
+mod bh;
 mod bosses;
 mod clues;
 mod common;
@@ -35,8 +36,9 @@ pub extern "C" fn exported(
     }
 
     match command {
-        "boss" => bosses::bosses(query, author, rsn_n),
-        "clue" | "clues" => clues::clue(query, author, rsn_n),
+        "bh" | "bounty" | "bhunter" | "bountyhunter" => bh::lookup(query, author, rsn_n),
+        "boss" | "bosses" => bosses::lookup(query, author, rsn_n),
+        "clue" | "clues" => clues::lookup(query, author, rsn_n),
         "experience" | "xperience" | "exp" | "xp" => xp::xp(query),
         "ge" => ge::ge(query),
         "level" | "lvl" => level::level(query),
@@ -52,7 +54,8 @@ pub extern "C" fn exported(
         // | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
         // | "hunt" | "construction" | "con" => stats::stats(command, query, author),
         "wiki" => wiki::wiki(query),
-        "help" => Ok(r"boss[N]
+        "help" => Ok(r"bh[N]
+boss[N]
 clues[N]
 ge
 level
@@ -65,7 +68,8 @@ wiki"
             .split("\n")
             .map(|s| s.to_string())
             .collect::<Vec<String>>()),
-        "" => Ok(r"boss\d*
+        "" => Ok(r"b(ounty)?h(unter)?\d*
+boss\d*
 clues?\d*
 ge
 level

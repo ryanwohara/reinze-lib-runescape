@@ -24,33 +24,31 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         };
     }
 
-    let clues: [&str; 7] = [
-        "All", "Beginner", "Easy", "Medium", "Hard", "Elite", "Master",
-    ];
+    let bh: [&str; 2] = ["Hunter", "Rogue"];
 
     let stats = match get_stats(&rsn) {
         Ok(stats) => stats,
         Err(_) => return Err(()),
     };
 
-    let mut clue_completions: Vec<String> = Vec::new();
+    let mut bh_ranks: Vec<String> = Vec::new();
     let mut index = 0 - 1 as isize;
-    let offset = 27;
+    let offset = 25;
 
     for line in stats {
         index += 1;
 
-        if index - offset >= 0 && index - offset < clues.len() as isize {
+        if index - offset >= 0 && index - offset < bh.len() as isize {
             if line[0] == "-1" {
                 continue;
             }
 
-            let name: &str = clues[(index - offset) as usize];
+            let name: &str = bh[(index - offset) as usize];
             let rank = &line[0];
             let completions = &line[1];
 
-            if clues.contains(&name) {
-                clue_completions.push(format!(
+            if bh.contains(&name) {
+                bh_ranks.push(format!(
                     "{}: {} {}",
                     c1(name),
                     c2(&commas_from_string(completions)),
@@ -60,7 +58,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         }
     }
 
-    let output = format!("{} {}", l("Clues"), clue_completions.join(&c1(" | ")));
+    let output = format!("{} {}", l("Bounty Hunter"), bh_ranks.join(&c1(" | ")));
 
     Ok(vec![output])
 }
