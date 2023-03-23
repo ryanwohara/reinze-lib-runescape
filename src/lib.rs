@@ -6,6 +6,7 @@ mod database;
 mod ge;
 mod items;
 mod level;
+mod lms;
 mod params;
 mod patch;
 mod players;
@@ -42,6 +43,9 @@ pub extern "C" fn exported(
         "experience" | "xperience" | "exp" | "xp" => xp::xp(query),
         "ge" => ge::ge(query),
         "level" | "lvl" => level::level(query),
+        "lms" | "lmstanding" | "lmanstanding" | "lastmstanding" | "lastmanstanding" => {
+            lms::lookup(query, author, rsn_n)
+        }
         "param" | "params" => params::params(query),
         "patch" => patch::patch(query),
         "players" => players::players(),
@@ -72,6 +76,7 @@ wiki"
 boss\d*
 clues?\d*
 ge
+l(ast)?m(an)?s(tanding)?
 level
 lvl
 params
