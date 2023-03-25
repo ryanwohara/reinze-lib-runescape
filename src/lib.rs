@@ -11,6 +11,7 @@ mod params;
 mod patch;
 mod players;
 mod prices;
+mod rifts;
 mod stats;
 mod wiki;
 mod xp;
@@ -57,6 +58,7 @@ pub extern "C" fn exported(
         // | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
         // | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
         // | "hunt" | "construction" | "con" => stats::stats(command, query, author),
+        "rift" | "rifts" => rifts::lookup(query, author, rsn_n),
         "wiki" => wiki::wiki(query),
         "help" => Ok(r"bh[N]
 boss[N]
@@ -68,6 +70,7 @@ xp
 params
 players
 price
+rifts[N]
 wiki"
             //stats"
             .split("\n")
@@ -84,6 +87,7 @@ params
 patch
 players
 price
+rifts?\d*
 e?xp(erience)?
 wiki"
             // stats
