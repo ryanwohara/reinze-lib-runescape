@@ -12,6 +12,7 @@ mod patch;
 mod players;
 mod prices;
 mod rifts;
+mod soulwars;
 mod stats;
 mod wiki;
 mod xp;
@@ -59,6 +60,9 @@ pub extern "C" fn exported(
         // | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
         // | "hunt" | "construction" | "con" => stats::stats(command, query, author),
         "rift" | "rifts" => rifts::lookup(query, author, rsn_n),
+        "sw" | "swar" | "soulw" | "soulwar" | "soulwars" | "zeal" => {
+            soulwars::lookup(query, author, rsn_n)
+        }
         "wiki" => wiki::wiki(query),
         "help" => Ok(r"bh[N]
 boss[N]
@@ -71,6 +75,7 @@ params
 players
 price
 rifts[N]
+sw[N]
 wiki"
             //stats"
             .split("\n")
@@ -88,6 +93,8 @@ patch
 players
 price
 rifts?\d*
+s(oul)?w(ar)?s?\d*
+zeal\d*
 e?xp(erience)?
 wiki"
             // stats
