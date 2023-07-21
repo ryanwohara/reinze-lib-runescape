@@ -24,7 +24,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         };
     }
 
-    let clues: [&str; 9] = [
+    let clues: [&str; 7] = [
         "All", "Beginner", "Easy", "Medium", "Hard", "Elite", "Master",
     ];
 
@@ -35,7 +35,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
 
     let mut clue_completions: Vec<String> = Vec::new();
     let mut index = 0 - 1 as isize;
-    let offset = 27;
+    let offset = 29;
 
     for line in stats {
         index += 1;
