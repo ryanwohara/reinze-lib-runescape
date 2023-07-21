@@ -24,7 +24,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         };
     }
 
-    let bh: [&str; 2] = ["Hunter", "Rogue"];
+    let bh: [&str; 4] = ["Hunter", "Rogue", "Legacy Hunter", "Legacy Rogue"];
 
     let stats = match get_stats(&rsn) {
         Ok(stats) => stats,

@@ -24,7 +24,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         };
     }
 
-    let clues: [&str; 7] = [
+    let clues: [&str; 9] = [
         "All", "Beginner", "Easy", "Medium", "Hard", "Elite", "Master",
     ];
 

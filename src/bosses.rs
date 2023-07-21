@@ -24,12 +24,14 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         };
     }
 
-    let bosses: [&str; 51] = [
+    let bosses: [&str; 54] = [
         "Abyssal Sire",
         "Alchemical Hydra",
+        "Artio",
         "Barrows Chests",
         "Bryophyta",
         "Callisto",
+        "Calvar'ion",
         "Cerberus",
         "CoX",
         "CoX: Challenge",
@@ -60,6 +62,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         "Sarachnis",
         "Scorpia",
         "Skotizo",
+        "Spindel",
         "Tempoross",
         "Guantlet",
         "Corrupted Gauntlet",
@@ -85,7 +88,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
 
     let mut boss_kills: Vec<String> = Vec::new();
     let mut index = 0 - 1 as isize;
-    let offset = 38;
+    let offset = 40;
 
     for line in stats {
         index += 1;

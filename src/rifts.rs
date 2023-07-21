@@ -33,7 +33,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
 
     let mut rifts_closed: Vec<String> = Vec::new();
     let mut index = 0 - 1 as isize;
-    let offset = 37;
+    let offset = 39;
 
     for line in stats {
         index += 1;
