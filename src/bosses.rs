@@ -24,7 +24,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         };
     }
 
-    let bosses: [&str; 54] = [
+    let bosses: [&str; 58] = [
         "Abyssal Sire",
         "Alchemical Hydra",
         "Artio",
@@ -44,6 +44,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         "Dagannoth Rex",
         "Dagannoth Supreme",
         "Deranged Archaeologist",
+        "Duke Sucellus",
         "General Graardor",
         "Giant Mole",
         "Grotesque Guardians",
@@ -66,6 +67,8 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         "Tempoross",
         "Guantlet",
         "Corrupted Gauntlet",
+        "The Leviathan",
+        "The Whisperer",
         "ToB",
         "ToB: Hard",
         "Thermonuclear Smoke Devil",
@@ -73,6 +76,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         "ToA: Expert",
         "TzKal-Zuk",
         "TzTok-Jad",
+        "Vardorvis",
         "Venenatis",
         "Vet'ion",
         "Vorkath",
