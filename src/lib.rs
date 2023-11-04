@@ -20,11 +20,7 @@ mod xp;
 use regex::Regex;
 
 #[no_mangle]
-pub extern "C" fn exported(
-    mut command: &str,
-    query: &str,
-    author: &str,
-) -> Result<Vec<String>, ()> {
+pub extern "C" fn exported(mut command: &str, query: &str, author: &str) -> String {
     let re = Regex::new(r"^([a-zA-Z]+)(\d+)$").unwrap();
     let re_match = match re.captures(command) {
         Some(captures) => vec![captures],
@@ -38,7 +34,7 @@ pub extern "C" fn exported(
         rsn_n = re_match[0].get(2).unwrap().as_str();
     }
 
-    match command {
+    match match command {
         "bh" | "bounty" | "bhunter" | "bountyhunter" => bh::lookup(query, author, rsn_n),
         "boss" | "bosses" => bosses::lookup(query, author, rsn_n),
         "clue" | "clues" => clues::lookup(query, author, rsn_n),
@@ -150,5 +146,8 @@ wiki"
             .map(|s| s.to_string())
             .collect::<Vec<String>>()),
         _ => Ok(vec![]),
+    } {
+        Ok(output) => output.join("\n"),
+        Err(_) => "".to_owned(),
     }
 }
