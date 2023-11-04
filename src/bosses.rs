@@ -92,7 +92,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
 
     let mut boss_kills: Vec<String> = Vec::new();
     let mut index = 0 - 1 as isize;
-    let offset = 40;
+    let offset = 41;
 
     for line in stats {
         index += 1;

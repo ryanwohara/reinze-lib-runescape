@@ -11,6 +11,7 @@ mod params;
 mod patch;
 mod players;
 mod prices;
+mod pvparena;
 mod rifts;
 mod soulwars;
 mod stats;
@@ -79,13 +80,14 @@ pub extern "C" fn exported(
         "patch" => patch::patch(query),
         "players" => players::players(),
         "price" => prices::prices(query),
-        "overall" | "stats" | "total" | "attack" | "att" | "defence" | "def" | "strength"
-        | "str" | "hitpoints" | "hp" | "ranged" | "range" | "prayer" | "pray" | "magic"
-        | "mage" | "cooking" | "cook" | "woodcutting" | "wc" | "fletching" | "fletch"
-        | "fishing" | "fish" | "firemaking" | "fm" | "crafting" | "craft" | "smithing"
-        | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
-        | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
-        | "hunt" | "construction" | "con" => stats::stats(command, query, author),
+        // "overall" | "stats" | "total" | "attack" | "att" | "defence" | "def" | "strength"
+        // | "str" | "hitpoints" | "hp" | "ranged" | "range" | "prayer" | "pray" | "magic"
+        // | "mage" | "cooking" | "cook" | "woodcutting" | "wc" | "fletching" | "fletch"
+        // | "fishing" | "fish" | "firemaking" | "fm" | "crafting" | "craft" | "smithing"
+        // | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
+        // | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
+        // | "hunt" | "construction" | "con" => stats::stats(command, query, author),
+        "pvparena" | "pvp" | "arena" => pvparena::lookup(query, author, rsn_n),
         "rift" | "rifts" => rifts::lookup(query, author, rsn_n),
         "sw" | "swar" | "soulw" | "soulwar" | "soulwars" | "zeal" => {
             soulwars::lookup(query, author, rsn_n)
@@ -101,6 +103,7 @@ xp
 params
 players
 price
+pvparena[N]
 rifts[N]
 sw[N]
 wiki"
@@ -119,6 +122,7 @@ params
 patch
 players
 price
+(pvparena|pvp|arena)\d*
 rifts?\d*
 s(oul)?w(ar)?s?\d*
 zeal\d*

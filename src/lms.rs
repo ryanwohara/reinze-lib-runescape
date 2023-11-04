@@ -33,7 +33,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
 
     let mut lms_rank: Vec<String> = Vec::new();
     let mut index = 0 - 1 as isize;
-    let offset = 36;
+    let offset = 37;
 
     for line in stats {
         index += 1;

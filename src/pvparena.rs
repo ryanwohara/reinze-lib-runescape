@@ -24,31 +24,31 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         };
     }
 
-    let rifts: [&str; 1] = ["Closed"];
+    let pvparena: [&str; 1] = ["Kills"];
 
     let stats = match get_stats(&rsn) {
         Ok(stats) => stats,
         Err(_) => return Err(()),
     };
 
-    let mut rifts_closed: Vec<String> = Vec::new();
+    let mut pvparena_rank: Vec<String> = Vec::new();
     let mut index = 0 - 1 as isize;
-    let offset = 40;
+    let offset = 38;
 
     for line in stats {
         index += 1;
 
-        if index - offset >= 0 && index - offset < rifts.len() as isize {
+        if index - offset >= 0 && index - offset < pvparena.len() as isize {
             if line[0] == "-1" {
                 continue;
             }
 
-            let name: &str = rifts[(index - offset) as usize];
+            let name: &str = pvparena[(index - offset) as usize];
             let rank = &line[0];
             let completions = &line[1];
 
-            if rifts.contains(&name) {
-                rifts_closed.push(format!(
+            if pvparena.contains(&name) {
+                pvparena_rank.push(format!(
                     "{}: {} {}",
                     c1(name),
                     c2(&commas_from_string(completions)),
@@ -58,11 +58,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         }
     }
 
-    let output = format!(
-        "{} {}",
-        l("Guardians of the Rift"),
-        rifts_closed.join(&c1(" | "))
-    );
+    let output = format!("{} {}", l("PVP Arena"), pvparena_rank.join(&c1(" | ")));
 
     Ok(vec![output])
 }
