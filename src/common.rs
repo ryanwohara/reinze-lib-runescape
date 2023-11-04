@@ -97,65 +97,65 @@ pub fn commas_from_string(n: &str) -> String {
 }
 
 // Catches shorthand skill names and returns the full name
-pub fn skill(s: &str) -> String {
-    match s.to_lowercase().as_str() {
-        "overall" | "stats" | "total" => "Overall".to_string(),
-        "attack" | "att" => "Attack".to_string(),
-        "defence" | "def" => "Defence".to_string(),
-        "strength" | "str" => "Strength".to_string(),
-        "hitpoints" | "hp" => "Hitpoints".to_string(),
-        "ranged" | "range" => "Ranged".to_string(),
-        "prayer" | "pray" => "Prayer".to_string(),
-        "magic" | "mage" => "Magic".to_string(),
-        "cooking" | "cook" => "Cooking".to_string(),
-        "woodcutting" | "wc" => "Woodcutting".to_string(),
-        "fletching" | "fletch" => "Fletching".to_string(),
-        "fishing" | "fish" => "Fishing".to_string(),
-        "firemaking" | "fm" => "Firemaking".to_string(),
-        "crafting" | "craft" => "Crafting".to_string(),
-        "smithing" | "smith" => "Smithing".to_string(),
-        "mining" | "mine" => "Mining".to_string(),
-        "herblore" | "herb" => "Herblore".to_string(),
-        "agility" | "agil" => "Agility".to_string(),
-        "thieving" | "thief" => "Thieving".to_string(),
-        "slayer" | "slay" => "Slayer".to_string(),
-        "farming" | "farm" => "Farming".to_string(),
-        "runecraft" | "rc" => "Runecraft".to_string(),
-        "hunter" | "hunt" => "Hunter".to_string(),
-        "construction" | "con" => "Construction".to_string(),
-        _ => String::new(),
-    }
-}
+// pub fn skill(s: &str) -> String {
+//     match s.to_lowercase().as_str() {
+//         "overall" | "stats" | "total" => "Overall".to_string(),
+//         "attack" | "att" => "Attack".to_string(),
+//         "defence" | "def" => "Defence".to_string(),
+//         "strength" | "str" => "Strength".to_string(),
+//         "hitpoints" | "hp" => "Hitpoints".to_string(),
+//         "ranged" | "range" => "Ranged".to_string(),
+//         "prayer" | "pray" => "Prayer".to_string(),
+//         "magic" | "mage" => "Magic".to_string(),
+//         "cooking" | "cook" => "Cooking".to_string(),
+//         "woodcutting" | "wc" => "Woodcutting".to_string(),
+//         "fletching" | "fletch" => "Fletching".to_string(),
+//         "fishing" | "fish" => "Fishing".to_string(),
+//         "firemaking" | "fm" => "Firemaking".to_string(),
+//         "crafting" | "craft" => "Crafting".to_string(),
+//         "smithing" | "smith" => "Smithing".to_string(),
+//         "mining" | "mine" => "Mining".to_string(),
+//         "herblore" | "herb" => "Herblore".to_string(),
+//         "agility" | "agil" => "Agility".to_string(),
+//         "thieving" | "thief" => "Thieving".to_string(),
+//         "slayer" | "slay" => "Slayer".to_string(),
+//         "farming" | "farm" => "Farming".to_string(),
+//         "runecraft" | "rc" => "Runecraft".to_string(),
+//         "hunter" | "hunt" => "Hunter".to_string(),
+//         "construction" | "con" => "Construction".to_string(),
+//         _ => String::new(),
+//     }
+// }
 
-// Returns a vector of all skills
-pub fn skills() -> Vec<String> {
-    vec![
-        "Overall".to_string(),
-        "Attack".to_string(),
-        "Defence".to_string(),
-        "Strength".to_string(),
-        "Hitpoints".to_string(),
-        "Ranged".to_string(),
-        "Prayer".to_string(),
-        "Magic".to_string(),
-        "Cooking".to_string(),
-        "Woodcutting".to_string(),
-        "Fletching".to_string(),
-        "Fishing".to_string(),
-        "Firemaking".to_string(),
-        "Crafting".to_string(),
-        "Smithing".to_string(),
-        "Mining".to_string(),
-        "Herblore".to_string(),
-        "Agility".to_string(),
-        "Thieving".to_string(),
-        "Slayer".to_string(),
-        "Farming".to_string(),
-        "Runecraft".to_string(),
-        "Hunter".to_string(),
-        "Construction".to_string(),
-    ]
-}
+// // Returns a vector of all skills
+// pub fn skills() -> Vec<String> {
+//     vec![
+//         "Overall".to_string(),
+//         "Attack".to_string(),
+//         "Defence".to_string(),
+//         "Strength".to_string(),
+//         "Hitpoints".to_string(),
+//         "Ranged".to_string(),
+//         "Prayer".to_string(),
+//         "Magic".to_string(),
+//         "Cooking".to_string(),
+//         "Woodcutting".to_string(),
+//         "Fletching".to_string(),
+//         "Fishing".to_string(),
+//         "Firemaking".to_string(),
+//         "Crafting".to_string(),
+//         "Smithing".to_string(),
+//         "Mining".to_string(),
+//         "Herblore".to_string(),
+//         "Agility".to_string(),
+//         "Thieving".to_string(),
+//         "Slayer".to_string(),
+//         "Farming".to_string(),
+//         "Runecraft".to_string(),
+//         "Hunter".to_string(),
+//         "Construction".to_string(),
+//     ]
+// }
 
 pub fn get_rsn(author: &str, rsn_n: &str) -> core::result::Result<Vec<mysql::Row>, mysql::Error> {
     let mut conn = match database::connect() {

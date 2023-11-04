@@ -14,7 +14,7 @@ mod prices;
 mod pvparena;
 mod rifts;
 mod soulwars;
-mod stats;
+// mod stats;
 mod wiki;
 mod xp;
 
