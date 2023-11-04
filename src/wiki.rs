@@ -4,5 +4,7 @@ pub fn wiki(query: &str) -> Result<Vec<String>, ()> {
     url.push_str("https://oldschool.runescape.wiki/w/Special:Search?search=");
     url.push_str(&query.replace(" ", "+"));
 
+    output.push(url);
+
     Ok(output)
 }
