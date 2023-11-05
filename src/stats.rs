@@ -132,7 +132,7 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
 
             return Ok(vec![message]);
         } else if skill_id == 0 && index == 0 {
-            if split[1] != "-1" && !split[0].contains("404 - Page not found") {
+            if split[0] != "-1" && !split[0].contains("404 - Page not found") {
                 skill_data.push(format!(
                     "{}{} {}{} {}{}",
                     common::c1("Lvl:"),
@@ -144,7 +144,7 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
                 ));
             }
         } else if skill_id == 0 && index < hiscores_len as isize {
-            if split[1] != "-1" || !split[0].contains("404 - Page not found") {
+            if split[0] != "-1" && !split[0].contains("404 - Page not found") {
                 skill_data.push(format!(
                     "{} {}",
                     common::c1(&skills[index as usize]),
