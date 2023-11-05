@@ -66,26 +66,36 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
     println!("{:?}", hiscores_collected);
 
     let mut index = 0 - 1 as isize;
+    let mut skill_data = Vec::new();
+
     for split in hiscores_collected {
         index += 1;
 
-        if index as usize == skill_id {
+        if skill_id != 0 && index as usize == skill_id {
             if split[1] == "-1" || split[0].contains("404 - Page not found") {
                 return Ok(not_found);
             }
 
             let rank = split[0];
-            let level = split[1];
-            let xp = split[2];
-            let actual_level = common::xp_to_level(xp.parse::<u32>().unwrap());
+            let str_level = split[1];
+            let level = match str_level.parse::<u32>() {
+                Ok(level) => level,
+                Err(_) => 0,
+            };
+            let str_xp = split[2];
+            let xp = match str_xp.parse::<u32>() {
+                Ok(xp) => xp,
+                Err(_) => 0,
+            };
+            let actual_level = common::xp_to_level(xp);
             let next_level = actual_level + 1;
             let next_level_xp = common::level_to_xp(next_level);
-            let xp_difference = next_level_xp - xp.parse::<u32>().unwrap();
+            let xp_difference = next_level_xp - xp;
 
             let mut output: Vec<String> = Vec::new();
 
             let actual_level_string;
-            if skill != "Overall" && actual_level > level.parse::<u32>().unwrap() {
+            if actual_level > level {
                 actual_level_string = format!(" {}", common::p(&actual_level.to_string()));
             } else {
                 actual_level_string = "".to_string();
@@ -94,14 +104,14 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
             output.push(format!(
                 "{} {}{}",
                 common::c1("Level"),
-                common::c2(&common::commas_from_string(level)),
+                common::c2(&common::commas_from_string(str_level)),
                 actual_level_string
             ));
 
             output.push(format!(
                 "{} {}",
                 common::c1("XP"),
-                common::c2(&common::commas_from_string(xp))
+                common::c2(&common::commas_from_string(str_xp))
             ));
 
             if skill != "Overall" && next_level < 127 {
@@ -121,7 +131,31 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
             let message = format!("{} {}", prefix, output.join(&common::c1(" | ")));
 
             return Ok(vec![message]);
+        } else if skill_id == 0 && index == 0 {
+            if split[1] != "-1" && !split[0].contains("404 - Page not found") {
+                skill_data.push(format!(
+                    "{}{} {}{} {}{}",
+                    common::c1("Lvl:"),
+                    common::c2(&common::commas_from_string(split[1])),
+                    common::c1("XP:"),
+                    common::c2(&common::commas_from_string(split[2])),
+                    common::c1("Rank:"),
+                    common::c2(&common::commas_from_string(split[0])),
+                ));
+            }
+        } else if skill_id == 0 && index < hiscores_len as isize {
+            if split[1] != "-1" || !split[0].contains("404 - Page not found") {
+                skill_data.push(format!(
+                    "{} {}",
+                    common::c1(&skills[index as usize]),
+                    common::c2(&common::commas_from_string(split[1])),
+                ));
+            }
         }
+    }
+
+    if skill_data.len() > 0 {
+        return Ok(vec![format!("{} {}", prefix, skill_data.join(" "))]);
     }
 
     Ok(not_found)
