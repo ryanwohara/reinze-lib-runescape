@@ -27,10 +27,20 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
     let rsn: String;
 
     let mut flag_sort = false;
+    let mut flag_exp = false;
+    let mut flag_rank = false;
 
     for (index, arg) in split.iter().enumerate() {
         if arg.eq(&"-s") {
             flag_sort = true;
+            split.remove(index);
+            break;
+        } else if arg.eq(&"-e") {
+            flag_exp = true;
+            split.remove(index);
+            break;
+        } else if arg.eq(&"-r") {
+            flag_rank = true;
             split.remove(index);
             break;
         }
@@ -175,6 +185,20 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
                     if level < 99 {
                         sortable_data.push(((rank, level, xp, xp_difference), index));
                     }
+                } else if flag_exp {
+                    // if -e was passed
+                    skill_data.push(format!(
+                        "{} {}",
+                        common::c1(&skills[index as usize]),
+                        common::c2(&common::commas(xp as f64)),
+                    ));
+                } else if flag_rank {
+                    // if -r was passed
+                    skill_data.push(format!(
+                        "{} {}",
+                        common::c1(&skills[index as usize]),
+                        common::c2(&common::commas_from_string(rank)),
+                    ));
                 } else {
                     // otherwise...
                     skill_data.push(format!(
