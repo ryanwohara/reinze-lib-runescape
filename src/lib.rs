@@ -14,7 +14,7 @@ mod prices;
 mod pvparena;
 mod rifts;
 mod soulwars;
-// mod stats;
+mod stats;
 mod wiki;
 mod xp;
 
@@ -80,13 +80,13 @@ pub extern "C" fn exported(
         "patch" => patch::patch(query),
         "players" => players::players(),
         "price" => prices::prices(query),
-        // "overall" | "stats" | "total" | "attack" | "att" | "defence" | "def" | "strength"
-        // | "str" | "hitpoints" | "hp" | "ranged" | "range" | "prayer" | "pray" | "magic"
-        // | "mage" | "cooking" | "cook" | "woodcutting" | "wc" | "fletching" | "fletch"
-        // | "fishing" | "fish" | "firemaking" | "fm" | "crafting" | "craft" | "smithing"
-        // | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
-        // | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
-        // | "hunt" | "construction" | "con" => stats::stats(command, query, author),
+        "overall" | "stats" | "total" | "attack" | "att" | "defence" | "def" | "strength"
+        | "str" | "hitpoints" | "hp" | "ranged" | "range" | "prayer" | "pray" | "magic"
+        | "mage" | "cooking" | "cook" | "woodcutting" | "wc" | "fletching" | "fletch"
+        | "fishing" | "fish" | "firemaking" | "fm" | "crafting" | "craft" | "smithing"
+        | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
+        | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
+        | "hunt" | "construction" | "con" => stats::stats(command, query, author),
         "pvparena" | "pvp" | "arena" => pvparena::lookup(query, author, rsn_n),
         "rift" | "rifts" => rifts::lookup(query, author, rsn_n),
         "sw" | "swar" | "soulw" | "soulwar" | "soulwars" | "zeal" => {
@@ -106,8 +106,8 @@ price
 pvparena[N]
 rifts[N]
 sw[N]
+stats
 wiki"
-            //stats"
             .split("\n")
             .map(|s| s.to_string())
             .collect::<Vec<String>>()),
@@ -127,56 +127,36 @@ rifts?\d*
 s(oul)?w(ar)?s?\d*
 zeal\d*
 e?xp(erience)?
+stats
+overall
+total
+attack
+att
+defence
+def
+strength
+str
+h(it)?p(oints)?
+ranged?
+pray(er)?
+mag(e|ic)
+cook(ing)?
+w(ood)?c(utting)?
+fletch(ing)?
+fish(ing)?
+f(ire)?m(aking)?
+craft(ing)?
+smith(ing)?
+min(e|ing)
+herb(lore)?
+agil(ity)?
+thie(f|ving)
+slay(er)?
+farm(ing)?
+r(une)?c(raft)?
+hunt(er)?
+con(struction)?
 wiki"
-            // stats
-            // overall
-            // total
-            // attack
-            // att
-            // defence
-            // def
-            // strength
-            // str
-            // hitpoints
-            // hp
-            // ranged
-            // range
-            // prayer
-            // pray
-            // magic
-            // mage
-            // cooking
-            // cook
-            // woodcutting
-            // wc
-            // fletching
-            // fletch
-            // fishing
-            // fish
-            // firemaking
-            // fm
-            // crafting
-            // craft
-            // smithing
-            // smith
-            // mining
-            // mine
-            // herblore
-            // herb
-            // agility
-            // agil
-            // thieving
-            // thief
-            // slayer
-            // slay
-            // farming
-            // farm
-            // runecraft
-            // rc
-            // hunter
-            // hunt
-            // construction
-            // con"
             .split("\n")
             .map(|s| s.to_string())
             .collect::<Vec<String>>()),
