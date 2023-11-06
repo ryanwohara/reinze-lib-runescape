@@ -23,13 +23,23 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
         common::p("N/A")
     )];
 
-    let split: Vec<&str> = query.split(" ").collect();
+    let mut split: Vec<&str> = query.split(" ").collect();
     let rsn: String;
+
+    let mut flag_sort = false;
+
+    for (index, arg) in split.iter().enumerate() {
+        if arg.eq(&"-s") {
+            flag_sort = true;
+            split.remove(index);
+            break;
+        }
+    }
 
     if split.len() == 0 {
         rsn = author.to_string();
     } else {
-        rsn = query.to_string();
+        rsn = split.join(" ").to_string();
     }
 
     let resp = match reqwest::blocking::get(&format!(
@@ -63,10 +73,9 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
         .map(|x| x.split(',').collect::<Vec<&str>>())
         .collect::<Vec<Vec<&str>>>();
 
-    println!("{:?}", hiscores_collected);
-
     let mut index = 0 - 1 as isize;
     let mut skill_data = Vec::new();
+    let mut sortable_data = Vec::new();
 
     for split in hiscores_collected {
         index += 1;
@@ -145,15 +154,59 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
             }
         } else if skill_id == 0 && index < hiscores_len as isize {
             if split[0] != "-1" && !split[0].contains("404 - Page not found") {
-                skill_data.push(format!(
-                    "{} {}",
-                    common::c1(&skills[index as usize]),
-                    common::c2(&common::commas_from_string(split[1])),
-                ));
+                let rank = split[0];
+                let str_level = split[1];
+                let level = match str_level.parse::<u32>() {
+                    Ok(level) => level,
+                    Err(_) => 0,
+                };
+                let str_xp = split[2];
+                let xp = match str_xp.parse::<u32>() {
+                    Ok(xp) => xp,
+                    Err(_) => 0,
+                };
+                let actual_level = common::xp_to_level(xp);
+                let next_level = actual_level + 1;
+                let next_level_xp = common::level_to_xp(next_level);
+                let xp_difference = next_level_xp - xp;
+
+                if flag_sort {
+                    // if -s was passed
+                    if level < 99 {
+                        sortable_data.push(((rank, level, xp, xp_difference), index));
+                    }
+                } else {
+                    // otherwise...
+                    skill_data.push(format!(
+                        "{} {}",
+                        common::c1(&skills[index as usize]),
+                        common::c2(&common::commas(level as f64)),
+                    ));
+                }
             }
         }
     }
 
+    // if -s was passed
+    if flag_sort {
+        // sort the skills by xp_difference
+        sortable_data.sort_by(|a, b| a.0 .3.cmp(&b.0 .3));
+
+        skill_data = Vec::new();
+        skill_data.push(common::p("XP to Level"));
+        for data in sortable_data {
+            let xp_difference = data.0 .3;
+            let index = data.1;
+
+            skill_data.push(format!(
+                "{} {}",
+                common::c1(&skills[index as usize]),
+                common::c2(&common::commas(xp_difference as f64)),
+            ));
+        }
+    }
+
+    // wrap up the data and return it
     if skill_data.len() > 0 {
         return Ok(vec![format!("{} {}", prefix, skill_data.join(" "))]);
     }
