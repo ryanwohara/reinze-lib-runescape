@@ -1,10 +1,10 @@
-use crate::common::c1;
-use crate::common::c2;
-use crate::common::commas_from_string;
-use crate::common::get_rsn;
-use crate::common::get_stats;
-use crate::common::l;
-use crate::common::p;
+use common::c1;
+use common::c2;
+use common::commas_from_string;
+use common::get_rsn;
+use common::get_stats;
+use common::l;
+use common::p;
 use mysql::{from_row, Row};
 
 pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {

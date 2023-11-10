@@ -1,9 +1,9 @@
 extern crate ini;
 
-use crate::common::c1;
-use crate::common::c2;
-use crate::common::capitalize;
-use crate::common::l;
+use common::c1;
+use common::c2;
+use common::capitalize;
+use common::l;
 use ini::Ini;
 
 pub fn params(query: &str) -> Result<Vec<String>, ()> {

@@ -1,8 +1,6 @@
 mod bh;
 mod bosses;
 mod clues;
-mod common;
-mod database;
 mod ge;
 mod items;
 mod level;
@@ -17,6 +15,8 @@ mod soulwars;
 mod stats;
 mod wiki;
 mod xp;
+
+extern crate common;
 
 use regex::Regex;
 use std::ffi::{CStr, CString};

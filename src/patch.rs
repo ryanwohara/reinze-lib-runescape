@@ -1,6 +1,6 @@
-use crate::common::c1;
-use crate::common::c2;
-use crate::common::l;
+use common::c1;
+use common::c2;
+use common::l;
 
 pub fn patch(query: &str) -> Result<Vec<String>, ()> {
     let prefix = l("Patch");
