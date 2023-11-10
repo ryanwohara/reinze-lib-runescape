@@ -172,28 +172,28 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
             output.push(format!(
                 "{} {}{}",
                 common::c1("Level"),
-                common::c2(&common::commas_from_string(str_level)),
+                common::c2(&common::commas_from_string(str_level, "d")),
                 actual_level_string
             ));
 
             output.push(format!(
                 "{} {}",
                 common::c1("XP"),
-                common::c2(&common::commas_from_string(str_xp))
+                common::c2(&common::commas_from_string(str_xp, "d"))
             ));
 
             if skill != "Overall" && next_level < 127 {
                 output.push(format!(
                     "{} {}",
                     common::c1(&format!("XP to {}", next_level)),
-                    common::c2(&common::commas_from_string(&xp_difference.to_string()))
+                    common::c2(&common::commas_from_string(&xp_difference.to_string(), "d"))
                 ));
             }
 
             output.push(format!(
                 "{} {}",
                 common::c1("Rank"),
-                common::c2(&common::commas_from_string(rank))
+                common::c2(&common::commas_from_string(rank, "d"))
             ));
 
             let message = format!("{} {}", prefix, output.join(&common::c1(" | ")));
@@ -205,11 +205,11 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                 skill_data.push(format!(
                     "{}{} {}{} {}{}",
                     common::c1("Lvl:"),
-                    common::c2(&common::commas_from_string(split[1])),
+                    common::c2(&common::commas_from_string(split[1], "d")),
                     common::c1("XP:"),
-                    common::c2(&common::commas_from_string(split[2])),
+                    common::c2(&common::commas_from_string(split[2], "d")),
                     common::c1("Rank:"),
-                    common::c2(&common::commas_from_string(split[0])),
+                    common::c2(&common::commas_from_string(split[0], "d")),
                 ));
             }
         } else if skill_id == 0 && index < hiscores_len as isize {
@@ -250,21 +250,21 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                         skill_data.push(format!(
                             "{} {}",
                             common::c1(&skills[index as usize]),
-                            common::c2(&common::commas(xp as f64)),
+                            common::c2(&common::commas(xp as f64, "d")),
                         ));
                     } else if flag_rank {
                         // if -r was passed
                         skill_data.push(format!(
                             "{} {}",
                             common::c1(&skills[index as usize]),
-                            common::c2(&common::commas_from_string(rank)),
+                            common::c2(&common::commas_from_string(rank, "d")),
                         ));
                     } else {
                         // otherwise...
                         skill_data.push(format!(
                             "{} {}",
                             common::c1(&skills[index as usize]),
-                            common::c2(&common::commas(level as f64)),
+                            common::c2(&common::commas(level as f64, "d")),
                         ));
                     }
                 }
@@ -286,7 +286,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
             skill_data.push(format!(
                 "{} {}",
                 common::c1(&skills[index as usize]),
-                common::c2(&common::commas(xp_difference as f64)),
+                common::c2(&common::commas(xp_difference as f64, "d")),
             ));
         }
     }

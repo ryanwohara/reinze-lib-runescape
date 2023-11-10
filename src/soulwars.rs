@@ -51,8 +51,8 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
                 zeal.push(format!(
                     "{}: {} {}",
                     c1(name),
-                    c2(&commas_from_string(points)),
-                    p(&commas_from_string(rank))
+                    c2(&commas_from_string(points, "d")),
+                    p(&commas_from_string(rank, "d"))
                 ));
             }
         }
