@@ -86,7 +86,7 @@ pub extern "C" fn exported(
         | "fishing" | "fish" | "firemaking" | "fm" | "crafting" | "craft" | "smithing"
         | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
         | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
-        | "hunt" | "construction" | "con" => stats::stats(command, query, author),
+        | "hunt" | "construction" | "con" => stats::stats(command, query, author, rsn_n),
         "pvparena" | "pvp" | "arena" => pvparena::lookup(query, author, rsn_n),
         "rift" | "rifts" => rifts::lookup(query, author, rsn_n),
         "sw" | "swar" | "soulw" | "soulwar" | "soulwars" | "zeal" => {

@@ -2,7 +2,7 @@ use common;
 use mysql::{from_row, Row};
 use regex::Regex;
 
-pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()> {
+pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
     let skill = common::skill(command);
     let skills = common::skills();
     // Get the skill ID from the skill name
@@ -26,7 +26,6 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
     )];
 
     let mut split: Vec<&str> = query.split(" ").collect();
-    let rsn: String;
 
     let mut flag_sort = false;
     let mut flag_exp = false;
@@ -85,10 +84,20 @@ pub fn stats(command: &str, query: &str, author: &str) -> Result<Vec<String>, ()
         }
     }
 
-    if split.len() == 0 {
-        rsn = author.to_string();
-    } else {
-        rsn = split.join(" ").to_string();
+    let mut rsn: String = split.join(" ").to_string();
+    let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
+    let row: Vec<Row>;
+
+    if rsn.len() == 0 {
+        row = match common::get_rsn(author, rsn_n) {
+            Ok(db_rsn) => db_rsn,
+            Err(_) => vec![],
+        };
+
+        rsn = match row.first() {
+            Some(db_rsn) => from_row(db_rsn.to_owned()),
+            None => nick, // Default to the user's IRC nickname
+        };
     }
 
     let resp = match reqwest::blocking::get(&format!(
