@@ -1,9 +1,10 @@
 use common::{
-    c1, c2, commas, commas_from_string, get_rsn, l, level_to_xp, p, skill, skills, unranked,
-    xp_to_level,
+    c1, c2, commas, commas_from_string, get_cmb, get_rsn, l, level_to_xp, p, skill, skills,
+    unranked, xp_to_level,
 };
 use mysql::from_row;
 use regex::Regex;
+use std::collections::HashMap;
 
 pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
     let skill = skill(command);
@@ -197,6 +198,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
     let mut index = 0 - 1 as isize;
     let mut skill_data = Vec::new();
     let mut sortable_data = Vec::new();
+    let mut skill_lookup_data = HashMap::new();
 
     for split in hiscores_collected {
         index += 1;
@@ -294,6 +296,8 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                 let next_level_xp = level_to_xp(next_level);
                 let xp_difference = next_level_xp - xp;
 
+                skill_lookup_data.insert(&skills[index as usize], level);
+
                 // if filters were passed
                 if (flag_filter_by.len() == 0)
                     || (flag_filter_by.len() > 0
@@ -352,6 +356,23 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                 c2(&commas(xp_difference as f64, "d")),
             ));
         }
+    } else if skill_id == 0 {
+        println!("{:?}", skill_lookup_data);
+        // we need to include combat level
+        // in the overall summary
+        let cmb = get_cmb(
+            skill_lookup_data.get(&"Attack".to_string()).unwrap_or(&1),
+            skill_lookup_data.get(&"Strength".to_string()).unwrap_or(&1),
+            skill_lookup_data.get(&"Defence".to_string()).unwrap_or(&1),
+            skill_lookup_data
+                .get(&"Hitpoints".to_string())
+                .unwrap_or(&10),
+            skill_lookup_data.get(&"Ranged".to_string()).unwrap_or(&1),
+            skill_lookup_data.get(&"Prayer".to_string()).unwrap_or(&1),
+            skill_lookup_data.get(&"Magic".to_string()).unwrap_or(&1),
+        );
+
+        skill_data.insert(1, format!("{}{}", c1("Combat:"), c2(&cmb.to_string())));
     }
 
     // wrap up the data and return it
