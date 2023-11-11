@@ -1,7 +1,4 @@
-use super::common::c1;
-use super::common::c2;
-use super::common::l;
-use super::common::xp_to_level;
+use common::{c1, c2, commas, l, xp_to_level};
 
 pub fn level(query: &str) -> Result<Vec<String>, ()> {
     let err = vec![format!(
@@ -11,18 +8,14 @@ pub fn level(query: &str) -> Result<Vec<String>, ()> {
     )];
 
     let xp = match query.parse::<u32>() {
-        Ok(xp) => xp,
+        Ok(xp) => u32::min(xp, 200000000),
         Err(_) => return Ok(err),
     };
-
-    if xp > 200000000 {
-        return Ok(err);
-    }
 
     let output = vec![format!(
         "{} {} = {}",
         l("XP->Level"),
-        c1(query),
+        c1(&commas(xp as f64, "d")),
         c2(&format!("Level {}", &xp_to_level(xp).to_string()))
     )];
 

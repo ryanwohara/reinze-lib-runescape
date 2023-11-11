@@ -11,12 +11,12 @@ pub fn xp(query: &str) -> Result<Vec<String>, ()> {
         return Ok(vec!["Invalid number of arguments".to_string()]);
     } else if split.len() == 2 {
         let start = match split[0].parse::<u32>() {
-            Ok(start) => start,
+            Ok(start) => u32::min(start, 126),
             Err(_) => return Ok(vec!["Invalid arguments".to_string()]),
         };
 
         let end = match split[1].parse::<u32>() {
-            Ok(end) => end,
+            Ok(end) => u32::min(end, 126),
             Err(_) => return Ok(vec!["Invalid arguments".to_string()]),
         };
 
