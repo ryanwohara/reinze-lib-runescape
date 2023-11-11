@@ -30,10 +30,19 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
     let mut flag_sort = false;
     let mut flag_exp = false;
     let mut flag_rank = false;
+    let mut flag_ironman = false;
+    let mut flag_ultimate = false;
+    let mut flag_hardcore = false;
+    let mut flag_deadman = false;
+    let mut flag_leagues = false;
+    let mut flag_tournament = false;
+    let mut flag_1_def = false;
+    let mut flag_skill = false;
+    let mut flag_freshstart = false;
     let mut flag_filter_by = "";
     let mut flag_filter_at = 1;
 
-    let re_ser = Regex::new(r"-([ser])").unwrap();
+    let re_ser = Regex::new(r"(?:^|\b)-([seriuhdlt1]|sk|fs)(?:\b|$)").unwrap();
     let re_ser_match = match re_ser.captures(query) {
         Some(captures) => vec![captures],
         None => vec![],
@@ -48,6 +57,15 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
             "s" => flag_sort = true,
             "e" => flag_exp = true,
             "r" => flag_rank = true,
+            "i" => flag_ironman = true,
+            "u" => flag_ultimate = true,
+            "h" => flag_hardcore = true,
+            "d" => flag_deadman = true,
+            "l" => flag_leagues = true,
+            "t" => flag_tournament = true,
+            "1" => flag_1_def = true,
+            "sk" => flag_skill = true,
+            "fs" => flag_freshstart = true,
             _ => (),
         };
         for (index, arg) in split.iter().enumerate() {
@@ -100,10 +118,34 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
         };
     }
 
-    let resp = match reqwest::blocking::get(&format!(
-        "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player={}",
-        rsn
-    )) {
+    let base_url;
+
+    if flag_ironman {
+        base_url = "https://secure.runescape.com/m=hiscore_oldschool_ironman/index_lite.ws?player="
+    } else if flag_ultimate {
+        base_url = "https://secure.runescape.com/m=hiscore_oldschool_ultimate/index_lite.ws?player="
+    } else if flag_hardcore {
+        base_url = "https://secure.runescape.com/m=hiscore_oldschool_hardcore_ironman/index_lite.ws?player="
+    } else if flag_deadman {
+        base_url = "https://secure.runescape.com/m=hiscore_oldschool_deadman/index_lite.ws?player="
+    } else if flag_leagues {
+        base_url = "https://secure.runescape.com/m=hiscore_oldschool_seasonal/index_lite.ws?player="
+    } else if flag_tournament {
+        base_url =
+            "https://secure.runescape.com/m=hiscore_oldschool_tournament/index_lite.ws?player="
+    } else if flag_1_def {
+        base_url =
+            "https://secure.runescape.com/m=hiscore_oldschool_skiller_defence/index_lite.ws?player="
+    } else if flag_skill {
+        base_url = "https://secure.runescape.com/m=hiscore_oldschool_skiller/index_lite.ws?player="
+    } else if flag_freshstart {
+        base_url =
+            "https://secure.runescape.com/m=hiscore_oldschool_fresh_start/index_lite.ws?player="
+    } else {
+        base_url = "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=";
+    }
+
+    let resp = match reqwest::blocking::get(&format!("{}{}", base_url, rsn)) {
         Ok(resp) => resp,
         Err(e) => {
             println!("Error making HTTP request: {}", e);
