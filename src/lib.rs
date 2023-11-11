@@ -106,7 +106,7 @@ price
 pvparena[N]
 rifts[N]
 sw[N]
-stats
+stats[N]
 wiki"
             .split("\n")
             .map(|s| s.to_string())
