@@ -1,28 +1,16 @@
-use common::c1;
-use common::c2;
-use common::commas_from_string;
-use common::get_rsn;
-use common::get_stats;
-use common::l;
-use common::p;
-use mysql::{from_row, Row};
+use common::{c1, c2, commas_from_string, get_rsn, get_stats, l, p};
+use mysql::from_row;
 
 pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
-    let row: Vec<Row>;
-    let mut rsn: String = query.to_string();
     let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
-
-    if rsn.len() == 0 {
-        row = match get_rsn(author, rsn_n) {
-            Ok(db_rsn) => db_rsn,
-            Err(_) => vec![],
-        };
-
-        rsn = match row.first() {
-            Some(db_rsn) => from_row(db_rsn.to_owned()),
-            None => nick, // Default to the user's IRC nickname
-        };
-    }
+    let rsn = if query.is_empty() {
+        get_rsn(author, rsn_n)
+            .ok()
+            .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
+            .unwrap_or_else(|| nick)
+    } else {
+        query.to_string()
+    };
 
     let bosses: [&str; 58] = [
         "Abyssal Sire",

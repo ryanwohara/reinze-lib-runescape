@@ -1,28 +1,30 @@
-use common;
-use mysql::{from_row, Row};
+use common::{
+    c1, c2, commas, commas_from_string, get_rsn, l, level_to_xp, p, skill, skills, xp_to_level,
+};
+use mysql::from_row;
 use regex::Regex;
 
 pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
-    let skill = common::skill(command);
-    let skills = common::skills();
+    let skill = skill(command);
+    let skills = skills();
     // Get the skill ID from the skill name
     let skill_id = match skills.iter().position(|r| r.to_string() == skill) {
         Some(index) => index,
         None => 0,
     };
 
-    let prefix = common::l(&skill);
+    let prefix = l(&skill);
     let not_found = vec![format!(
         "{} {} {} {} {} {} {} {} {}",
         prefix,
-        common::c1("Level"),
-        common::p("N/A"),
-        common::c2("|"),
-        common::c1("XP"),
-        common::p("N/A"),
-        common::c2("|"),
-        common::c1("Rank"),
-        common::p("N/A")
+        c1("Level"),
+        p("N/A"),
+        c2("|"),
+        c1("XP"),
+        p("N/A"),
+        c2("|"),
+        c1("Rank"),
+        p("N/A")
     )];
 
     let mut split: Vec<&str> = query.split(" ").collect();
@@ -102,21 +104,15 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
         }
     }
 
-    let mut rsn: String = split.join(" ").to_string();
     let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
-    let row: Vec<Row>;
-
-    if rsn.len() == 0 {
-        row = match common::get_rsn(author, rsn_n) {
-            Ok(db_rsn) => db_rsn,
-            Err(_) => vec![],
-        };
-
-        rsn = match row.first() {
-            Some(db_rsn) => from_row(db_rsn.to_owned()),
-            None => nick, // Default to the user's IRC nickname
-        };
-    }
+    let rsn = if query.is_empty() {
+        get_rsn(author, rsn_n)
+            .ok()
+            .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
+            .unwrap_or_else(|| nick)
+    } else {
+        query.to_string()
+    };
 
     let base_url;
 
@@ -197,48 +193,48 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                 Ok(xp) => xp,
                 Err(_) => 0,
             };
-            let actual_level = common::xp_to_level(xp);
+            let actual_level = xp_to_level(xp);
             let next_level = actual_level + 1;
-            let next_level_xp = common::level_to_xp(next_level);
+            let next_level_xp = level_to_xp(next_level);
             let xp_difference = next_level_xp - xp;
 
             let mut output: Vec<String> = Vec::new();
 
             let actual_level_string;
             if actual_level > level {
-                actual_level_string = format!(" {}", common::p(&actual_level.to_string()));
+                actual_level_string = format!(" {}", p(&actual_level.to_string()));
             } else {
                 actual_level_string = "".to_string();
             }
 
             output.push(format!(
                 "{} {}{}",
-                common::c1("Level"),
-                common::c2(&common::commas_from_string(str_level, "d")),
+                c1("Level"),
+                c2(&commas_from_string(str_level, "d")),
                 actual_level_string
             ));
 
             output.push(format!(
                 "{} {}",
-                common::c1("XP"),
-                common::c2(&common::commas_from_string(str_xp, "d"))
+                c1("XP"),
+                c2(&commas_from_string(str_xp, "d"))
             ));
 
             if skill != "Overall" && next_level < 127 {
                 output.push(format!(
                     "{} {}",
-                    common::c1(&format!("XP to {}", next_level)),
-                    common::c2(&common::commas_from_string(&xp_difference.to_string(), "d"))
+                    c1(&format!("XP to {}", next_level)),
+                    c2(&commas_from_string(&xp_difference.to_string(), "d"))
                 ));
             }
 
             output.push(format!(
                 "{} {}",
-                common::c1("Rank"),
-                common::c2(&common::commas_from_string(rank, "d"))
+                c1("Rank"),
+                c2(&commas_from_string(rank, "d"))
             ));
 
-            let message = format!("{} {}", prefix, output.join(&common::c1(" | ")));
+            let message = format!("{} {}", prefix, output.join(&c1(" | ")));
 
             return Ok(vec![message]);
         } else if skill_id == 0 && index == 0 {
@@ -246,12 +242,12 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
             if split[0] != "-1" && !split[0].contains("404 - Page not found") {
                 skill_data.push(format!(
                     "{}{} {}{} {}{}",
-                    common::c1("Lvl:"),
-                    common::c2(&common::commas_from_string(split[1], "d")),
-                    common::c1("XP:"),
-                    common::c2(&common::commas_from_string(split[2], "d")),
-                    common::c1("Rank:"),
-                    common::c2(&common::commas_from_string(split[0], "d")),
+                    c1("Lvl:"),
+                    c2(&commas_from_string(split[1], "d")),
+                    c1("XP:"),
+                    c2(&commas_from_string(split[2], "d")),
+                    c1("Rank:"),
+                    c2(&commas_from_string(split[0], "d")),
                 ));
             }
         } else if skill_id == 0 && index < hiscores_len as isize {
@@ -268,9 +264,9 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                     Ok(xp) => xp,
                     Err(_) => 0,
                 };
-                let actual_level = common::xp_to_level(xp);
+                let actual_level = xp_to_level(xp);
                 let next_level = actual_level + 1;
-                let next_level_xp = common::level_to_xp(next_level);
+                let next_level_xp = level_to_xp(next_level);
                 let xp_difference = next_level_xp - xp;
 
                 // if filters were passed
@@ -291,22 +287,22 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                         // if -e was passed
                         skill_data.push(format!(
                             "{} {}",
-                            common::c1(&skills[index as usize]),
-                            common::c2(&common::commas(xp as f64, "d")),
+                            c1(&skills[index as usize]),
+                            c2(&commas(xp as f64, "d")),
                         ));
                     } else if flag_rank {
                         // if -r was passed
                         skill_data.push(format!(
                             "{} {}",
-                            common::c1(&skills[index as usize]),
-                            common::c2(&common::commas_from_string(rank, "d")),
+                            c1(&skills[index as usize]),
+                            c2(&commas_from_string(rank, "d")),
                         ));
                     } else {
                         // otherwise...
                         skill_data.push(format!(
                             "{} {}",
-                            common::c1(&skills[index as usize]),
-                            common::c2(&common::commas(level as f64, "d")),
+                            c1(&skills[index as usize]),
+                            c2(&commas(level as f64, "d")),
                         ));
                     }
                 }
@@ -320,15 +316,15 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
         sortable_data.sort_by(|a, b| a.0 .3.cmp(&b.0 .3));
 
         skill_data = Vec::new();
-        skill_data.push(common::p("XP to Level"));
+        skill_data.push(p("XP to Level"));
         for data in sortable_data {
             let xp_difference = data.0 .3;
             let index = data.1;
 
             skill_data.push(format!(
                 "{} {}",
-                common::c1(&skills[index as usize]),
-                common::c2(&common::commas(xp_difference as f64, "d")),
+                c1(&skills[index as usize]),
+                c2(&commas(xp_difference as f64, "d")),
             ));
         }
     }
