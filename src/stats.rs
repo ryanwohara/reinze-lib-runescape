@@ -32,21 +32,15 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
     let mut flag_filter_by = "";
     let mut flag_filter_at = 1;
 
-    let re_ser = Regex::new(r"(?:^|\b)-([seriuhdlt1]|sk|fs)(?:\b|$)").unwrap();
-    let re_ser_match = match re_ser.captures(query) {
-        Some(captures) => vec![captures],
-        None => vec![],
-    };
+    let re_ser1 = Regex::new(r"(?:^|\b|\s)-([iuhdlt1]|sk|fs)(?:\s|\b|$)").unwrap();
+    let re_ser_match1 = re_ser1.captures(query);
 
-    if re_ser_match.len() > 0 {
-        let flag = match re_ser_match[0].get(1) {
+    if let Some(capture) = re_ser_match1 {
+        let flag = match capture.get(1) {
             Some(flag) => flag.as_str(),
             None => "",
         };
         match flag {
-            "s" => flag_sort = true,
-            "e" => flag_exp = true,
-            "r" => flag_rank = true,
             "i" => flag_ironman = true,
             "u" => flag_ultimate = true,
             "h" => flag_hardcore = true,
@@ -56,6 +50,29 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
             "1" => flag_1_def = true,
             "sk" => flag_skill = true,
             "fs" => flag_freshstart = true,
+            _ => (),
+        };
+
+        for (index, arg) in split.iter().enumerate() {
+            if arg.eq(&format!("-{}", flag)) {
+                split.remove(index);
+                break;
+            }
+        }
+    }
+
+    let re_ser = Regex::new(r"(?:^|\b|\s)-([ser])(?:\s|\b|$)").unwrap();
+    let re_ser_match = re_ser.captures(query);
+
+    if let Some(capture) = re_ser_match {
+        let flag = match capture.get(1) {
+            Some(flag) => flag.as_str(),
+            None => "",
+        };
+        match flag {
+            "s" => flag_sort = true,
+            "e" => flag_exp = true,
+            "r" => flag_rank = true,
             _ => (),
         };
         for (index, arg) in split.iter().enumerate() {
@@ -356,7 +373,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                 c2(&commas(xp_difference as f64, "d")),
             ));
         }
-    } else if skill_id == 0 {
+    } else if skill_id == 0 && !skill_data.is_empty() {
         println!("{:?}", skill_lookup_data);
         // we need to include combat level
         // in the overall summary
