@@ -14,20 +14,6 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
         None => 0,
     };
 
-    let prefix = l(&skill);
-    let not_found = vec![format!(
-        "{} {} {} {} {} {} {} {} {}",
-        prefix,
-        c1("Level"),
-        p("N/A"),
-        c2("|"),
-        c1("XP"),
-        p("N/A"),
-        c2("|"),
-        c1("Rank"),
-        p("N/A")
-    )];
-
     let mut split: Vec<&str> = query.split(" ").collect();
 
     let mut flag_sort = false;
@@ -106,41 +92,79 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
     }
 
     let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
-    let rsn = if query.is_empty() {
+    let rsn = if split.is_empty() || split[0].is_empty() {
         get_rsn(author, rsn_n)
             .ok()
             .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
-            .unwrap_or_else(|| nick)
+            .unwrap_or_else(|| nick.to_owned())
     } else {
-        query.to_string()
+        split.join(" ")
     };
 
+    println!("{} => {}", nick, rsn);
+
     let base_url;
+    let mut prefix;
 
     if flag_ironman {
-        base_url = "https://secure.runescape.com/m=hiscore_oldschool_ironman/index_lite.ws?player="
+        base_url = "https://secure.runescape.com/m=hiscore_oldschool_ironman/index_lite.ws?player=";
+        prefix = vec![l("Iron"), l(&skill)].join(" ");
     } else if flag_ultimate {
-        base_url = "https://secure.runescape.com/m=hiscore_oldschool_ultimate/index_lite.ws?player="
+        base_url =
+            "https://secure.runescape.com/m=hiscore_oldschool_ultimate/index_lite.ws?player=";
+        prefix = vec![l("Ultimate"), l(&skill)].join(" ");
     } else if flag_hardcore {
-        base_url = "https://secure.runescape.com/m=hiscore_oldschool_hardcore_ironman/index_lite.ws?player="
+        base_url = "https://secure.runescape.com/m=hiscore_oldschool_hardcore_ironman/index_lite.ws?player=";
+        prefix = vec![l("Hardcode"), l(&skill)].join(" ");
     } else if flag_deadman {
-        base_url = "https://secure.runescape.com/m=hiscore_oldschool_deadman/index_lite.ws?player="
+        base_url = "https://secure.runescape.com/m=hiscore_oldschool_deadman/index_lite.ws?player=";
+        prefix = vec![l("Deadman"), l(&skill)].join(" ");
     } else if flag_leagues {
-        base_url = "https://secure.runescape.com/m=hiscore_oldschool_seasonal/index_lite.ws?player="
+        base_url =
+            "https://secure.runescape.com/m=hiscore_oldschool_seasonal/index_lite.ws?player=";
+        prefix = vec![l("Seasonal"), l(&skill)].join(" ");
     } else if flag_tournament {
         base_url =
-            "https://secure.runescape.com/m=hiscore_oldschool_tournament/index_lite.ws?player="
+            "https://secure.runescape.com/m=hiscore_oldschool_tournament/index_lite.ws?player=";
+        prefix = vec![l("Tournament"), l(&skill)].join(" ");
     } else if flag_1_def {
         base_url =
-            "https://secure.runescape.com/m=hiscore_oldschool_skiller_defence/index_lite.ws?player="
+            "https://secure.runescape.com/m=hiscore_oldschool_skiller_defence/index_lite.ws?player=";
+        prefix = vec![l("1 Def"), l(&skill)].join(" ");
     } else if flag_skill {
-        base_url = "https://secure.runescape.com/m=hiscore_oldschool_skiller/index_lite.ws?player="
+        base_url = "https://secure.runescape.com/m=hiscore_oldschool_skiller/index_lite.ws?player=";
+        prefix = vec![l("Skiller"), l(&skill)].join(" ");
     } else if flag_freshstart {
         base_url =
-            "https://secure.runescape.com/m=hiscore_oldschool_fresh_start/index_lite.ws?player="
+            "https://secure.runescape.com/m=hiscore_oldschool_fresh_start/index_lite.ws?player=";
+        prefix = vec![l("Fresh Start"), l(&skill)].join(" ");
     } else {
         base_url = "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=";
+        prefix = l(&skill);
     }
+
+    if flag_exp {
+        prefix = vec![prefix, p("XP")].join(" ");
+    } else if flag_rank {
+        prefix = vec![prefix, p("Rank")].join(" ");
+    } else if flag_sort {
+        prefix = vec![prefix, p("XP to Level")].join(" ");
+    } else {
+        prefix = vec![prefix, p("Level")].join(" ");
+    }
+
+    let not_found = vec![format!(
+        "{} {} {} {} {} {} {} {} {}",
+        prefix,
+        c1("Level"),
+        p("N/A"),
+        c2("|"),
+        c1("XP"),
+        p("N/A"),
+        c2("|"),
+        c1("Rank"),
+        p("N/A")
+    )];
 
     let resp = match reqwest::blocking::get(&format!("{}{}", base_url, rsn)) {
         Ok(resp) => resp,
@@ -317,7 +341,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
         sortable_data.sort_by(|a, b| a.0 .3.cmp(&b.0 .3));
 
         skill_data = Vec::new();
-        skill_data.push(p("XP to Level"));
+
         for data in sortable_data {
             let xp_difference = data.0 .3;
             let index = data.1;
