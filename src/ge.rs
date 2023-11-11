@@ -1,14 +1,5 @@
-use super::common::c1;
-use super::common::c2;
-use super::common::c3;
-use super::common::c4;
-use super::common::c5;
-use super::common::l;
-use super::common::p;
-use super::items::Ge;
-use super::items::GeItemPrice;
-use super::items::Mapping;
-use super::items::StrOrNum;
+use super::items::{Ge, GeItemPrice, Mapping, StrOrNum};
+use common::{c1, c2, c3, c4, c5, l, not_found, p};
 use regex::Regex;
 use serde_json;
 use std::fs::read_to_string;
@@ -97,11 +88,7 @@ pub fn ge(query: &str) -> Result<Vec<String>, ()> {
         }
     }
 
-    if found_items.len() == 0 {
-        return Err(());
-    }
-
-    output = format!("{} {}", output, found_items.join(&c1(" | ")));
+    output = format!("{} {}", output, not_found(found_items));
 
     let output_vec = vec![output];
 

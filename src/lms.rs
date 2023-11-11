@@ -1,4 +1,4 @@
-use common::{c1, c2, commas_from_string, get_rsn, get_stats, l, p};
+use common::{c1, c2, commas_from_string, get_rsn, get_stats, l, p, unranked};
 use mysql::from_row;
 
 pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
@@ -37,7 +37,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         })
         .collect();
 
-    let output = format!("{} {}", l("Last Man Standing"), lms_rank.join(&c1(" | ")));
+    let output = format!("{} {}", l("Last Man Standing"), unranked(lms_rank));
 
     Ok(vec![output])
 }

@@ -1,6 +1,4 @@
-use common::c1;
-use common::c2;
-use common::l;
+use common::{c1, c2, l, not_found};
 
 pub fn patch(query: &str) -> Result<Vec<String>, ()> {
     let prefix = l("Patch");
@@ -42,9 +40,7 @@ pub fn patch(query: &str) -> Result<Vec<String>, ()> {
         return Ok(vec![format!("{}: {}", prefix, c1("No results found"))]);
     }
 
-    let output = format!("{} {}", prefix, found_params.join(&c1(" | ")));
+    let output = format!("{} {}", prefix, not_found(found_params));
 
-    let output_vec = vec![output];
-
-    Ok(output_vec)
+    Ok(vec![output])
 }

@@ -1,5 +1,6 @@
 use common::{
-    c1, c2, commas, commas_from_string, get_rsn, l, level_to_xp, p, skill, skills, xp_to_level,
+    c1, c2, commas, commas_from_string, get_rsn, l, level_to_xp, p, skill, skills, unranked,
+    xp_to_level,
 };
 use mysql::from_row;
 use regex::Regex;
@@ -234,7 +235,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                 c2(&commas_from_string(rank, "d"))
             ));
 
-            let message = format!("{} {}", prefix, output.join(&c1(" | ")));
+            let message = format!("{} {}", prefix, unranked(output));
 
             return Ok(vec![message]);
         } else if skill_id == 0 && index == 0 {

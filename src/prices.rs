@@ -1,9 +1,6 @@
 use crate::items::Data;
 use crate::items::Mapping;
-use common::c1;
-use common::c2;
-use common::commas;
-use common::l;
+use common::{c1, c2, commas, l, not_found};
 use regex::Regex;
 use serde_json;
 use std::fs::read_to_string;
@@ -85,11 +82,7 @@ pub fn prices(query: &str) -> Result<Vec<String>, ()> {
         }
     }
 
-    if found_items.len() == 0 {
-        return Err(());
-    }
-
-    output = format!("{} {}", output, found_items.join(&c1(" | ")));
+    output = format!("{} {}", output, not_found(found_items));
 
     let output_vec: Vec<String> = vec![output];
 

@@ -118,7 +118,7 @@ ge
 l(ast)?m(an)?s(tanding)?\d*
 level
 lvl
-params
+params?
 patch
 players
 price
