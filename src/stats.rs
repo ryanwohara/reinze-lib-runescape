@@ -46,45 +46,18 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
         split.join(" ")
     };
 
-    let base_url;
-    let mut prefix;
-
-    if flag_ironman {
-        base_url = "https://secure.runescape.com/m=hiscore_oldschool_ironman/index_lite.ws?player=";
-        prefix = vec![l("Iron"), l(&skill)].join(" ");
-    } else if flag_ultimate {
-        base_url =
-            "https://secure.runescape.com/m=hiscore_oldschool_ultimate/index_lite.ws?player=";
-        prefix = vec![l("Ultimate"), l(&skill)].join(" ");
-    } else if flag_hardcore {
-        base_url = "https://secure.runescape.com/m=hiscore_oldschool_hardcore_ironman/index_lite.ws?player=";
-        prefix = vec![l("Hardcode"), l(&skill)].join(" ");
-    } else if flag_deadman {
-        base_url = "https://secure.runescape.com/m=hiscore_oldschool_deadman/index_lite.ws?player=";
-        prefix = vec![l("Deadman"), l(&skill)].join(" ");
-    } else if flag_leagues {
-        base_url =
-            "https://secure.runescape.com/m=hiscore_oldschool_seasonal/index_lite.ws?player=";
-        prefix = vec![l("Seasonal"), l(&skill)].join(" ");
-    } else if flag_tournament {
-        base_url =
-            "https://secure.runescape.com/m=hiscore_oldschool_tournament/index_lite.ws?player=";
-        prefix = vec![l("Tournament"), l(&skill)].join(" ");
-    } else if flag_1_def {
-        base_url =
-            "https://secure.runescape.com/m=hiscore_oldschool_skiller_defence/index_lite.ws?player=";
-        prefix = vec![l("1 Def"), l(&skill)].join(" ");
-    } else if flag_skill {
-        base_url = "https://secure.runescape.com/m=hiscore_oldschool_skiller/index_lite.ws?player=";
-        prefix = vec![l("Skiller"), l(&skill)].join(" ");
-    } else if flag_freshstart {
-        base_url =
-            "https://secure.runescape.com/m=hiscore_oldschool_fresh_start/index_lite.ws?player=";
-        prefix = vec![l("Fresh Start"), l(&skill)].join(" ");
-    } else {
-        base_url = "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=";
-        prefix = l(&skill);
-    }
+    let (base_url, mut prefix) = get_base_url(
+        &skill,
+        flag_ironman,
+        flag_ultimate,
+        flag_hardcore,
+        flag_deadman,
+        flag_leagues,
+        flag_tournament,
+        flag_1_def,
+        flag_skill,
+        flag_freshstart,
+    );
 
     if flag_exp {
         prefix = vec![prefix, p("XP")].join(" ");
@@ -299,7 +272,6 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
             ));
         }
     } else if skill_id == 0 && !skill_data.is_empty() {
-        println!("{:?}", skill_lookup_data);
         // we need to include combat level
         // in the overall summary
         let cmb = get_cmb(
@@ -426,4 +398,59 @@ fn process_filter_by_flags(query: &str, mut split: Vec<String>) -> (Vec<String>,
 
 fn convert_split_to_string(split: Vec<&str>) -> Vec<String> {
     split.into_iter().map(|s| s.to_string()).collect()
+}
+
+fn get_base_url(
+    skill: &str,
+    flag_ironman: bool,
+    flag_ultimate: bool,
+    flag_hardcore: bool,
+    flag_deadman: bool,
+    flag_leagues: bool,
+    flag_tournament: bool,
+    flag_1_def: bool,
+    flag_skill: bool,
+    flag_freshstart: bool,
+) -> (String, String) {
+    let base_url;
+    let prefix;
+
+    if flag_ironman {
+        base_url = "https://secure.runescape.com/m=hiscore_oldschool_ironman/index_lite.ws?player=";
+        prefix = vec![l("Iron"), l(skill)].join(" ");
+    } else if flag_ultimate {
+        base_url =
+            "https://secure.runescape.com/m=hiscore_oldschool_ultimate/index_lite.ws?player=";
+        prefix = vec![l("Ultimate"), l(skill)].join(" ");
+    } else if flag_hardcore {
+        base_url = "https://secure.runescape.com/m=hiscore_oldschool_hardcore_ironman/index_lite.ws?player=";
+        prefix = vec![l("Hardcode"), l(skill)].join(" ");
+    } else if flag_deadman {
+        base_url = "https://secure.runescape.com/m=hiscore_oldschool_deadman/index_lite.ws?player=";
+        prefix = vec![l("Deadman"), l(skill)].join(" ");
+    } else if flag_leagues {
+        base_url =
+            "https://secure.runescape.com/m=hiscore_oldschool_seasonal/index_lite.ws?player=";
+        prefix = vec![l("Seasonal"), l(skill)].join(" ");
+    } else if flag_tournament {
+        base_url =
+            "https://secure.runescape.com/m=hiscore_oldschool_tournament/index_lite.ws?player=";
+        prefix = vec![l("Tournament"), l(skill)].join(" ");
+    } else if flag_1_def {
+        base_url =
+            "https://secure.runescape.com/m=hiscore_oldschool_skiller_defence/index_lite.ws?player=";
+        prefix = vec![l("1 Def"), l(skill)].join(" ");
+    } else if flag_skill {
+        base_url = "https://secure.runescape.com/m=hiscore_oldschool_skiller/index_lite.ws?player=";
+        prefix = vec![l("Skiller"), l(skill)].join(" ");
+    } else if flag_freshstart {
+        base_url =
+            "https://secure.runescape.com/m=hiscore_oldschool_fresh_start/index_lite.ws?player=";
+        prefix = vec![l("Fresh Start"), l(skill)].join(" ");
+    } else {
+        base_url = "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=";
+        prefix = l(skill);
+    }
+
+    (base_url.to_owned(), prefix)
 }
