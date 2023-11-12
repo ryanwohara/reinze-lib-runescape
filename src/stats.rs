@@ -10,104 +10,31 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
     let skill = skill(command);
     let skills = skills();
     // Get the skill ID from the skill name
-    let skill_id = match skills.iter().position(|r| r.to_string() == skill) {
-        Some(index) => index,
-        None => 0,
-    };
+    let skill_id = skills
+        .iter()
+        .position(|r| r.to_string() == skill)
+        .unwrap_or(0);
 
-    let mut split: Vec<&str> = query.split(" ").collect();
+    let split: Vec<String> = convert_split_to_string(query.split(" ").collect());
 
-    let mut flag_sort = false;
-    let mut flag_exp = false;
-    let mut flag_rank = false;
-    let mut flag_ironman = false;
-    let mut flag_ultimate = false;
-    let mut flag_hardcore = false;
-    let mut flag_deadman = false;
-    let mut flag_leagues = false;
-    let mut flag_tournament = false;
-    let mut flag_1_def = false;
-    let mut flag_skill = false;
-    let mut flag_freshstart = false;
-    let mut flag_filter_by = "";
-    let mut flag_filter_at = 1;
+    let (split, (flag_filter_by, flag_filter_at)) = process_filter_by_flags(query, split);
 
-    let re_ser1 = Regex::new(r"(?:^|\b|\s)-([iuhdlt1]|sk|fs)(?:\s|\b|$)").unwrap();
-    let re_ser_match1 = re_ser1.captures(query);
+    let (
+        split,
+        (
+            flag_ironman,
+            flag_ultimate,
+            flag_hardcore,
+            flag_deadman,
+            flag_leagues,
+            flag_tournament,
+            flag_1_def,
+            flag_skill,
+            flag_freshstart,
+        ),
+    ) = process_account_type_flags(query, split);
 
-    if let Some(capture) = re_ser_match1 {
-        let flag = match capture.get(1) {
-            Some(flag) => flag.as_str(),
-            None => "",
-        };
-        match flag {
-            "i" => flag_ironman = true,
-            "u" => flag_ultimate = true,
-            "h" => flag_hardcore = true,
-            "d" => flag_deadman = true,
-            "l" => flag_leagues = true,
-            "t" => flag_tournament = true,
-            "1" => flag_1_def = true,
-            "sk" => flag_skill = true,
-            "fs" => flag_freshstart = true,
-            _ => (),
-        };
-
-        for (index, arg) in split.iter().enumerate() {
-            if arg.eq(&format!("-{}", flag)) {
-                split.remove(index);
-                break;
-            }
-        }
-    }
-
-    let re_ser = Regex::new(r"(?:^|\b|\s)-([ser])(?:\s|\b|$)").unwrap();
-    let re_ser_match = re_ser.captures(query);
-
-    if let Some(capture) = re_ser_match {
-        let flag = match capture.get(1) {
-            Some(flag) => flag.as_str(),
-            None => "",
-        };
-        match flag {
-            "s" => flag_sort = true,
-            "e" => flag_exp = true,
-            "r" => flag_rank = true,
-            _ => (),
-        };
-        for (index, arg) in split.iter().enumerate() {
-            if arg.eq(&format!("-{}", flag)) {
-                split.remove(index);
-                break;
-            }
-        }
-    }
-
-    let re_filter = Regex::new(r"([<>=]=?)\s?(\d+)").unwrap();
-    let re_filter_match = match re_filter.captures(query) {
-        Some(captures) => vec![captures],
-        None => vec![],
-    };
-
-    if re_filter_match.len() > 0 {
-        flag_filter_by = re_filter_match[0].get(1).unwrap().as_str();
-        flag_filter_at = re_filter_match[0]
-            .get(2)
-            .unwrap()
-            .as_str()
-            .parse::<u32>()
-            .unwrap_or(1);
-        for (index, arg) in split.iter().enumerate() {
-            if arg.eq(&flag_filter_by) {
-                split.remove(index);
-                split.remove(index);
-                break;
-            } else if arg.eq(&format!("{}{}", flag_filter_by, flag_filter_at)) {
-                split.remove(index);
-                break;
-            }
-        }
-    }
+    let (split, (flag_sort, flag_exp, flag_rank)) = process_ser_flags(query, split);
 
     let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
     let rsn = if split.is_empty() || split[0].is_empty() {
@@ -118,8 +45,6 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
     } else {
         split.join(" ")
     };
-
-    println!("{} => {}", nick, rsn);
 
     let base_url;
     let mut prefix;
@@ -398,4 +323,107 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
     }
 
     Ok(not_found)
+}
+
+fn process_ser_flags(query: &str, mut split: Vec<String>) -> (Vec<String>, (bool, bool, bool)) {
+    let re_ser = Regex::new(r"(?:^|\b|\s)-([ser])(?:\s|\b|$)").unwrap();
+    let nil = (false, false, false);
+
+    let (output, flag) = re_ser
+        .captures(query)
+        .map(|capture| {
+            let flag = capture.get(1).map_or("", |flag| flag.as_str());
+            (
+                match flag {
+                    "s" => (true, false, false),
+                    "e" => (false, true, false),
+                    "r" => (false, false, true),
+                    _ => nil,
+                },
+                flag,
+            )
+        })
+        .unwrap_or_else(|| (nil, ""));
+
+    if !flag.is_empty() {
+        split.retain(|arg| arg != &format!("-{}", flag));
+    }
+
+    (split.into_iter().map(|s| s.to_string()).collect(), output)
+}
+
+fn process_account_type_flags(
+    query: &str,
+    mut split: Vec<String>,
+) -> (
+    Vec<String>,
+    (bool, bool, bool, bool, bool, bool, bool, bool, bool),
+) {
+    let re_ser = Regex::new(r"(?:^|\b|\s)-([iuhdlt1]|sk|fs)(?:\s|\b|$)").unwrap();
+    let nil = (
+        false, false, false, false, false, false, false, false, false,
+    );
+
+    let (output, flag) = re_ser
+        .captures(query)
+        .map(|capture| {
+            let flag = capture.get(1).map_or("", |flag| flag.as_str());
+            (
+                match flag {
+                    "i" => (true, false, false, false, false, false, false, false, false),
+                    "u" => (false, true, false, false, false, false, false, false, false),
+                    "h" => (false, false, true, false, false, false, false, false, false),
+                    "d" => (false, false, false, true, false, false, false, false, false),
+                    "l" => (false, false, false, false, true, false, false, false, false),
+                    "t" => (false, false, false, false, false, true, false, false, false),
+                    "1" => (false, false, false, false, false, false, true, false, false),
+                    "sk" => (false, false, false, false, false, false, false, true, false),
+                    "fs" => (false, false, false, false, false, false, false, false, true),
+                    _ => nil,
+                },
+                flag,
+            )
+        })
+        .unwrap_or_else(|| (nil, ""));
+
+    if !flag.is_empty() {
+        split.retain(|arg| arg != &format!("-{}", flag));
+    }
+
+    (split, output)
+}
+
+fn process_filter_by_flags(query: &str, mut split: Vec<String>) -> (Vec<String>, (String, u32)) {
+    let re_filter = Regex::new(r"(?:^|\b|\s)([<>=]=?)\s?(\d+)(?:\s|\b|$)").unwrap();
+    let nil = ("".to_string(), 0);
+
+    let (flag, filter_at) = re_filter
+        .captures(query)
+        .map(|capture| {
+            let flag = capture.get(1).map_or("", |flag| flag.as_str());
+            let filter_at = capture
+                .get(2)
+                .map_or("", |filter_at| filter_at.as_str())
+                .parse::<u32>()
+                .unwrap_or(1);
+            match flag {
+                ">" | "<" | ">=" | "<=" | "=" => (flag.to_string(), u32::max(filter_at, 1)),
+                _ => nil.to_owned(),
+            }
+        })
+        .unwrap_or(nil);
+
+    if !flag.is_empty() {
+        split.retain(|arg| {
+            arg != &flag
+                && arg != &filter_at.to_string()
+                && arg != &format!("{}{}", flag, filter_at)
+        });
+    }
+
+    (split, (flag, filter_at))
+}
+
+fn convert_split_to_string(split: Vec<&str>) -> Vec<String> {
+    split.into_iter().map(|s| s.to_string()).collect()
 }
