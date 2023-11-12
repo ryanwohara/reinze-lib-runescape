@@ -19,20 +19,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
 
     let (split, (flag_filter_by, flag_filter_at)) = process_filter_by_flags(query, split);
 
-    let (
-        split,
-        (
-            flag_ironman,
-            flag_ultimate,
-            flag_hardcore,
-            flag_deadman,
-            flag_leagues,
-            flag_tournament,
-            flag_1_def,
-            flag_skill,
-            flag_freshstart,
-        ),
-    ) = process_account_type_flags(query, split);
+    let (split, mut prefix, base_url) = process_account_type_flags(query, split);
 
     let (split, (flag_sort, flag_exp, flag_rank)) = process_ser_flags(query, split);
 
@@ -46,28 +33,17 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
         split.join(" ")
     };
 
-    let (base_url, mut prefix) = get_base_url(
-        &skill,
-        flag_ironman,
-        flag_ultimate,
-        flag_hardcore,
-        flag_deadman,
-        flag_leagues,
-        flag_tournament,
-        flag_1_def,
-        flag_skill,
-        flag_freshstart,
-    );
-
     if flag_exp {
-        prefix = vec![prefix, p("XP")].join(" ");
+        prefix = vec![l(&skill), prefix, p("XP")].join(" ");
     } else if flag_rank {
-        prefix = vec![prefix, p("Rank")].join(" ");
+        prefix = vec![l(&skill), prefix, p("Rank")].join(" ");
     } else if flag_sort {
-        prefix = vec![prefix, p("XP to Level")].join(" ");
+        prefix = vec![l(&skill), prefix, p("XP to Level")].join(" ");
     } else {
-        prefix = vec![prefix, p("Level")].join(" ");
+        prefix = vec![l(&skill), prefix, p("Level")].join(" ");
     }
+
+    prefix = prefix.replace("  ", " ");
 
     let not_found = vec![format!(
         "{} {} {} {} {} {} {} {} {}",
@@ -324,34 +300,69 @@ fn process_ser_flags(query: &str, mut split: Vec<String>) -> (Vec<String>, (bool
     (split.into_iter().map(|s| s.to_string()).collect(), output)
 }
 
-fn process_account_type_flags(
+pub fn process_account_type_flags(
     query: &str,
-    mut split: Vec<String>,
-) -> (
-    Vec<String>,
-    (bool, bool, bool, bool, bool, bool, bool, bool, bool),
-) {
+    split: Vec<String>,
+) -> (Vec<String>, String, String) {
     let re_ser = Regex::new(r"(?:^|\b|\s)-([iuhdlt1]|sk|fs)(?:\s|\b|$)").unwrap();
     let nil = (
-        false, false, false, false, false, false, false, false, false,
+        split.to_owned(),
+        "".to_owned(),
+        "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=".to_owned(),
     );
 
-    let (output, flag) = re_ser
+    let (mut output, flag) = re_ser
         .captures(query)
         .map(|capture| {
             let flag = capture.get(1).map_or("", |flag| flag.as_str());
             (
                 match flag {
-                    "i" => (true, false, false, false, false, false, false, false, false),
-                    "u" => (false, true, false, false, false, false, false, false, false),
-                    "h" => (false, false, true, false, false, false, false, false, false),
-                    "d" => (false, false, false, true, false, false, false, false, false),
-                    "l" => (false, false, false, false, true, false, false, false, false),
-                    "t" => (false, false, false, false, false, true, false, false, false),
-                    "1" => (false, false, false, false, false, false, true, false, false),
-                    "sk" => (false, false, false, false, false, false, false, true, false),
-                    "fs" => (false, false, false, false, false, false, false, false, true),
-                    _ => nil,
+                    "i" => (
+                        split,
+                        l("Iron"),
+                        "https://secure.runescape.com/m=hiscore_oldschool_ironman/index_lite.ws?player=".to_owned(),
+                    ),
+                    "u" => (
+                        split,
+                        l("Ultimate"),
+                        "https://secure.runescape.com/m=hiscore_oldschool_ultimate/index_lite.ws?player=".to_owned(),
+                    ),
+                    "h" => (
+                        split,
+                        l("Hardcode"),
+                        "https://secure.runescape.com/m=hiscore_oldschool_hardcore_ironman/index_lite.ws?player=".to_owned(),
+                    ),
+                    "d" => (
+                        split,
+                        l("Deadman"),
+                        "https://secure.runescape.com/m=hiscore_oldschool_deadman/index_lite.ws?player=".to_owned(),
+                    ),
+                    "l" => (
+                        split,
+                        l("Seasonal"),
+                        "https://secure.runescape.com/m=hiscore_oldschool_seasonal/index_lite.ws?player=".to_owned(),
+                    ),
+                    "t" => (
+                        split,
+                        l("Tournament"),
+                        "https://secure.runescape.com/m=hiscore_oldschool_tournament/index_lite.ws?player=".to_owned(),
+                    ),
+                    "1" => (
+                        split,
+                        l("1 Def"),
+                        "https://secure.runescape.com/m=hiscore_oldschool_skiller_defence/index_lite.ws?player=".to_owned(),
+                    ),
+                    "sk" => (
+                        split,
+                        l("Skiller"),
+                        "https://secure.runescape.com/m=hiscore_oldschool_skiller/index_lite.ws?player=".to_owned(),
+                    ),
+                    "fs" => (
+                        split,
+                        l("Fresh Start"),
+                        "https://secure.runescape.com/m=hiscore_oldschool_fresh_start/index_lite.ws?player=".to_owned(),
+                    ),
+                    _ => nil.to_owned(),
                 },
                 flag,
             )
@@ -359,10 +370,10 @@ fn process_account_type_flags(
         .unwrap_or_else(|| (nil, ""));
 
     if !flag.is_empty() {
-        split.retain(|arg| arg != &format!("-{}", flag));
+        output.0.retain(|arg| arg != &format!("-{}", flag));
     }
 
-    (split, output)
+    output
 }
 
 fn process_filter_by_flags(query: &str, mut split: Vec<String>) -> (Vec<String>, (String, u32)) {
@@ -396,61 +407,6 @@ fn process_filter_by_flags(query: &str, mut split: Vec<String>) -> (Vec<String>,
     (split, (flag, filter_at))
 }
 
-fn convert_split_to_string(split: Vec<&str>) -> Vec<String> {
+pub fn convert_split_to_string(split: Vec<&str>) -> Vec<String> {
     split.into_iter().map(|s| s.to_string()).collect()
-}
-
-fn get_base_url(
-    skill: &str,
-    flag_ironman: bool,
-    flag_ultimate: bool,
-    flag_hardcore: bool,
-    flag_deadman: bool,
-    flag_leagues: bool,
-    flag_tournament: bool,
-    flag_1_def: bool,
-    flag_skill: bool,
-    flag_freshstart: bool,
-) -> (String, String) {
-    let base_url;
-    let prefix;
-
-    if flag_ironman {
-        base_url = "https://secure.runescape.com/m=hiscore_oldschool_ironman/index_lite.ws?player=";
-        prefix = vec![l("Iron"), l(skill)].join(" ");
-    } else if flag_ultimate {
-        base_url =
-            "https://secure.runescape.com/m=hiscore_oldschool_ultimate/index_lite.ws?player=";
-        prefix = vec![l("Ultimate"), l(skill)].join(" ");
-    } else if flag_hardcore {
-        base_url = "https://secure.runescape.com/m=hiscore_oldschool_hardcore_ironman/index_lite.ws?player=";
-        prefix = vec![l("Hardcode"), l(skill)].join(" ");
-    } else if flag_deadman {
-        base_url = "https://secure.runescape.com/m=hiscore_oldschool_deadman/index_lite.ws?player=";
-        prefix = vec![l("Deadman"), l(skill)].join(" ");
-    } else if flag_leagues {
-        base_url =
-            "https://secure.runescape.com/m=hiscore_oldschool_seasonal/index_lite.ws?player=";
-        prefix = vec![l("Seasonal"), l(skill)].join(" ");
-    } else if flag_tournament {
-        base_url =
-            "https://secure.runescape.com/m=hiscore_oldschool_tournament/index_lite.ws?player=";
-        prefix = vec![l("Tournament"), l(skill)].join(" ");
-    } else if flag_1_def {
-        base_url =
-            "https://secure.runescape.com/m=hiscore_oldschool_skiller_defence/index_lite.ws?player=";
-        prefix = vec![l("1 Def"), l(skill)].join(" ");
-    } else if flag_skill {
-        base_url = "https://secure.runescape.com/m=hiscore_oldschool_skiller/index_lite.ws?player=";
-        prefix = vec![l("Skiller"), l(skill)].join(" ");
-    } else if flag_freshstart {
-        base_url =
-            "https://secure.runescape.com/m=hiscore_oldschool_fresh_start/index_lite.ws?player=";
-        prefix = vec![l("Fresh Start"), l(skill)].join(" ");
-    } else {
-        base_url = "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=";
-        prefix = l(skill);
-    }
-
-    (base_url.to_owned(), prefix)
 }
