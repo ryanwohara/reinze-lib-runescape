@@ -1,4 +1,7 @@
-use common::{c1, c2, commas_from_string, get_rsn, get_stats, l, p, unranked};
+use common::{
+    c1, c2, commas_from_string, convert_split_to_string, get_rsn, get_stats, l, p,
+    process_account_type_flags, unranked,
+};
 use mysql::from_row;
 
 pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
@@ -16,7 +19,11 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         "All", "Beginner", "Easy", "Medium", "Hard", "Elite", "Master",
     ];
 
-    let stats = match get_stats(&rsn) {
+    let split: Vec<String> = convert_split_to_string(query.split(" ").collect());
+
+    let (split, mut prefix, base_url) = process_account_type_flags(query, split);
+
+    let stats = match get_stats(&rsn, &base_url) {
         Ok(stats) => stats,
         Err(_) => return Err(()),
     };

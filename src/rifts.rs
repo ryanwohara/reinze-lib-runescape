@@ -1,8 +1,18 @@
-use common::{c1, c2, commas_from_string, get_rsn, get_stats, l, p, unranked};
+use common::{
+    c1, c2, commas_from_string, convert_split_to_string, get_rsn, get_stats, l, p,
+    process_account_type_flags, unranked,
+};
 use mysql::from_row;
 
 pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
     let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
+
+    let rifts: [&str; 1] = ["Closed"];
+
+    let split: Vec<String> = convert_split_to_string(query.split(" ").collect());
+
+    let (split, mut prefix, base_url) = process_account_type_flags(query, split);
+
     let rsn = if query.is_empty() {
         get_rsn(author, rsn_n)
             .ok()
@@ -12,12 +22,14 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         query.to_string()
     };
 
-    let rifts: [&str; 1] = ["Closed"];
-
-    let stats = match get_stats(&rsn) {
+    let stats = match get_stats(&rsn, &base_url) {
         Ok(stats) => stats,
         Err(_) => return Err(()),
     };
+
+    prefix = vec![l("Guardians of the Rift"), prefix]
+        .join(" ")
+        .replace("  ", " ");
 
     let mut rifts_closed: Vec<String> = Vec::new();
     let mut index = 0 - 1 as isize;
@@ -46,7 +58,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         }
     }
 
-    let output = format!("{} {}", l("Guardians of the Rift"), unranked(rifts_closed));
+    let output = format!("{} {}", prefix, unranked(rifts_closed));
 
     Ok(vec![output])
 }

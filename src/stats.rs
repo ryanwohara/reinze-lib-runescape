@@ -1,6 +1,6 @@
 use common::{
-    c1, c2, commas, commas_from_string, get_cmb, get_rsn, l, level_to_xp, p, skill, skills,
-    unranked, xp_to_level,
+    c1, c2, commas, commas_from_string, convert_split_to_string, get_cmb, get_rsn, l, level_to_xp,
+    p, process_account_type_flags, skill, skills, unranked, xp_to_level,
 };
 use mysql::from_row;
 use regex::Regex;
@@ -300,82 +300,6 @@ fn process_ser_flags(query: &str, mut split: Vec<String>) -> (Vec<String>, (bool
     (split.into_iter().map(|s| s.to_string()).collect(), output)
 }
 
-pub fn process_account_type_flags(
-    query: &str,
-    split: Vec<String>,
-) -> (Vec<String>, String, String) {
-    let re_ser = Regex::new(r"(?:^|\b|\s)-([iuhdlt1]|sk|fs)(?:\s|\b|$)").unwrap();
-    let nil = (
-        split.to_owned(),
-        "".to_owned(),
-        "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=".to_owned(),
-    );
-
-    let (mut output, flag) = re_ser
-        .captures(query)
-        .map(|capture| {
-            let flag = capture.get(1).map_or("", |flag| flag.as_str());
-            (
-                match flag {
-                    "i" => (
-                        split,
-                        l("Iron"),
-                        "https://secure.runescape.com/m=hiscore_oldschool_ironman/index_lite.ws?player=".to_owned(),
-                    ),
-                    "u" => (
-                        split,
-                        l("Ultimate"),
-                        "https://secure.runescape.com/m=hiscore_oldschool_ultimate/index_lite.ws?player=".to_owned(),
-                    ),
-                    "h" => (
-                        split,
-                        l("Hardcode"),
-                        "https://secure.runescape.com/m=hiscore_oldschool_hardcore_ironman/index_lite.ws?player=".to_owned(),
-                    ),
-                    "d" => (
-                        split,
-                        l("Deadman"),
-                        "https://secure.runescape.com/m=hiscore_oldschool_deadman/index_lite.ws?player=".to_owned(),
-                    ),
-                    "l" => (
-                        split,
-                        l("Seasonal"),
-                        "https://secure.runescape.com/m=hiscore_oldschool_seasonal/index_lite.ws?player=".to_owned(),
-                    ),
-                    "t" => (
-                        split,
-                        l("Tournament"),
-                        "https://secure.runescape.com/m=hiscore_oldschool_tournament/index_lite.ws?player=".to_owned(),
-                    ),
-                    "1" => (
-                        split,
-                        l("1 Def"),
-                        "https://secure.runescape.com/m=hiscore_oldschool_skiller_defence/index_lite.ws?player=".to_owned(),
-                    ),
-                    "sk" => (
-                        split,
-                        l("Skiller"),
-                        "https://secure.runescape.com/m=hiscore_oldschool_skiller/index_lite.ws?player=".to_owned(),
-                    ),
-                    "fs" => (
-                        split,
-                        l("Fresh Start"),
-                        "https://secure.runescape.com/m=hiscore_oldschool_fresh_start/index_lite.ws?player=".to_owned(),
-                    ),
-                    _ => nil.to_owned(),
-                },
-                flag,
-            )
-        })
-        .unwrap_or_else(|| (nil, ""));
-
-    if !flag.is_empty() {
-        output.0.retain(|arg| arg != &format!("-{}", flag));
-    }
-
-    output
-}
-
 fn process_filter_by_flags(query: &str, mut split: Vec<String>) -> (Vec<String>, (String, u32)) {
     let re_filter = Regex::new(r"(?:^|\b|\s)([<>=]=?)\s?(\d+)(?:\s|\b|$)").unwrap();
     let nil = ("".to_string(), 0);
@@ -407,6 +331,6 @@ fn process_filter_by_flags(query: &str, mut split: Vec<String>) -> (Vec<String>,
     (split, (flag, filter_at))
 }
 
-pub fn convert_split_to_string(split: Vec<&str>) -> Vec<String> {
-    split.into_iter().map(|s| s.to_string()).collect()
+pub fn get_stats_subsection(query: &str, author: &str, rsn_n: &str) -> Vec<Vec<String>> {
+    vec![vec!["".to_owned()]]
 }

@@ -1,23 +1,32 @@
-use common::{c1, c2, commas_from_string, get_rsn, get_stats, l, p, unranked};
+use common::{
+    c1, c2, commas_from_string, convert_split_to_string, get_rsn, get_stats, l, p,
+    process_account_type_flags, unranked,
+};
 use mysql::from_row;
 
 pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
+    let sw: [&str; 1] = ["Points"];
+
+    let split: Vec<String> = convert_split_to_string(query.split(" ").collect());
+
+    let (split, mut prefix, base_url) = process_account_type_flags(query, split);
+
     let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
-    let rsn = if query.is_empty() {
+    let rsn = if split.is_empty() || split[0].is_empty() {
         get_rsn(author, rsn_n)
             .ok()
             .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
-            .unwrap_or_else(|| nick)
+            .unwrap_or_else(|| nick.to_owned())
     } else {
-        query.to_string()
+        split.join(" ")
     };
 
-    let sw: [&str; 1] = ["Points"];
-
-    let stats = match get_stats(&rsn) {
+    let stats = match get_stats(&rsn, &base_url) {
         Ok(stats) => stats,
         Err(_) => return Err(()),
     };
+
+    prefix = vec![l("Soul Wars"), prefix].join(" ").replace("  ", " ");
 
     let mut zeal: Vec<String> = Vec::new();
     let mut index = 0 - 1 as isize;
@@ -46,7 +55,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         }
     }
 
-    let output = format!("{} {}", l("Soul Wars"), unranked(zeal));
+    let output = format!("{} {}", prefix, unranked(zeal));
 
     Ok(vec![output])
 }
