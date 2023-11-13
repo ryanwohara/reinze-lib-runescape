@@ -1,6 +1,6 @@
 use common::{
-    c1, c2, commas, commas_from_string, convert_split_to_string, get_cmb, get_rsn, l, level_to_xp,
-    p, process_account_type_flags, skill, skills, unranked, xp_to_level,
+    c1, c2, commas, commas_from_string, convert_split_to_string, get_cmb, get_rsn, get_stats, l,
+    level_to_xp, p, process_account_type_flags, skill, skills, unranked, xp_to_level,
 };
 use mysql::from_row;
 use regex::Regex;
@@ -331,6 +331,64 @@ fn process_filter_by_flags(query: &str, mut split: Vec<String>) -> (Vec<String>,
     (split, (flag, filter_at))
 }
 
-pub fn get_stats_subsection(query: &str, author: &str, rsn_n: &str) -> Vec<Vec<String>> {
-    vec![vec!["".to_owned()]]
+pub fn process_stats_subsection(
+    query: &str,
+    author: &str,
+    rsn_n: &str,
+    cmd_prefix: &str,
+    categories: Vec<&str>,
+    offset: isize,
+) -> Result<Vec<String>, ()> {
+    let split: Vec<String> = convert_split_to_string(query.split(" ").collect());
+
+    let (split, flag_prefix, base_url) = process_account_type_flags(query, split);
+
+    let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
+    let rsn = if split.is_empty() || split[0].is_empty() {
+        get_rsn(author, rsn_n)
+            .ok()
+            .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
+            .unwrap_or_else(|| nick.to_owned())
+    } else {
+        split.join(" ")
+    };
+
+    let stats = match get_stats(&rsn, &base_url) {
+        Ok(stats) => stats,
+        Err(_) => return Err(()),
+    };
+
+    let mut prefix_vec = vec![cmd_prefix, &flag_prefix];
+    prefix_vec.retain(|x| !x.is_empty());
+    let prefix = prefix_vec.join(" ");
+
+    let mut vec: Vec<String> = Vec::new();
+    let mut index = 0 - 1 as isize;
+
+    for line in stats {
+        index += 1;
+
+        if index - offset >= 0 && index - offset < categories.len() as isize {
+            if line[0] == "-1" {
+                continue;
+            }
+
+            let name: &str = categories[(index - offset) as usize];
+            let rank = &line[0];
+            let points = &line[1];
+
+            if categories.contains(&name) {
+                vec.push(format!(
+                    "{}: {} {}",
+                    c1(name),
+                    c2(&commas_from_string(points, "d")),
+                    p(&commas_from_string(rank, "d"))
+                ));
+            }
+        }
+    }
+
+    let output = format!("{} {}", prefix, unranked(vec));
+
+    Ok(vec![output])
 }
