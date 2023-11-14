@@ -96,7 +96,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
 
         if skill_id != 0 && index as usize == skill_id {
             // individual skill
-            if split[0].contains("404 - Page not found") || len(split) < 2 || split[1] == "-1" {
+            if split[0].contains("404 - Page not found") || split.len() < 2 || split[1] == "-1" {
                 return Ok(not_found);
             }
 
