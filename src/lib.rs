@@ -130,12 +130,9 @@ e?xp(erience)?
 stats
 overall
 total
-attack
-att
-defence
-def
-strength
-str
+att(ack)?
+def(ence)?
+str(ength)?
 h(it)?p(oints)?
 ranged?
 pray(er)?
