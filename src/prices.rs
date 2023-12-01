@@ -63,7 +63,7 @@ pub fn prices(query: &str) -> Result<Vec<String>, ()> {
                 Some(item) => item,
                 None => {
                     println!("Error getting item: {}", item.id);
-                    return Err(());
+                    continue;
                 }
             };
             found_items.push(format!(
