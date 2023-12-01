@@ -7,6 +7,7 @@ mod level;
 mod lms;
 mod params;
 mod patch;
+mod plant;
 mod players;
 mod prices;
 mod pvparena;
@@ -87,6 +88,7 @@ pub extern "C" fn exported(
         | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
         | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
         | "hunt" | "construction" | "con" => stats::stats(command, query, author, rsn_n),
+        "plant" | "plants" => plant::lookup(query),
         "pvparena" | "pvp" | "arena" => pvparena::lookup(query, author, rsn_n),
         "rift" | "rifts" => rifts::lookup(query, author, rsn_n),
         "sw" | "swar" | "soulw" | "soulwar" | "soulwars" | "zeal" => {
@@ -101,6 +103,7 @@ level
 lms[N]
 xp
 params
+plant
 players
 price
 pvparena[N]
@@ -120,6 +123,7 @@ level
 lvl
 params?
 patch
+plants?
 players
 price
 (pvparena|pvp|arena)\d*
