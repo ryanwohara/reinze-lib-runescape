@@ -1,7 +1,8 @@
-use common::{
-    c1, c2, commas, commas_from_string, convert_split_to_string, get_cmb, get_rsn, get_stats, l,
-    level_to_xp, p, process_account_type_flags, skill, skills, unranked, xp_to_level,
+use super::common::{
+    get_cmb, get_rsn, get_stats, level_to_xp, process_account_type_flags, skill, skills,
+    xp_to_level, Combat,
 };
+use common::{c1, c2, commas, commas_from_string, convert_split_to_string, l, p, unranked};
 use mysql::from_row;
 use regex::Regex;
 use std::collections::HashMap;
@@ -33,12 +34,19 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
         split.join(" ")
     };
 
+    let mut combat_command = false;
+    if command == "combat" || command == "cmb" {
+        combat_command = true;
+    }
+
     if flag_exp {
         prefix = vec![l(&skill), prefix, p("XP")].join(" ");
     } else if flag_rank {
         prefix = vec![l(&skill), prefix, p("Rank")].join(" ");
     } else if flag_sort {
         prefix = vec![l(&skill), prefix, p("XP to Level")].join(" ");
+    } else if combat_command {
+        prefix = l("Combat");
     } else {
         prefix = vec![l(&skill), prefix, p("Level")].join(" ");
     }
@@ -90,6 +98,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
     let mut skill_data = Vec::new();
     let mut sortable_data = Vec::new();
     let mut skill_lookup_data = HashMap::new();
+    let mut skill_xp_lookup_data = HashMap::new();
 
     for split in hiscores_collected {
         index += 1;
@@ -158,15 +167,17 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
         } else if skill_id == 0 && index == 0 {
             // overall
             if split[0] != "-1" && !split[0].contains("404 - Page not found") {
-                skill_data.push(format!(
-                    "{}{} {}{} {}{}",
-                    c1("Lvl:"),
-                    c2(&commas_from_string(split[1], "d")),
-                    c1("XP:"),
-                    c2(&commas_from_string(split[2], "d")),
-                    c1("Rank:"),
-                    c2(&commas_from_string(split[0], "d")),
-                ));
+                if !combat_command {
+                    skill_data.push(format!(
+                        "{}{} {}{} {}{}",
+                        c1("Lvl:"),
+                        c2(&commas_from_string(split[1], "d")),
+                        c1("XP:"),
+                        c2(&commas_from_string(split[2], "d")),
+                        c1("Rank:"),
+                        c2(&commas_from_string(split[0], "d")),
+                    ));
+                }
             }
         } else if skill_id == 0 && index < hiscores_len as isize {
             // all skills
@@ -188,6 +199,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                 let xp_difference = next_level_xp - xp;
 
                 skill_lookup_data.insert(&skills[index as usize], level);
+                skill_xp_lookup_data.insert(&skills[index as usize], xp);
 
                 // if filters were passed
                 if (flag_filter_by.len() == 0)
@@ -206,23 +218,32 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                     } else if flag_exp {
                         // if -e was passed
                         skill_data.push(format!(
-                            "{} {}",
-                            c1(&skills[index as usize]),
+                            "{}{}",
+                            c1(&format!("{}:", &skills[index as usize])),
                             c2(&commas(xp as f64, "d")),
                         ));
                     } else if flag_rank {
                         // if -r was passed
                         skill_data.push(format!(
-                            "{} {}",
-                            c1(&skills[index as usize]),
+                            "{}{}",
+                            c1(&format!("{}:", &skills[index as usize])),
                             c2(&commas_from_string(rank, "d")),
                         ));
+                    } else if combat_command {
+                        if index > 0 && index < 8 {
+                            // if combat skill
+                            skill_data.push(format!(
+                                "{}{}",
+                                c1(&format!("{}:", &skills[index as usize])),
+                                c2(&commas_from_string(str_level, "d")),
+                            ));
+                        }
                     } else {
                         // otherwise...
                         skill_data.push(format!(
-                            "{} {}",
-                            c1(&skills[index as usize]),
-                            c2(&commas(level as f64, "d")),
+                            "{}{}",
+                            c1(&format!("{}:", &skills[index as usize])),
+                            c2(&actual_level.to_string()),
                         ));
                     }
                 }
@@ -243,7 +264,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
 
             skill_data.push(format!(
                 "{} {}",
-                c1(&skills[index as usize]),
+                c1(&format!("{}:", &skills[index as usize])),
                 c2(&commas(xp_difference as f64, "d")),
             ));
         }
@@ -262,7 +283,83 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
             skill_lookup_data.get(&"Magic".to_string()).unwrap_or(&1),
         );
 
-        skill_data.insert(1, format!("{}{}", c1("Combat:"), c2(&cmb.to_string())));
+        let total_level = skill_lookup_data.get(&"Attack".to_string()).unwrap_or(&0) + 
+        skill_lookup_data.get(&"Strength".to_string()).unwrap_or(&0) + 
+        skill_lookup_data.get(&"Defence".to_string()).unwrap_or(&0) + 
+        skill_lookup_data
+            .get(&"Hitpoints".to_string())
+            .unwrap_or(&1151) + // HP is level 10
+        skill_lookup_data.get(&"Ranged".to_string()).unwrap_or(&0) + 
+        skill_lookup_data.get(&"Prayer".to_string()).unwrap_or(&0) + 
+        skill_lookup_data.get(&"Magic".to_string()).unwrap_or(&0);
+
+        let total_xp = skill_xp_lookup_data.get(&"Attack".to_string()).unwrap_or(&0) + 
+        skill_xp_lookup_data.get(&"Strength".to_string()).unwrap_or(&0) + 
+        skill_xp_lookup_data.get(&"Defence".to_string()).unwrap_or(&0) + 
+        skill_xp_lookup_data
+            .get(&"Hitpoints".to_string())
+            .unwrap_or(&1151) + // HP is level 10
+        skill_xp_lookup_data.get(&"Ranged".to_string()).unwrap_or(&0) + 
+        skill_xp_lookup_data.get(&"Prayer".to_string()).unwrap_or(&0) + 
+        skill_xp_lookup_data.get(&"Magic".to_string()).unwrap_or(&0);
+
+        if combat_command {
+            skill_data.insert(
+                0,
+                format!(
+                    "{}{} {} {}{} {}{}",
+                    c1("Combat:"),
+                    c2(&cmb.level.to_string()),
+                    p(&cmb.style),
+                    c1("Total Cmb Levels:"),
+                    c2(&total_level.to_string()),
+                    c1("Total XP:"),
+                    c2(&commas(total_xp as f64, "d")),
+                ),
+            );
+
+            let next_cmb_level = (cmb.level + 1.0).floor();
+            let level_difference = next_cmb_level - cmb.level;
+
+            let att_to_next_level =
+                parse_skill_data_for_cmb("Attack", &skill_lookup_data, level_difference);
+            let str_to_next_level =
+                parse_skill_data_for_cmb("Strength", &skill_lookup_data, level_difference);
+            let def_to_next_level =
+                parse_skill_data_for_cmb("Defence", &skill_lookup_data, level_difference);
+            let hp_to_next_level =
+                parse_skill_data_for_cmb("Hitpoints", &skill_lookup_data, level_difference);
+            let prayer_to_next_level =
+                parse_skill_data_for_cmb("Prayer", &skill_lookup_data, level_difference);
+            let range_to_next_level =
+                parse_skill_data_for_cmb("Ranged", &skill_lookup_data, level_difference);
+            let mage_to_next_level =
+                parse_skill_data_for_cmb("Magic", &skill_lookup_data, level_difference);
+
+            let to_next_cmb_level = calculate_next_cmb_level_req(
+                cmb,
+                att_to_next_level,
+                str_to_next_level,
+                def_to_next_level,
+                hp_to_next_level,
+                prayer_to_next_level,
+                range_to_next_level,
+                mage_to_next_level,
+            );
+
+            if to_next_cmb_level.len() > 0 {
+                skill_data.push(c1("|| To next level:"));
+
+                to_next_cmb_level
+                    .iter()
+                    .for_each(|x| skill_data.push(x.to_string()));
+            }
+        } else {
+            skill_data.insert(
+                0,
+                format!("{}{}", c1("Combat:"), c2(&cmb.level.to_string()),),
+            );
+        }
     }
 
     // wrap up the data and return it
@@ -271,6 +368,101 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
     }
 
     Ok(not_found)
+}
+
+fn calculate_next_cmb_level_req(
+    cmb: Combat,
+    att_to_next_level: u32,
+    str_to_next_level: u32,
+    def_to_next_level: u32,
+    hp_to_next_level: u32,
+    prayer_to_next_level: u32,
+    range_to_next_level: u32,
+    mage_to_next_level: u32,
+) -> Vec<String> {
+    let mut list = Vec::new();
+
+    match cmb.style.as_str() {
+        "Melee" => {
+            if att_to_next_level > 0 {
+                list.push(format!(
+                    "{}{}",
+                    c1("Attack:"),
+                    c2(&att_to_next_level.to_string())
+                ));
+            }
+
+            if str_to_next_level > 0 {
+                list.push(format!(
+                    "{}{}",
+                    c1("Strength:"),
+                    c2(&str_to_next_level.to_string())
+                ));
+            }
+        }
+        "Ranged" => {
+            if range_to_next_level > 0 {
+                list.push(format!(
+                    "{}{}",
+                    c1("Ranged:"),
+                    c2(&range_to_next_level.to_string())
+                ));
+            }
+        }
+        "Magic" => {
+            if mage_to_next_level > 0 {
+                list.push(format!(
+                    "{}{}",
+                    c1("Magic:"),
+                    c2(&mage_to_next_level.to_string())
+                ));
+            }
+        }
+        _ => {}
+    }
+
+    if def_to_next_level > 0 {
+        list.push(format!(
+            "{}{}",
+            c1("Defence:"),
+            c2(&def_to_next_level.to_string())
+        ));
+    }
+
+    if hp_to_next_level > 0 {
+        list.push(format!(
+            "{}{}",
+            c1("Hitpoints:"),
+            c2(&hp_to_next_level.to_string())
+        ));
+    }
+
+    if prayer_to_next_level > 0 {
+        list.push(format!(
+            "{}{}",
+            c1("Prayer:"),
+            c2(&prayer_to_next_level.to_string())
+        ));
+    }
+
+    list
+}
+
+fn parse_skill_data_for_cmb(
+    skill: &str,
+    skill_lookup_data: &HashMap<&String, u32>,
+    level_difference: f64,
+) -> u32 {
+    match skill_lookup_data.get(&skill.to_owned()).unwrap_or(&1) {
+        99 => 0.0,
+        _ => match skill {
+            "Attack" | "Strength" => level_difference / 0.325,
+            "Defence" | "Hitpoints" => level_difference / 0.25,
+            "Prayer" => level_difference / 0.125,
+            _ => level_difference / 0.4875,
+        },
+    }
+    .ceil() as u32
 }
 
 fn process_ser_flags(query: &str, mut split: Vec<String>) -> (Vec<String>, (bool, bool, bool)) {

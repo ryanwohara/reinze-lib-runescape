@@ -1,8 +1,5 @@
-use super::common::c1;
-use super::common::c2;
-use super::common::commas;
-use super::common::l;
-use super::common::level_to_xp;
+use crate::common::level_to_xp;
+use common::{c1, c2, commas, l};
 
 pub fn xp(query: &str) -> Result<Vec<String>, ()> {
     let split: Vec<&str> = query.split("-").collect();

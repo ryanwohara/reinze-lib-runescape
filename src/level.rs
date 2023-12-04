@@ -1,4 +1,5 @@
-use common::{c1, c2, commas, l, xp_to_level};
+use crate::common::xp_to_level;
+use common::{c1, c2, commas, l};
 
 pub fn level(query: &str) -> Result<Vec<String>, ()> {
     let err = vec![format!(

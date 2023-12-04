@@ -1,5 +1,6 @@
 extern crate ini;
 
+use crate::common::skill as common_skill;
 use common::{c1, c2, capitalize, l, not_found};
 use ini::Ini;
 
@@ -8,7 +9,7 @@ pub fn params(query: &str) -> Result<Vec<String>, ()> {
 
     let (skill, param) = match query.split_once(" ") {
         Some((skill, param)) if !skill.is_empty() && !param.is_empty() => {
-            (common::skill(skill), param)
+            (common_skill(skill), param)
         }
         _ => {
             return Ok(vec![format!(

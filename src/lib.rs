@@ -1,6 +1,7 @@
 mod bh;
 mod bosses;
 mod clues;
+mod common;
 mod ge;
 mod items;
 mod level;
@@ -16,8 +17,6 @@ mod soulwars;
 mod stats;
 mod wiki;
 mod xp;
-
-extern crate common;
 
 use regex::Regex;
 use std::ffi::{CStr, CString};
@@ -81,9 +80,9 @@ pub extern "C" fn exported(
         "patch" => patch::patch(query),
         "players" => players::players(),
         "price" => prices::prices(query),
-        "overall" | "stats" | "total" | "attack" | "att" | "defence" | "def" | "strength"
-        | "str" | "hitpoints" | "hp" | "ranged" | "range" | "prayer" | "pray" | "magic"
-        | "mage" | "cooking" | "cook" | "woodcutting" | "wc" | "fletching" | "fletch"
+        "overall" | "stats" | "total" | "combat" | "cmb" | "attack" | "att" | "defence" | "def"
+        | "strength" | "str" | "hitpoints" | "hp" | "ranged" | "range" | "prayer" | "pray"
+        | "magic" | "mage" | "cooking" | "cook" | "woodcutting" | "wc" | "fletching" | "fletch"
         | "fishing" | "fish" | "firemaking" | "fm" | "crafting" | "craft" | "smithing"
         | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
         | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
@@ -98,6 +97,7 @@ pub extern "C" fn exported(
         "help" => Ok(r"bh[N]
 boss[N]
 clues[N]
+combat[N]
 ge
 level
 lms[N]
@@ -117,6 +117,7 @@ wiki"
         "" => Ok(r"b(ounty)?h(unter)?\d*
 boss\d*
 clues?\d*
+co?mb(at)?\d*
 ge
 l(ast)?m(an)?s(tanding)?\d*
 level
