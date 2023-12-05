@@ -238,7 +238,7 @@ pub fn process_account_type_flags(
                     ),
                     "l" => (
                         split,
-                        l("Seasonal"),
+                        l("Leagues"),
                         "https://secure.runescape.com/m=hiscore_oldschool_seasonal/index_lite.ws?player=".to_owned(),
                     ),
                     "t" => (
