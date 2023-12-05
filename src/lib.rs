@@ -4,6 +4,7 @@ mod clues;
 mod common;
 mod ge;
 mod items;
+mod leagues;
 mod level;
 mod lms;
 mod params;
@@ -73,6 +74,7 @@ pub extern "C" fn exported(
         "experience" | "xperience" | "exp" | "xp" => xp::xp(query),
         "ge" => ge::ge(query),
         "level" | "lvl" => level::level(query),
+        "league" | "leagues" => leagues::lookup(query, author, rsn_n),
         "lms" | "lmstanding" | "lmanstanding" | "lastmstanding" | "lastmanstanding" => {
             lms::lookup(query, author, rsn_n)
         }
@@ -100,6 +102,7 @@ clues[N]
 combat[N]
 ge
 level
+leagues[N]
 lms[N]
 xp
 params
@@ -121,6 +124,7 @@ co?mb(at)?\d*
 ge
 l(ast)?m(an)?s(tanding)?\d*
 level
+leagues?\d*
 lvl
 params?
 patch
