@@ -557,6 +557,7 @@ pub fn process_stats_subsection(
     let mut vec: Vec<String> = Vec::new();
     let mut index = 0 - 1 as isize;
 
+    let mut leagues = "".to_string();
     for line in stats {
         index += 1;
 
@@ -576,11 +577,27 @@ pub fn process_stats_subsection(
                     c2(&commas_from_string(points, "d")),
                     p(&commas_from_string(rank, "d"))
                 ));
+
+                if offset == 24 {
+                    let points = points.parse::<u32>().unwrap_or(0);
+
+                    let tier = match points {
+                        0..=2500 => "Bronze",
+                        5000..=9999 => "Iron",
+                        10000..=17999 => "Steel",
+                        18000..=27999 => "Mithril",
+                        28000..=41999 => "Adamant",
+                        42000..=55999 => "Rune",
+                        _ => "Dragon",
+                    };
+
+                    leagues = format!(" {} {}", &c1("Tier:"), &c2(tier));
+                }
             }
         }
     }
 
-    let output = format!("{} {}", prefix, unranked(vec));
+    let output = format!("{} {}{}", prefix, unranked(vec), leagues);
 
     Ok(vec![output])
 }
