@@ -582,7 +582,8 @@ pub fn process_stats_subsection(
                     let points = points.parse::<u32>().unwrap_or(0);
 
                     let tier = match points {
-                        0..=2500 => "Bronze",
+                        0..=2499 => "Unranked",
+                        2500..=4999 => "Bronze",
                         5000..=9999 => "Iron",
                         10000..=17999 => "Steel",
                         18000..=27999 => "Mithril",
