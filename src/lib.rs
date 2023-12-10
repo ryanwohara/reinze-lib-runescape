@@ -14,6 +14,7 @@ mod players;
 mod prices;
 mod pvparena;
 mod rifts;
+mod rsn;
 mod soulwars;
 mod stats;
 mod wiki;
@@ -92,6 +93,7 @@ pub extern "C" fn exported(
         "plant" | "plants" => plant::lookup(query),
         "pvparena" | "pvp" | "arena" => pvparena::lookup(query, author, rsn_n),
         "rift" | "rifts" => rifts::lookup(query, author, rsn_n),
+        "rsn" => rsn::process(query, author, rsn_n),
         "sw" | "swar" | "soulw" | "soulwar" | "soulwars" | "zeal" => {
             soulwars::lookup(query, author, rsn_n)
         }
@@ -111,6 +113,7 @@ players
 price
 pvparena[N]
 rifts[N]
+rsn[N]
 sw[N]
 stats[N]
 wiki"
@@ -133,6 +136,7 @@ players
 price
 (pvparena|pvp|arena)\d*
 rifts?\d*
+rsn\d*
 s(oul)?w(ar)?s?\d*
 zeal\d*
 e?xp(erience)?
