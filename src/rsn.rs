@@ -1,6 +1,6 @@
 use std::vec;
 
-use common::database;
+use common::{c1, c2, database, l, not_found};
 use mysql::{prelude::*, *};
 
 pub fn process(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
@@ -43,8 +43,17 @@ fn set(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
                 params! { query, host, rsn_n },
             ) {
                 Ok(_) => Ok::<Vec<String>, ()>(vec![format!(
-                    "Set rsn #{} from {} to {}",
-                    rsn_n, rsn, query
+                    "{} {}",
+                    l("RSN"),
+                    format!(
+                        "{}{} {} {} {} {}",
+                        c1("Set rsn #"),
+                        c2(rsn_n),
+                        c1("from"),
+                        c2(&rsn),
+                        c1("to"),
+                        c2(query)
+                    )
                 )]),
                 Err(e) => {
                     println!(
@@ -61,7 +70,17 @@ fn set(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
                 "INSERT INTO rsn (host, rsn_ident, rsn, private) VALUES (:host, :rsn_n, :query, 1)",
                 params! { host, rsn_n, query },
             ) {
-                Ok(_) => Ok(vec![format!("Set rsn #{} to {}", rsn_n, query)]),
+                Ok(_) => Ok::<Vec<String>, ()>(vec![format!(
+                    "{} {}",
+                    l("RSN"),
+                    format!(
+                        "{}{} {} {}",
+                        c1("Set rsn #"),
+                        c2(rsn_n),
+                        c1("to"),
+                        c2(query)
+                    )
+                )]),
                 Err(e) => {
                     println!(
                         "Error setting rsn{} for {} to `{}`: {}",
@@ -100,7 +119,11 @@ fn delete(author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
         "DELETE FROM rsn WHERE host = :host AND rsn_ident = :rsn_n",
         params! { host, rsn_n },
     ) {
-        Ok(_) => Ok(vec![format!("Deleted rsn #{}", rsn_n)]),
+        Ok(_) => Ok(vec![format!(
+            "{} {}",
+            l("RSN"),
+            format!("{}{}", c1("Deleted rsn #"), c2(rsn_n))
+        )]),
         Err(e) => {
             println!("Error deleting rsn #{} for {}: {}", rsn_n, author, e);
             Ok(vec![format!(
@@ -131,8 +154,16 @@ fn show(author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
         "SELECT rsn FROM rsn WHERE host = :host AND rsn_ident = :rsn_n",
         params! { host, rsn_n },
     ) {
-        Ok(Some(rsn)) => Ok(vec![format!("rsn #{}: {}", rsn_n, rsn)]),
-        Ok(None) => Ok(vec![format!("No rsn #{} set", rsn_n)]),
+        Ok(Some(rsn)) => Ok(vec![format!(
+            "{} {}",
+            l("RSN"),
+            l(&format!("#{} {}", rsn_n, rsn))
+        )]),
+        Ok(None) => Ok(vec![format!(
+            "{} {}",
+            l("RSN"),
+            &format!("{}{} {}", c1("No rsn #"), c2(rsn_n), c1("set"))
+        )]),
         Err(e) => {
             println!("Error getting rsn #{} for {}: {}", rsn_n, author, e);
             Ok(null)
@@ -167,12 +198,14 @@ fn list(author: &str) -> Result<Vec<String>, ()> {
                 .map(|(id, rsn)| (id.to_string(), rsn));
 
             Ok(vec![format!(
-                "Stored RSNs || {}",
-                mapped
-                    .into_iter()
-                    .map(|(id, rsn)| format!("[#{}: {}]", id, rsn))
-                    .collect::<Vec<String>>()
-                    .join(", ")
+                "{} {}",
+                l("RSN"),
+                not_found(
+                    mapped
+                        .into_iter()
+                        .map(|(id, rsn)| l(&format!("#{} {}", &id, &rsn)))
+                        .collect::<Vec<String>>()
+                )
             )])
         }
         Err(e) => {
