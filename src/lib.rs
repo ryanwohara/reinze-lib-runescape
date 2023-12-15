@@ -7,6 +7,7 @@ mod items;
 mod leagues;
 mod level;
 mod lms;
+mod noburn;
 mod params;
 mod patch;
 mod plant;
@@ -79,6 +80,7 @@ pub extern "C" fn exported(
         "lms" | "lmstanding" | "lmanstanding" | "lastmstanding" | "lastmanstanding" => {
             lms::lookup(query, author, rsn_n)
         }
+        "noburn" | "burn" => noburn::noburn(query),
         "param" | "params" => params::params(query),
         "patch" => patch::patch(query),
         "players" => players::players(),
@@ -104,9 +106,10 @@ clues[N]
 combat[N]
 ge
 level
+xp
 leagues[N]
 lms[N]
-xp
+noburn
 params
 plant
 players
@@ -129,6 +132,7 @@ l(ast)?m(an)?s(tanding)?\d*
 level
 leagues?\d*
 lvl
+(no)?burn
 params?
 patch
 plants?
