@@ -36,10 +36,6 @@ pub fn patch(query: &str) -> Result<Vec<String>, ()> {
         }
     }
 
-    if found_params.len() == 0 {
-        return Ok(vec![format!("{}: {}", prefix, c1("No results found"))]);
-    }
-
     let output = format!("{} {}", prefix, not_found(found_params));
 
     Ok(vec![output])
