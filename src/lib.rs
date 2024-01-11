@@ -1,4 +1,5 @@
 mod bh;
+mod boost;
 mod bosses;
 mod clues;
 mod common;
@@ -71,6 +72,7 @@ pub extern "C" fn exported(
 
     match match command {
         "bh" | "bounty" | "bhunter" | "bountyhunter" => bh::lookup(query, author, rsn_n),
+        "boost" | "boosts" => boost::boost(query),
         "boss" | "bosses" => bosses::lookup(query, author, rsn_n),
         "clue" | "clues" => clues::lookup(query, author, rsn_n),
         "experience" | "xperience" | "exp" | "xp" => xp::xp(query),
@@ -101,6 +103,7 @@ pub extern "C" fn exported(
         }
         "wiki" => wiki::wiki(query),
         "help" => Ok(r"bh[N]
+boost
 boss[N]
 clues[N]
 combat[N]
@@ -124,6 +127,7 @@ wiki"
             .map(|s| s.to_string())
             .collect::<Vec<String>>()),
         "" => Ok(r"b(ounty)?h(unter)?\d*
+boost
 boss\d*
 clues?\d*
 co?mb(at)?\d*
