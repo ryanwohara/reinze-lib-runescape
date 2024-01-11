@@ -103,6 +103,7 @@ pub extern "C" fn exported(
         }
         "wiki" => wiki::wiki(query),
         "help" => Ok(r"bh[N]
+boost
 boss[N]
 clues[N]
 combat[N]
@@ -126,6 +127,7 @@ wiki"
             .map(|s| s.to_string())
             .collect::<Vec<String>>()),
         "" => Ok(r"b(ounty)?h(unter)?\d*
+boost
 boss\d*
 clues?\d*
 co?mb(at)?\d*
