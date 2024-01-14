@@ -1,8 +1,8 @@
 use crate::common::skill;
-use common::{c1, c2, l, not_found};
+use common::{c1, c2, capitalize, l, not_found};
 
 pub fn boost(query: &str) -> Result<Vec<String>, ()> {
-    let prefix = l("boost");
+    let prefix = l("Boost");
 
     if query.len() == 0 {
         return Ok(vec![format!("{} {}", prefix, c1("No query provided"))]);
@@ -29,7 +29,11 @@ pub fn boost(query: &str) -> Result<Vec<String>, ()> {
 
     for (k, v) in section.iter() {
         if k.contains(&skill) {
-            found_params.push(format!("{}: {}", c1(&k.replace("_", " ")), c2(v)));
+            let split = v.split(" ~ ").collect::<Vec<&str>>();
+            found_params.push(c1(&capitalize(k)));
+            for s in split {
+                found_params.push(c2(s));
+            }
             break;
         }
     }
