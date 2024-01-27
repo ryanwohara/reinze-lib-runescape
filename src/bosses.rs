@@ -42,6 +42,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         "Phantom Muspah",
         "Sarachnis",
         "Scorpia",
+        "Scurrius",
         "Skotizo",
         "Spindel",
         "Tempoross",
