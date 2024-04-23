@@ -1,7 +1,7 @@
 use std::vec;
 
 use common::{c1, c2, database, l, not_found};
-use mysql::{prelude::*, *};
+use mysql::{prelude::Queryable, *};
 
 pub fn process(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
     let mut split = query.split_whitespace();
