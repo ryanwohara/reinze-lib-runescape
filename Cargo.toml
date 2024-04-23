@@ -11,10 +11,11 @@ common = { git = "https://github.com/ryanwohara/reinze-lib-common.git", branch =
 dotenv = "0.15.0"
 format_num = "0.1.0"
 futures = "0.3.21"
+meval = { git = "https://github.com/ryanwohara/meval-rs.git", branch = "main" }
 mysql = "25.0.0"
-rust-ini = "0.21.0"
 regex = "1.7.1"
 reqwest = { version = "0.12", features = ["json", "blocking"] }
+rust-ini = "0.21.0"
 select = "0.6.0"
 serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.90"
