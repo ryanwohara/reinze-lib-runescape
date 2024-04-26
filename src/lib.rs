@@ -76,7 +76,8 @@ pub extern "C" fn exported(
         "boost" | "boosts" => boost::boost(query),
         "boss" | "bosses" => bosses::lookup(query, author, rsn_n),
         "clue" | "clues" => clues::lookup(query, author, rsn_n),
-        "congrats" | "congratz" | "grats" | "gratz" | "gz" => grats::get(query, author),
+        "congratulations" | "congratulation" | "congrats" | "congratz" | "grats" | "gratz"
+        | "gz" => grats::get(query, author),
         "experience" | "xperience" | "exp" | "xp" => xp::xp(query),
         "ge" => ge::ge(query),
         "level" | "lvl" => level::level(query),
@@ -134,7 +135,7 @@ boost
 boss\d*
 clues?\d*
 co?mb(at)?\d*
-(con)?grat[sz]
+(con)?grat[sz]?(ulations?)?
 ge
 l(ast)?m(an)?s(tanding)?\d*
 level
@@ -177,7 +178,7 @@ slay(er)?
 farm(ing)?
 r(une)?c(raft)?
 hunt(er)?
-con(struction)?
+con(struction)?$
 wiki"
             .split("\n")
             .map(|s| s.to_string())
