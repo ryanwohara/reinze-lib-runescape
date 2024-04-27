@@ -13,15 +13,28 @@ pub fn get(query: &str, author: &str) -> Result<Vec<String>, ()> {
     let mut nick = author.split("!").collect::<Vec<&str>>()[0];
     let mut milestone = first_token;
     let mut skill_token = second_token;
+
+    let err = Ok(vec!["Syntax: +congrats [nick] (level) (skill)".to_string()]);
+
     if third_token.len() > 0 {
         nick = first_token;
         milestone = second_token;
         skill_token = third_token;
     } else if second_token.len() == 0 {
-        return Ok(vec!["Syntax: +congrats [nick] (level) (skill)".to_string()]);
+        return err;
     }
 
     let skill = &get_skill(skill_token);
+
+    if skill.len() == 0 {
+        return err;
+    }
+
+    let re = Regex::new(r"^(\d+)[kmb]?$").unwrap();
+    _ = match re.captures(milestone) {
+        Some(captures) => vec![captures],
+        None => return err,
+    };
 
     let processed_milestone = eval_query(milestone.replace(",", ""))? as u32;
     let comma_milestone = common::commas(processed_milestone as f64, "d");
