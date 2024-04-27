@@ -4,6 +4,7 @@ mod bosses;
 mod clues;
 mod common;
 mod ge;
+mod grats;
 mod items;
 mod leagues;
 mod level;
@@ -75,6 +76,8 @@ pub extern "C" fn exported(
         "boost" | "boosts" => boost::boost(query),
         "boss" | "bosses" => bosses::lookup(query, author, rsn_n),
         "clue" | "clues" => clues::lookup(query, author, rsn_n),
+        "congratulations" | "congratulation" | "congrats" | "congratz" | "grats" | "gratz"
+        | "gz" => grats::get(query, author),
         "experience" | "xperience" | "exp" | "xp" => xp::xp(query),
         "ge" => ge::ge(query),
         "level" | "lvl" => level::level(query),
@@ -107,6 +110,7 @@ boost
 boss[N]
 clues[N]
 combat[N]
+congrats
 ge
 level
 xp
@@ -131,6 +135,7 @@ boost
 boss\d*
 clues?\d*
 co?mb(at)?\d*
+(con)?grat[sz]?(ulations?)?
 ge
 l(ast)?m(an)?s(tanding)?\d*
 level
@@ -173,7 +178,7 @@ slay(er)?
 farm(ing)?
 r(une)?c(raft)?
 hunt(er)?
-con(struction)?
+con(struction)?$
 wiki"
             .split("\n")
             .map(|s| s.to_string())
