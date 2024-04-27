@@ -30,7 +30,7 @@ pub fn get(query: &str, author: &str) -> Result<Vec<String>, ()> {
         return err;
     }
 
-    let re = Regex::new(r"^(\d+)[kmb]?$").unwrap();
+    let re = Regex::new(r"^([\d.]+)[kmb]?$").unwrap();
     _ = match re.captures(milestone) {
         Some(captures) => vec![captures],
         None => return err,
