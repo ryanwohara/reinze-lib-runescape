@@ -24,11 +24,16 @@ pub fn get(query: &str, author: &str) -> Result<Vec<String>, ()> {
         return err;
     }
 
-    let skill = &get_skill(skill_token);
+    let mut skill_name = get_skill(skill_token);
 
-    if skill.len() == 0 {
-        return err;
+    if skill_name.clone().len() == 0 {
+        skill_name = rs3_skill(skill_token);
+        if skill_name.clone().len() == 0 {
+            return err;
+        }
     }
+
+    let skill = &skill_name;
 
     let re = Regex::new(r"^([\d.]+)[kmb]?$").unwrap();
     _ = match re.captures(milestone) {
@@ -161,4 +166,14 @@ fn replace_all(caps: &regex::Captures) -> String {
         num *= factor;
     }
     num.to_string()
+}
+
+fn rs3_skill(s: &str) -> String {
+    match s.to_lowercase().as_str() {
+        "archaeology" | "arch"=> "Archaeology".to_string(),
+        "invention" | "inv" | "invent" => "Invention".to_string(),
+        "divination" | "div"  => "Divination".to_string(),
+        "summoning" | "sum" | "summon" => "Summoning".to_string(),
+        _ => String::new(),
+    }
 }
