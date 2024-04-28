@@ -170,9 +170,9 @@ fn replace_all(caps: &regex::Captures) -> String {
 
 fn rs3_skill(s: &str) -> String {
     match s.to_lowercase().as_str() {
-        "archaeology" | "arch"=> "Archaeology".to_string(),
+        "archaeology" | "arch" => "Archaeology".to_string(),
         "invention" | "inv" | "invent" => "Invention".to_string(),
-        "divination" | "div"  => "Divination".to_string(),
+        "divination" | "div" => "Divination".to_string(),
         "summoning" | "sum" | "summon" => "Summoning".to_string(),
         _ => String::new(),
     }
