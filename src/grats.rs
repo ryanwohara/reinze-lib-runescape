@@ -43,7 +43,7 @@ pub fn get(query: &str, author: &str) -> Result<Vec<String>, ()> {
 
     if skill == "Overall" {
         output = format!(
-            "{0}: Congratulations on {1} {2}! Pretty impresive!",
+            "{0}: Congratulations on {1} {2}! Pretty impressive!",
             nick, comma_milestone, skill
         )
     } else if processed_milestone < 40 {
@@ -84,7 +84,7 @@ pub fn get(query: &str, author: &str) -> Result<Vec<String>, ()> {
     // We'll just assume it's XP
     } else if processed_milestone <= 1000000 {
         output = format!(
-            "{0}: Congratulations on {1} {2} xp! Pretty impresive!",
+            "{0}: Congratulations on {1} {2} xp! Pretty impressive!",
             nick, comma_milestone, skill
         )
     } else if processed_milestone <= 2500000 {
