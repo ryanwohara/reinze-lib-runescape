@@ -135,7 +135,7 @@ boost
 boss\d*
 clues?\d*
 co?mb(at)?\d*
-(con)?grat[sz]?(ulations?)?
+((con)?grat[sz]?(ulations?)?|gz)
 ge
 l(ast)?m(an)?s(tanding)?\d*
 level
