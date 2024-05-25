@@ -228,7 +228,7 @@ pub fn process_account_type_flags(
                     ),
                     "h" => (
                         split,
-                        l("Hardcode"),
+                        l("Hardcore"),
                         "https://secure.runescape.com/m=hiscore_oldschool_hardcore_ironman/index_lite.ws?player=".to_owned(),
                     ),
                     "d" => (
