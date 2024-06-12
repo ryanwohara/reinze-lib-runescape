@@ -533,9 +533,30 @@ pub fn process_stats_subsection(
 ) -> Result<Vec<String>, ()> {
     let split: Vec<String> = convert_split_to_string(query.split(" ").collect());
 
-    let (split, flag_prefix, base_url) = process_account_type_flags(query, split);
+    let (mut split, flag_prefix, base_url) = process_account_type_flags(query, split);
 
     let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
+    let mut filter = "".to_owned();
+
+    let joined = split.join(" ");
+
+    if joined.contains("@") {
+        let cloned = joined.clone();
+
+        split = cloned
+            .split("@")
+            .map(|s| s.to_owned())
+            .collect::<Vec<String>>();
+
+        if split.len() > 1 {
+            filter = split[1].trim().to_owned();
+            split = vec![split[0].trim().to_owned()];
+        } else {
+            filter = split[0].trim().to_owned();
+            split = vec!["".to_owned()];
+        }
+    }
+
     let rsn = if split.is_empty() || split[0].is_empty() {
         get_rsn(author, rsn_n)
             .ok()
@@ -570,7 +591,7 @@ pub fn process_stats_subsection(
             let rank = &line[0];
             let points = &line[1];
 
-            if categories.contains(&name) {
+            if filter.len() == 0 || name.to_lowercase().contains(&filter.to_lowercase()) {
                 vec.push(format!(
                     "{}: {} {}",
                     c1(name),
