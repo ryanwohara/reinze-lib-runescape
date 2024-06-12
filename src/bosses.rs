@@ -46,7 +46,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         "Skotizo",
         "Spindel",
         "Tempoross",
-        "Guantlet",
+        "Gauntlet",
         "Corrupted Gauntlet",
         "The Leviathan",
         "The Whisperer",
