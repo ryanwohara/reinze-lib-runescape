@@ -2,6 +2,7 @@ mod bh;
 mod boost;
 mod bosses;
 mod clues;
+mod colosseum;
 mod common;
 mod ge;
 mod grats;
@@ -76,6 +77,7 @@ pub extern "C" fn exported(
         "boost" | "boosts" => boost::boost(query),
         "boss" | "bosses" => bosses::lookup(query, author, rsn_n),
         "clue" | "clues" => clues::lookup(query, author, rsn_n),
+        "colo" | "colosseum" => colosseum::lookup(query, author, rsn_n),
         "congratulations" | "congratulation" | "congrats" | "congratz" | "grats" | "gratz"
         | "gz" => grats::get(query, author),
         "experience" | "xperience" | "exp" | "xp" => xp::xp(query),
@@ -109,6 +111,7 @@ pub extern "C" fn exported(
 boost
 boss[N]
 clues[N]
+colosseum[N]
 combat[N]
 congrats
 ge
@@ -135,6 +138,7 @@ boost
 boss\d*
 clues?\d*
 co?mb(at)?\d*
+colo(sseum)?\d*
 ((con)?grat[sz]?(ulations?)?|gz)
 ge
 l(ast)?m(an)?s(tanding)?\d*
