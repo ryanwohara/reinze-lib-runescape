@@ -8,6 +8,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         "Abyssal Sire",
         "Alchemical Hydra",
         "Artio",
+        "Araxxor",
         "Barrows Chests",
         "Bryophyta",
         "Callisto",
