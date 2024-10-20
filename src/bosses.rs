@@ -7,6 +7,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
     let categories: Vec<&str> = vec![
         "Abyssal Sire",
         "Alchemical Hydra",
+        "Amoxliatl",
         "Artio",
         "Araxxor",
         "Barrows Chests",
