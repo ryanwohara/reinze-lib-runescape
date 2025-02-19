@@ -2,6 +2,7 @@ mod bh;
 mod boost;
 mod bosses;
 mod clues;
+mod collectionlog;
 mod colosseum;
 mod common;
 mod ge;
@@ -78,6 +79,7 @@ pub extern "C" fn exported(
         "boss" | "bosses" => bosses::lookup(query, author, rsn_n),
         "clue" | "clues" => clues::lookup(query, author, rsn_n),
         "colo" | "colosseum" => colosseum::lookup(query, author, rsn_n),
+        "coll" | "collection" | "collectionlog" => collectionlog::lookup(query, author, rsn_n),
         "congratulations" | "congratulation" | "congrats" | "congratz" | "grats" | "gratz"
         | "gz" => grats::get(query, author),
         "experience" | "xperience" | "exp" | "xp" => xp::xp(query),
