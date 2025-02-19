@@ -130,7 +130,7 @@ pub fn get_cmb(
     }
 }
 
-pub fn get_rsn(author: &str, rsn_n: &str) -> core::result::Result<Vec<mysql::Row>, mysql::Error> {
+pub fn get_rsn(author: &str, rsn_n: &str) -> core::result::Result<Vec<mysql::Row>, mysql::error::Error> {
     let mut conn = match database::connect() {
         Ok(conn) => conn,
         Err(e) => {
