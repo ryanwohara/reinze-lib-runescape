@@ -53,6 +53,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         "Gauntlet", // these lines should have the prefix of `The`
         "Corrupted Gauntlet",
         "Hueycoatl",
+        "Royal Titans",
         "Leviathan",
         "Whisperer", // but it would be _even more_ to send on IRC
         "ToB",
