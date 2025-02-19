@@ -114,6 +114,7 @@ boost
 boss[N]
 clues[N]
 colosseum[N]
+collectionlog[N]
 combat[N]
 congrats
 ge
@@ -141,6 +142,7 @@ boss\d*
 clues?\d*
 co?mb(at)?\d*
 colo(sseum)?\d*
+coll(ection(log)?)?\d*
 ((con)?grat[sz]?(ulations?)?|gz)
 ge
 l(ast)?m(an)?s(tanding)?\d*
