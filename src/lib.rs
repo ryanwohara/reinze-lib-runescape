@@ -117,7 +117,7 @@ colosseum[N]
 collectionlog[N]
 combat[N]
 congrats
-^ge
+ge
 level
 xp
 leagues[N]
@@ -144,7 +144,7 @@ co?mb(at)?\d*
 colo(sseum)?\d*
 coll(ection(log)?)?\d*
 ((con)?grat[sz]?(ulations?)?|gz)
-ge
+^ge
 l(ast)?m(an)?s(tanding)?\d*
 level
 leagues?\d*
