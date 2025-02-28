@@ -117,7 +117,7 @@ colosseum[N]
 collectionlog[N]
 combat[N]
 congrats
-ge
+^ge
 level
 xp
 leagues[N]
