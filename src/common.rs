@@ -1,66 +1,72 @@
+use crate::items::Mapping;
 use common::{database, *};
 use mysql::{prelude::*, *};
 use regex::Regex;
+use std::fs::read_to_string;
 
 // Catches shorthand skill names and returns the full name
 pub fn skill(s: &str) -> String {
     match s.to_lowercase().as_str() {
-        "overall" | "stats" | "total" | "combat" | "cmb" => "Overall".to_string(),
-        "attack" | "att" => "Attack".to_string(),
-        "defence" | "def" => "Defence".to_string(),
-        "strength" | "str" => "Strength".to_string(),
-        "hitpoints" | "hp" => "Hitpoints".to_string(),
-        "ranged" | "range" => "Ranged".to_string(),
-        "prayer" | "pray" => "Prayer".to_string(),
-        "magic" | "mage" => "Magic".to_string(),
-        "cooking" | "cook" => "Cooking".to_string(),
-        "woodcutting" | "wc" => "Woodcutting".to_string(),
-        "fletching" | "fletch" => "Fletching".to_string(),
-        "fishing" | "fish" => "Fishing".to_string(),
-        "firemaking" | "fm" => "Firemaking".to_string(),
-        "crafting" | "craft" => "Crafting".to_string(),
-        "smithing" | "smith" => "Smithing".to_string(),
-        "mining" | "mine" => "Mining".to_string(),
-        "herblore" | "herb" => "Herblore".to_string(),
-        "agility" | "agil" => "Agility".to_string(),
-        "thieving" | "thief" => "Thieving".to_string(),
-        "slayer" | "slay" => "Slayer".to_string(),
-        "farming" | "farm" => "Farming".to_string(),
-        "runecraft" | "rc" => "Runecraft".to_string(),
-        "hunter" | "hunt" => "Hunter".to_string(),
-        "construction" | "con" => "Construction".to_string(),
-        _ => String::new(),
+        "overall" | "stats" | "total" | "combat" | "cmb" => "Overall",
+        "attack" | "att" => "Attack",
+        "defence" | "def" => "Defence",
+        "strength" | "str" => "Strength",
+        "hitpoints" | "hp" => "Hitpoints",
+        "ranged" | "range" => "Ranged",
+        "prayer" | "pray" => "Prayer",
+        "magic" | "mage" => "Magic",
+        "cooking" | "cook" => "Cooking",
+        "woodcutting" | "wc" => "Woodcutting",
+        "fletching" | "fletch" => "Fletching",
+        "fishing" | "fish" => "Fishing",
+        "firemaking" | "fm" => "Firemaking",
+        "crafting" | "craft" => "Crafting",
+        "smithing" | "smith" => "Smithing",
+        "mining" | "mine" => "Mining",
+        "herblore" | "herb" => "Herblore",
+        "agility" | "agil" => "Agility",
+        "thieving" | "thief" => "Thieving",
+        "slayer" | "slay" => "Slayer",
+        "farming" | "farm" => "Farming",
+        "runecraft" | "rc" => "Runecraft",
+        "hunter" | "hunt" => "Hunter",
+        "construction" | "con" => "Construction",
+        _ => "",
     }
+    .to_string()
 }
 
 // Returns a vector of all skills
 pub fn skills() -> Vec<String> {
     vec![
-        "Overall".to_string(),
-        "Attack".to_string(),
-        "Defence".to_string(),
-        "Strength".to_string(),
-        "Hitpoints".to_string(),
-        "Ranged".to_string(),
-        "Prayer".to_string(),
-        "Magic".to_string(),
-        "Cooking".to_string(),
-        "Woodcutting".to_string(),
-        "Fletching".to_string(),
-        "Fishing".to_string(),
-        "Firemaking".to_string(),
-        "Crafting".to_string(),
-        "Smithing".to_string(),
-        "Mining".to_string(),
-        "Herblore".to_string(),
-        "Agility".to_string(),
-        "Thieving".to_string(),
-        "Slayer".to_string(),
-        "Farming".to_string(),
-        "Runecraft".to_string(),
-        "Hunter".to_string(),
-        "Construction".to_string(),
+        "Overall",
+        "Attack",
+        "Defence",
+        "Strength",
+        "Hitpoints",
+        "Ranged",
+        "Prayer",
+        "Magic",
+        "Cooking",
+        "Woodcutting",
+        "Fletching",
+        "Fishing",
+        "Firemaking",
+        "Crafting",
+        "Smithing",
+        "Mining",
+        "Herblore",
+        "Agility",
+        "Thieving",
+        "Slayer",
+        "Farming",
+        "Runecraft",
+        "Hunter",
+        "Construction",
     ]
+    .iter()
+    .map(|x| x.to_owned().to_owned())
+    .collect()
 }
 
 // Converts a level to experience
@@ -68,7 +74,7 @@ pub fn level_to_xp(level: u32) -> u32 {
     let mut xp = 0;
 
     for i in 1..level {
-        let x = i as f32;
+        let x: f32 = i as f32;
 
         xp += (x + 300.0 * 2.0_f32.powf(x / 7.0)).floor() as u32 / 4;
     }
@@ -130,7 +136,10 @@ pub fn get_cmb(
     }
 }
 
-pub fn get_rsn(author: &str, rsn_n: &str) -> core::result::Result<Vec<mysql::Row>, mysql::error::Error> {
+pub fn get_rsn(
+    author: &str,
+    rsn_n: &str,
+) -> core::result::Result<Vec<mysql::Row>, mysql::error::Error> {
     let mut conn = match database::connect() {
         Ok(conn) => conn,
         Err(e) => {
@@ -273,6 +282,126 @@ pub fn process_account_type_flags(
     }
 
     output
+}
+
+pub fn get_item_db() -> Result<Vec<Mapping>, ()> {
+    let mapping_filename = "lib/item_db.json";
+
+    let mapping_file_contents = match read_to_string(mapping_filename) {
+        Ok(file) => file,
+        Err(e) => {
+            println!("Error opening item_db.json: {}", e);
+            return Err(());
+        }
+    };
+
+    match serde_json::from_str::<Vec<Mapping>>(&mapping_file_contents) {
+        Ok(json) => Ok(json),
+        Err(e) => {
+            println!("Error parsing item_db.json into JSON: {}", e);
+            return Err(());
+        }
+    }
+}
+
+pub fn parse_item_db(query: &str) -> Result<Vec<String>, ()> {
+    let mut found_items: Vec<String> = vec![];
+
+    let item_db = match get_item_db() {
+        Ok(item_db) => item_db,
+        Err(_) => return Err(()),
+    };
+
+    let query = replace_item_abbreviations(query);
+
+    let regex_string = format!(r"(?i){}", query);
+    let re = match Regex::new(&regex_string) {
+        Ok(re) => re,
+        Err(e) => {
+            println!("Error creating regex: {}", e);
+            return Err(());
+        }
+    };
+
+    for item in item_db.iter() {
+        let matched = re.captures(&item.name);
+        if matched.is_some() {
+            // Hit the OSRS API with &item.id
+            let url = format!(
+                "http://services.runescape.com/m=itemdb_oldschool/api/catalogue/detail.json?item={}",
+                &item.id
+            );
+
+            let rt = tokio::runtime::Runtime::new().unwrap();
+
+            let response = match rt.block_on(reqwest::get(&url)) {
+                Ok(response) => response,
+                Err(e) => {
+                    println!("Error getting response from OSRS API: {}", e);
+                    return Err(());
+                }
+            };
+
+            let j: String = match rt.block_on(response.text()) {
+                Ok(j) => j,
+                Err(e) => {
+                    println!("Error parsing response from OSRS API into JSON: {}", e);
+                    return Err(());
+                }
+            };
+
+            found_items.push(j);
+        }
+
+        if found_items.len() >= 6 {
+            break;
+        }
+    }
+
+    Ok(found_items)
+}
+
+pub fn replace_item_abbreviations(query: &str) -> String {
+    let patterns = [
+        (r"sgs$", "Saradomin godsword"),
+        (r"ags$", "Armadyl godsword"),
+        (r"bgs$", "Bandos godsword"),
+        (r"zgs$", "Zamorak godsword"),
+        (r"dfs$", "Dragonfire shield"),
+        (r"dd.?$", "Dragon dagger"),
+        (r"bcp$", "Bandos chestplate"),
+        (r"acp$", "Armadyl chestplate"),
+        (r"acb$", "Armadyl crossbow"),
+        (r"ac[^o]$", "Armadyl c"),
+        (r"sot?d$", "Staff of the dead"),
+        (r"z ?s(pear)?$", "Zamorakian spear"),
+        (r"t?bp$", "blowpipe"),
+        (r"ss$", "Saradomin sword"),
+        (r"b ?ring$", "Berserker ring"),
+        (r"d ?bow$", "Dark bow"),
+        (r"ely$", "Elysian"),
+        (r"bstaff$", "Battlestaff"),
+        (r"scp$", "Super combat potion"),
+        (r"d.?leather$", "Dragon leather"),
+        (r"d.?pick(axe)?$", "Dragon pickaxe"),
+        (r"d.?axe$", "Dragon axe"),
+        (r"dfh$", "Dragon full helm"),
+        (r"ore$", " ore"),
+        (r"dwh?$", "dragon warhammer"),
+        (
+            r"bolt(y|age)$",
+            "(amylase|runite ore|air orb|^battlestaff|torstol$|Super combat potion(4))",
+        ),
+    ];
+
+    for (pattern, replacement) in patterns.iter() {
+        let re = Regex::new(pattern).unwrap();
+        if re.is_match(query) {
+            return re.replace_all(query, *replacement).to_string();
+        }
+    }
+
+    query.to_string()
 }
 
 #[cfg(test)]
