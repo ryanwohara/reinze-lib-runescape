@@ -1,3 +1,5 @@
+extern crate core;
+
 mod bh;
 mod boost;
 mod bosses;

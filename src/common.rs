@@ -378,7 +378,8 @@ pub fn replace_item_abbreviations(query: &str) -> String {
         (r"t?bp$", "blowpipe"),
         (r"ss$", "Saradomin sword"),
         (r"b ?ring$", "Berserker ring"),
-        (r"d ?bow$", "Dark bow"),
+        (r"tbow", "Twisted bow"),
+        (r"^d ?bow$", "Dark bow"),
         (r"ely$", "Elysian"),
         (r"bstaff$", "Battlestaff"),
         (r"scp$", "Super combat potion"),
@@ -580,5 +581,15 @@ mod tests {
         assert_eq!(xp_to_level(10692591), 97);
         assert_eq!(xp_to_level(11805568), 98);
         assert_eq!(xp_to_level(13034392), 99);
+    }
+
+    #[test]
+    fn test_get_item_db() {
+        let item_db = match get_item_db() {
+            Ok(item_db) => item_db,
+            _ => vec![],
+        };
+
+        assert_eq!(item_db.len(), 0);
     }
 }
