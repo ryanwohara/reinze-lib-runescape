@@ -24,6 +24,8 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
 
     let (split, (flag_sort, flag_exp, flag_rank)) = process_ser_flags(query, split);
 
+    let (split, (start, goal)) = process_start_and_goal(query, split);
+
     let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
     let rsn = if split.is_empty() || split[0].is_empty() {
         get_rsn(author, rsn_n)
@@ -66,35 +68,65 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
         p("N/A")
     )];
 
-    let resp = match reqwest::blocking::get(&format!("{}{}", base_url, rsn)) {
-        Ok(resp) => resp,
-        Err(e) => {
-            println!("Error making HTTP request: {}", e);
-            return Err(());
-        }
-    };
+    let hiscores_collected: Vec<Vec<&str>>;
+    let mut hiscores_len = 24;
+    let string_hiscores_collected;
+    let string;
 
-    let string = match resp.text() {
-        Ok(string) => string,
-        Err(e) => {
-            println!("Error getting text: {}", e);
-            return Err(());
-        }
-    };
+    if start == 0 {
+        string = match reqwest::blocking::get(&format!("{}{}", base_url, rsn)) {
+            Ok(resp) => match resp.text() {
+                Ok(string) => string,
+                Err(e) => {
+                    println!("Error getting text: {}", e);
+                    return Err(());
+                }
+            },
+            Err(e) => {
+                println!("Error making HTTP request: {}", e);
+                return Err(());
+            }
+        };
 
-    let hiscores_split = string.split('\n').collect::<Vec<&str>>();
-    let mut hiscores_len = hiscores_split.len() - 1;
-    if hiscores_len > 24 {
-        // 23 skills
-        hiscores_len = 24;
+        let hiscores_split = string.split('\n').collect::<Vec<&str>>();
+        hiscores_len = hiscores_split.len() - 1;
+        if hiscores_len > 24 {
+            // 23 skills
+            hiscores_len = 24;
+        }
+
+        hiscores_collected = hiscores_split[0..=hiscores_len]
+            .iter()
+            .map(|x| x.split(',').collect::<Vec<&str>>())
+            .collect::<Vec<Vec<&str>>>();
+    } else {
+        let start_xp = if start > 126 {
+            start
+        } else {
+            level_to_xp(start)
+        };
+
+        let start_level = xp_to_level(start_xp);
+
+        string_hiscores_collected = (0..hiscores_len)
+            .collect::<Vec<usize>>()
+            .iter()
+            .map(|_| {
+                vec![
+                    "0".to_string(),
+                    format!("{start_level}"),
+                    format!("{start_xp}"),
+                ]
+            })
+            .collect::<Vec<Vec<String>>>();
+
+        hiscores_collected = string_hiscores_collected
+            .iter()
+            .map(|vec| vec![vec[0].as_str(), vec[1].as_str(), vec[2].as_str()])
+            .collect::<Vec<Vec<&str>>>();
     }
 
-    let hiscores_collected = hiscores_split[0..=hiscores_len]
-        .iter()
-        .map(|x| x.split(',').collect::<Vec<&str>>())
-        .collect::<Vec<Vec<&str>>>();
-
-    let mut index = 0 - 1 as isize;
+    let mut index = -1isize;
     let mut skill_data = Vec::new();
     let mut sortable_data = Vec::new();
     let mut skill_lookup_data = HashMap::new();
@@ -111,18 +143,26 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
 
             let rank = split[0];
             let str_level = split[1];
-            let level = match str_level.parse::<u32>() {
-                Ok(level) => level,
-                Err(_) => 0,
-            };
+            let level = str_level.parse::<u32>().unwrap_or_else(|_| 0);
             let str_xp = split[2];
-            let xp = match str_xp.parse::<u32>() {
-                Ok(xp) => xp,
-                Err(_) => 0,
-            };
+            let xp = str_xp.parse::<u32>().unwrap_or_else(|_| 0);
             let actual_level = xp_to_level(xp);
-            let next_level = actual_level + 1;
-            let next_level_xp = level_to_xp(next_level);
+
+            let next_level;
+            let next_level_xp;
+            if goal > 0 {
+                if goal <= 126 {
+                    next_level = goal;
+                    next_level_xp = level_to_xp(goal);
+                } else {
+                    next_level_xp = goal;
+                    next_level = xp_to_level(goal);
+                }
+            } else {
+                next_level = actual_level + 1;
+                next_level_xp = level_to_xp(next_level);
+            }
+
             let xp_difference = next_level_xp - xp;
 
             let mut output: Vec<String> = Vec::new();
@@ -155,11 +195,13 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                 ));
             }
 
-            output.push(format!(
-                "{} {}",
-                c1("Rank"),
-                c2(&commas_from_string(rank, "d"))
-            ));
+            if rank != "0" {
+                output.push(format!(
+                    "{} {}",
+                    c1("Rank"),
+                    c2(&commas_from_string(rank, "d"))
+                ));
+            }
 
             let message = format!("{} {}", prefix, unranked(output));
 
@@ -184,15 +226,9 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
             if split[0] != "-1" && !split[0].contains("404 - Page not found") {
                 let rank = split[0];
                 let str_level = split[1];
-                let level = match str_level.parse::<u32>() {
-                    Ok(level) => level,
-                    Err(_) => 0,
-                };
+                let level = str_level.parse::<u32>().unwrap_or_else(|_| 0);
                 let str_xp = split[2];
-                let xp = match str_xp.parse::<u32>() {
-                    Ok(xp) => xp,
-                    Err(_) => 0,
-                };
+                let xp = str_xp.parse::<u32>().unwrap_or_else(|_| 0);
                 let actual_level = xp_to_level(xp);
                 let next_level = actual_level + 1;
                 let next_level_xp = level_to_xp(next_level);
@@ -463,6 +499,34 @@ fn parse_skill_data_for_cmb(
         },
     }
     .ceil() as u32
+}
+
+fn start_and_goal_match<T>(regex: Regex, query: T) -> u32
+where
+    T: ToString,
+{
+    regex
+        .captures(&query.to_string())
+        .map(|capture| {
+            let str = capture.get(1).map_or("", |start| start.as_str());
+
+            str.parse::<u32>().unwrap_or_else(|_| 0)
+        })
+        .unwrap_or_else(|| 0)
+}
+
+fn process_start_and_goal(query: &str, mut split: Vec<String>) -> (Vec<String>, (u32, u32)) {
+    let re_start = Regex::new(r"(?:^|\b|\s)\^([\d,.]+[kmb]?)").unwrap();
+    let re_goal = Regex::new(r"(?:^|\b|\s)#([\d,.]+[kmb]?)").unwrap();
+
+    let start = start_and_goal_match(re_start, query);
+    let goal = start_and_goal_match(re_goal, query);
+
+    if start != 0 && goal != 0 {
+        split.retain(|arg| !arg.starts_with("^") && !arg.starts_with("#"))
+    }
+
+    (split, (start, goal))
 }
 
 fn process_ser_flags(query: &str, mut split: Vec<String>) -> (Vec<String>, (bool, bool, bool)) {

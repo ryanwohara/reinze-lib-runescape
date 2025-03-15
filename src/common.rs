@@ -376,7 +376,7 @@ pub fn replace_item_abbreviations(query: &str) -> String {
         (r"sot?d$", "Staff of the dead"),
         (r"z ?s(pear)?$", "Zamorakian spear"),
         (r"t?bp$", "blowpipe"),
-        (r"ss$", "Saradomin sword"),
+        (r"^ss$", "Saradomin sword"),
         (r"b ?ring$", "Berserker ring"),
         (r"tbow", "Twisted bow"),
         (r"^d ?bow$", "Dark bow"),
