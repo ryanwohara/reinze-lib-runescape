@@ -27,11 +27,13 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
     let (split, (start, goal)) = process_start_and_goal(query, split);
 
     let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
-    let rsn = if split.is_empty() || split[0].is_empty() {
+    let rsn = if start > 0 {
+        nick
+    } else if split.is_empty() || split[0].is_empty() {
         get_rsn(author, rsn_n)
             .ok()
             .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
-            .unwrap_or_else(|| nick.to_owned())
+            .unwrap_or_else(|| nick)
     } else {
         split.join(" ")
     };
@@ -516,15 +518,13 @@ where
 }
 
 fn process_start_and_goal(query: &str, mut split: Vec<String>) -> (Vec<String>, (u32, u32)) {
-    let re_start = Regex::new(r"(?:^|\b|\s)\^([\d,.]+[kmb]?)").unwrap();
-    let re_goal = Regex::new(r"(?:^|\b|\s)#([\d,.]+[kmb]?)").unwrap();
+    let re_start = Regex::new(r"(?:^|\b|\s)\^([\d,.]+[kmb]?)(?:\s|\b|$)").unwrap();
+    let re_goal = Regex::new(r"(?:^|\b|\s)#([\d,.]+[kmb]?)(?:\s|\b|$)").unwrap();
 
     let start = start_and_goal_match(re_start, query);
     let goal = start_and_goal_match(re_goal, query);
 
-    if start != 0 && goal != 0 {
-        split.retain(|arg| !arg.starts_with("^") && !arg.starts_with("#"))
-    }
+    split.retain(|arg| !arg.starts_with("^") && !arg.starts_with("#"));
 
     (split, (start, goal))
 }
