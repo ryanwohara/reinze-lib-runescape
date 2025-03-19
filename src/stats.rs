@@ -197,7 +197,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                     p(&format!("{}%", {
                         let current_level_xp = level_to_xp(actual_level);
                         let total_level_gap = next_level_xp - current_level_xp;
-                        let percentage = (xp_difference as f64 / total_level_gap as f64) * 100.0;
+                        let percentage = (1.0 - (xp_difference as f64 / total_level_gap as f64)) * 100.0;
 
                         percentage.round()
                     }))
