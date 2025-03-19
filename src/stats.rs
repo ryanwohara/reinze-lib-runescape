@@ -191,9 +191,16 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
 
             if skill != "Overall" && next_level < 127 {
                 output.push(format!(
-                    "{} {}",
+                    "{} {} {}",
                     c1(&format!("XP to {}", next_level)),
-                    c2(&commas_from_string(&xp_difference.to_string(), "d"))
+                    c2(&commas_from_string(&xp_difference.to_string(), "d")),
+                    p(&format!("{}%", {
+                        let current_level_xp = level_to_xp(actual_level);
+                        let total_level_gap = next_level_xp - current_level_xp;
+                        let percentage = (xp_difference as f64 / total_level_gap as f64) * 100.0;
+
+                        percentage.round()
+                    }))
                 ));
             }
 
