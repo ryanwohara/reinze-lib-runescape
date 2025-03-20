@@ -1,4 +1,5 @@
-use crate::stats::skill::{Detail, Details, Multipliers, Skill};
+use crate::stats::skill::{Detail, Details, Multipliers, Skill, ToString};
+use common::{c1, c2, p};
 
 pub enum Agility {
     GnomeStrongholdCourse,
@@ -102,13 +103,13 @@ impl Skill for Agility {
         };
 
         Details::Agility(AgilityDetails {
-            name: details.0.to_string(),
+            name: details.0.to_owned(),
             level: details.1,
             xp: details.2,
             multipliers: details
                 .3
                 .iter()
-                .map(move |x| Multipliers::Agility(x.clone()))
+                .map(|x| Multipliers::Agility(x.clone()))
                 .collect(),
         })
     }
@@ -148,6 +149,28 @@ pub struct AgilityDetails {
     pub multipliers: Vec<Multipliers>,
 }
 
+impl ToString for AgilityDetails {
+    fn to_string(&self, xp_difference: f64) -> String {
+        let mut vec = vec![format!(
+            "{}: {}",
+            c1(self.name.as_str()),
+            c2(format!("{}", (xp_difference / self.xp).ceil()).as_str())
+        )];
+
+        self.multipliers.iter().for_each(|Multipliers::Agility(a)| {
+            let d = a.details();
+            vec.push(p(format!(
+                "{} {}",
+                c1(format!("{}:", d.name.as_str()).as_str()),
+                c2(format!("{}", (xp_difference / (self.xp * d.value)).ceil()).as_str())
+            )
+            .as_str()));
+        });
+
+        vec.join(" ")
+    }
+}
+
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub enum AgilityMultipliers {
     WildernessAgilityTicket11To50,
@@ -168,7 +191,7 @@ impl AgilityMultipliers {
         };
 
         AgilityMultiplierDetails {
-            name: details.0.to_string(),
+            name: details.0.to_owned(),
             value: details.1,
         }
     }
