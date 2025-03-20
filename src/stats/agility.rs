@@ -1,5 +1,6 @@
-use crate::stats::skill::{Detail, Details, Multipliers, Skill, ToString};
+use crate::stats::skill::{Detail, Details, IntoString, Multipliers, Skill};
 use common::{c1, c2, p};
+use regex::Regex;
 
 pub enum Agility {
     GnomeStrongholdCourse,
@@ -47,6 +48,60 @@ impl Skill for Agility {
         .iter()
         .map(|x| x.details())
         .collect()
+    }
+
+    fn search<T>(query: T) -> Vec<Self>
+    where
+        T: ToString,
+        Self: Sized,
+    {
+        let mut all = Self::all();
+
+        let q = query.to_string().to_lowercase();
+
+        if let Ok(pattern) = Regex::new(q.as_str()) {
+            all.retain(|activity| pattern.captures(activity.name().to_lowercase().as_str()).iter().count() > 0);
+        }
+
+        all
+    }
+
+    fn all() -> Vec<Self>
+    where
+        Self: Sized,
+    {
+        vec![
+            Self::GnomeStrongholdCourse,
+            Self::DraynorVillageRooftop,
+            Self::ShayzienBasicCourse,
+            Self::LeapingTrout,
+            Self::AlKharidRooftop,
+            Self::LeapingSalmon,
+            Self::VarrockRooftop,
+            Self::PenguinAgilityCourse,
+            Self::BarbarianOutpost,
+            Self::CanifisRooftop,
+            Self::LeapingSturgeon,
+            Self::ShayzienAdvancedCourse,
+            Self::ApeAtollCourse,
+            Self::ColossalWyrmBasicCourse,
+            Self::FaladorRooftop,
+            Self::WildernessAgilityCourseTicket,
+            Self::WildernessAgilityCourse,
+            Self::HallowedSepulchreFloor1,
+            Self::SeersVillageRooftop,
+            Self::WerewolfAgilityCourse,
+            Self::ColossalWyrmAdvancedCourse,
+            Self::HallowedSepulchreFloor2,
+            Self::PollnivneachRooftop,
+            Self::DorgeshKaanAgilityCourse,
+            Self::HallowedSepulchreFloor3,
+            Self::PrifddinasAgilityCourse,
+            Self::RellekkaRooftop,
+            Self::HallowedSepulchreFloor4,
+            Self::ArdougneRooftop,
+            Self::HallowedSepulchreFloor5,
+        ]
     }
 
     fn details(&self) -> Details {
@@ -149,12 +204,16 @@ pub struct AgilityDetails {
     pub multipliers: Vec<Multipliers>,
 }
 
-impl ToString for AgilityDetails {
+impl IntoString for AgilityDetails {
     fn to_string(&self, xp_difference: f64) -> String {
         let mut vec = vec![format!(
             "{}: {}",
             c1(self.name.as_str()),
-            c2(common::commas_from_string(format!("{}", (xp_difference / self.xp).ceil()).as_str(), "d").as_str())
+            c2(common::commas_from_string(
+                format!("{}", (xp_difference / self.xp).ceil()).as_str(),
+                "d"
+            )
+            .as_str())
         )];
 
         self.multipliers.iter().for_each(|Multipliers::Agility(a)| {

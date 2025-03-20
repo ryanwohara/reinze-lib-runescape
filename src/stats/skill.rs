@@ -3,8 +3,10 @@ use crate::common::{skill_by_id, skill_id, skills};
 use crate::stats::agility::{Agility, AgilityDetails, AgilityMultipliers};
 
 pub trait Skill {
+    fn all() -> Vec<Self> where Self: Sized;
     fn defaults() -> Vec<Details>;
     fn details(&self) -> Details;
+    fn search<T>(query: T) -> Vec<Self> where T: ToString, Self: Sized;
 }
 
 #[derive(Clone, PartialOrd, PartialEq)]
@@ -12,7 +14,7 @@ pub enum Details {
     Agility(AgilityDetails),
 }
 
-pub trait ToString {
+pub trait IntoString {
     fn to_string(&self, xp_difference: f64) -> String;
 }
 
