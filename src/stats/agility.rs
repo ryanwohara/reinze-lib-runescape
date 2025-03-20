@@ -154,7 +154,7 @@ impl ToString for AgilityDetails {
         let mut vec = vec![format!(
             "{}: {}",
             c1(self.name.as_str()),
-            c2(format!("{}", (xp_difference / self.xp).ceil()).as_str())
+            c2(common::commas_from_string(format!("{}", (xp_difference / self.xp).ceil()).as_str(), "d").as_str())
         )];
 
         self.multipliers.iter().for_each(|Multipliers::Agility(a)| {
@@ -162,7 +162,11 @@ impl ToString for AgilityDetails {
             vec.push(p(format!(
                 "{} {}",
                 c1(format!("{}:", d.name.as_str()).as_str()),
-                c2(format!("{}", (xp_difference / (self.xp * d.value)).ceil()).as_str())
+                c2(common::commas_from_string(
+                    format!("{}", (xp_difference / (self.xp * d.value)).ceil()).as_str(),
+                    "d"
+                )
+                .as_str())
             )
             .as_str()));
         });
