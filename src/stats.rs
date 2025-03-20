@@ -1,7 +1,12 @@
+mod agility;
+mod skill;
+
 use super::common::{
-    get_cmb, get_rsn, get_stats, level_to_xp, process_account_type_flags, skill, skills,
-    xp_to_level, Combat,
+    get_cmb, get_rsn, get_stats, level_to_xp, process_account_type_flags, skill, skill_by_id,
+    skills, xp_to_level, Combat,
 };
+use crate::stats::agility::{Agility, AgilityDetails};
+use crate::stats::skill::{details_by_skill_id, Details, Skill};
 use common::{c1, c2, commas, commas_from_string, convert_split_to_string, l, p, unranked};
 use mysql::from_row;
 use regex::Regex;
@@ -27,16 +32,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
     let (split, (start, goal)) = process_start_and_goal(query, split);
 
     let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
-    let rsn = if start > 0 {
-        nick
-    } else if split.is_empty() || split[0].is_empty() {
-        get_rsn(author, rsn_n)
-            .ok()
-            .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
-            .unwrap_or_else(|| nick)
-    } else {
-        split.join(" ")
-    };
+
 
     let mut combat_command = false;
     if command == "combat" || command == "cmb" {
@@ -76,6 +72,17 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
     let string;
 
     if start == 0 {
+        let rsn = if start > 0 {
+            nick
+        } else if split.is_empty() || split[0].is_empty() {
+            get_rsn(author, rsn_n)
+                .ok()
+                .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
+                .unwrap_or(nick)
+        } else {
+            split.join(" ")
+        };
+
         string = match reqwest::blocking::get(&format!("{}{}", base_url, rsn)) {
             Ok(resp) => match resp.text() {
                 Ok(string) => string,
@@ -197,7 +204,8 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                     p(&format!("{}%", {
                         let current_level_xp = level_to_xp(actual_level);
                         let total_level_gap = next_level_xp - current_level_xp;
-                        let percentage = (1.0 - (xp_difference as f64 / total_level_gap as f64)) * 100.0;
+                        let percentage =
+                            (1.0 - (xp_difference as f64 / total_level_gap as f64)) * 100.0;
 
                         percentage.round()
                     }))
@@ -214,7 +222,28 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
 
             let message = format!("{} {}", prefix, unranked(output));
 
-            return Ok(vec![message]);
+            if next_level > 126 {
+                // not max lvl, not agility < TODO
+                return Ok(vec![message]);
+            }
+
+            let details = details_by_skill_id(skill_id as u32);
+
+            let calc = details
+                .iter()
+                .map(|x| match x {
+                    Details::Agility(agility) => {
+                        format!(
+                            "{}: {}",
+                            c1(agility.name.as_str()),
+                            c2(format!("{}", (xp_difference as f64 / agility.xp).round()).as_str())
+                        )
+                    }
+                })
+                .collect::<Vec<String>>()
+                .join(format!(" {} ", c1("|")).as_str());
+
+            return Ok(vec![message, calc]);
         } else if skill_id == 0 && index == 0 {
             // overall
             if split[0] != "-1" && !split[0].contains("404 - Page not found") {
@@ -328,25 +357,25 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
             skill_lookup_data.get(&"Magic".to_string()).unwrap_or(&1),
         );
 
-        let total_level = skill_lookup_data.get(&"Attack".to_string()).unwrap_or(&0) + 
-        skill_lookup_data.get(&"Strength".to_string()).unwrap_or(&0) + 
-        skill_lookup_data.get(&"Defence".to_string()).unwrap_or(&0) + 
-        skill_lookup_data
-            .get(&"Hitpoints".to_string())
-            .unwrap_or(&1151) + // HP is level 10
-        skill_lookup_data.get(&"Ranged".to_string()).unwrap_or(&0) + 
-        skill_lookup_data.get(&"Prayer".to_string()).unwrap_or(&0) + 
-        skill_lookup_data.get(&"Magic".to_string()).unwrap_or(&0);
+        let total_level = skill_lookup_data.get(&"Attack".to_string()).unwrap_or(&0) +
+            skill_lookup_data.get(&"Strength".to_string()).unwrap_or(&0) +
+            skill_lookup_data.get(&"Defence".to_string()).unwrap_or(&0) +
+            skill_lookup_data
+                .get(&"Hitpoints".to_string())
+                .unwrap_or(&1151) + // HP is level 10
+            skill_lookup_data.get(&"Ranged".to_string()).unwrap_or(&0) +
+            skill_lookup_data.get(&"Prayer".to_string()).unwrap_or(&0) +
+            skill_lookup_data.get(&"Magic".to_string()).unwrap_or(&0);
 
-        let total_xp = skill_xp_lookup_data.get(&"Attack".to_string()).unwrap_or(&0) + 
-        skill_xp_lookup_data.get(&"Strength".to_string()).unwrap_or(&0) + 
-        skill_xp_lookup_data.get(&"Defence".to_string()).unwrap_or(&0) + 
-        skill_xp_lookup_data
-            .get(&"Hitpoints".to_string())
-            .unwrap_or(&1151) + // HP is level 10
-        skill_xp_lookup_data.get(&"Ranged".to_string()).unwrap_or(&0) + 
-        skill_xp_lookup_data.get(&"Prayer".to_string()).unwrap_or(&0) + 
-        skill_xp_lookup_data.get(&"Magic".to_string()).unwrap_or(&0);
+        let total_xp = skill_xp_lookup_data.get(&"Attack".to_string()).unwrap_or(&0) +
+            skill_xp_lookup_data.get(&"Strength".to_string()).unwrap_or(&0) +
+            skill_xp_lookup_data.get(&"Defence".to_string()).unwrap_or(&0) +
+            skill_xp_lookup_data
+                .get(&"Hitpoints".to_string())
+                .unwrap_or(&1151) + // HP is level 10
+            skill_xp_lookup_data.get(&"Ranged".to_string()).unwrap_or(&0) +
+            skill_xp_lookup_data.get(&"Prayer".to_string()).unwrap_or(&0) +
+            skill_xp_lookup_data.get(&"Magic".to_string()).unwrap_or(&0);
 
         if combat_command {
             skill_data.insert(
@@ -519,7 +548,7 @@ where
         .map(|capture| {
             let str = capture.get(1).map_or("", |start| start.as_str());
 
-            str.parse::<u32>().unwrap_or_else(|_| 0)
+            str.parse::<u32>().unwrap_or(0)
         })
         .unwrap_or_else(|| 0)
 }

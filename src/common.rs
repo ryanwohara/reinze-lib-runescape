@@ -65,8 +65,26 @@ pub fn skills() -> Vec<String> {
         "Construction",
     ]
     .iter()
-    .map(|x| x.to_owned().to_owned())
+    .map(|x| x.to_string())
     .collect()
+}
+
+pub fn skill_id<T>(skill: T) -> u32
+where
+    T: ToString,
+{
+    skills()
+        .iter()
+        .position(|s| s.to_string() == skill.to_string())
+        .unwrap_or(0) as u32
+}
+
+pub fn skill_by_id(skill: u32) -> String {
+    let mut s = skills();
+
+    s.retain(|x| skill == skill_id(x));
+
+    s.pop().unwrap_or("Overall".to_string())
 }
 
 // Converts a level to experience
@@ -469,31 +487,34 @@ mod tests {
         assert_eq!(
             skills(),
             vec![
-                "Overall".to_string(),
-                "Attack".to_string(),
-                "Defence".to_string(),
-                "Strength".to_string(),
-                "Hitpoints".to_string(),
-                "Ranged".to_string(),
-                "Prayer".to_string(),
-                "Magic".to_string(),
-                "Cooking".to_string(),
-                "Woodcutting".to_string(),
-                "Fletching".to_string(),
-                "Fishing".to_string(),
-                "Firemaking".to_string(),
-                "Crafting".to_string(),
-                "Smithing".to_string(),
-                "Mining".to_string(),
-                "Herblore".to_string(),
-                "Agility".to_string(),
-                "Thieving".to_string(),
-                "Slayer".to_string(),
-                "Farming".to_string(),
-                "Runecraft".to_string(),
-                "Hunter".to_string(),
-                "Construction".to_string(),
+                "Overall",
+                "Attack",
+                "Defence",
+                "Strength",
+                "Hitpoints",
+                "Ranged",
+                "Prayer",
+                "Magic",
+                "Cooking",
+                "Woodcutting",
+                "Fletching",
+                "Fishing",
+                "Firemaking",
+                "Crafting",
+                "Smithing",
+                "Mining",
+                "Herblore",
+                "Agility",
+                "Thieving",
+                "Slayer",
+                "Farming",
+                "Runecraft",
+                "Hunter",
+                "Construction",
             ]
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
         );
     }
 
