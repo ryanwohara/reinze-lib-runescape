@@ -223,7 +223,6 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
             let message = format!("{} {}", prefix, unranked(output));
 
             if next_level > 126 {
-                // not max lvl, not agility < TODO
                 return Ok(vec![message]);
             }
 
@@ -231,17 +230,13 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
 
             let calc = details
                 .iter()
-                .map(|x| match x {
-                    Details::Agility(agility) => {
-                        format!(
-                            "{}: {}",
-                            c1(agility.name.as_str()),
-                            c2(format!("{}", (xp_difference as f64 / agility.xp).round()).as_str())
-                        )
-                    }
-                })
+                .map(|detail| detail.to_string(xp_difference as f64))
                 .collect::<Vec<String>>()
                 .join(format!(" {} ", c1("|")).as_str());
+
+            if calc.len() == 0 {
+                return Ok(vec![message]);
+            }
 
             return Ok(vec![message, calc]);
         } else if skill_id == 0 && index == 0 {
