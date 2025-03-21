@@ -60,7 +60,13 @@ impl Skill for Agility {
         let q = query.to_string().to_lowercase();
 
         if let Ok(pattern) = Regex::new(q.as_str()) {
-            all.retain(|activity| pattern.captures(activity.name().to_lowercase().as_str()).iter().count() > 0);
+            all.retain(|activity| {
+                pattern
+                    .captures(activity.name().to_lowercase().as_str())
+                    .iter()
+                    .count()
+                    > 0
+            });
         }
 
         all
@@ -172,27 +178,35 @@ impl Skill for Agility {
 
 impl Detail for Agility {
     fn multipliers(&self) -> Vec<Multipliers> {
-        let Details::Agility(obj) = self.details();
+        if let Details::Agility(obj) = self.details() {
+            return obj.multipliers;
+        }
 
-        obj.multipliers
+        vec![]
     }
 
     fn name(&self) -> String {
-        let Details::Agility(obj) = self.details();
+        if let Details::Agility(obj) = self.details() {
+            return obj.name;
+        }
 
-        obj.name
+        "".to_string()
     }
 
     fn level(&self) -> u32 {
-        let Details::Agility(obj) = self.details();
+        if let Details::Agility(obj) = self.details() {
+            return obj.level;
+        }
 
-        obj.level
+        0
     }
 
     fn xp(&self) -> f64 {
-        let Details::Agility(obj) = self.details();
+        if let Details::Agility(obj) = self.details() {
+            return obj.xp;
+        }
 
-        obj.xp
+        0.0
     }
 }
 
@@ -216,7 +230,12 @@ impl IntoString for AgilityDetails {
             .as_str())
         )];
 
-        self.multipliers.iter().for_each(|Multipliers::Agility(a)| {
+        self.multipliers.iter().for_each(|x| {
+            let a = match x {
+                Multipliers::Agility(x) => x,
+                _ => return, // TODO move this logic elsewhere
+            };
+
             let d = a.details();
             vec.push(p(format!(
                 "{} {}",
