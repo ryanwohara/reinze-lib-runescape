@@ -31,8 +31,9 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
 
     let (split, (start, goal)) = process_start_and_goal(query, split);
 
-    let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
+    let (split, search) = find_search_flag(query, split);
 
+    let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
 
     let mut combat_command = false;
     if command == "combat" || command == "cmb" {
@@ -226,7 +227,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                 return Ok(vec![message]);
             }
 
-            let details = details_by_skill_id(skill_id as u32);
+            let details = details_by_skill_id(skill_id as u32, search.as_str());
 
             let calc = details
                 .iter()
@@ -534,6 +535,19 @@ fn parse_skill_data_for_cmb(
     .ceil() as u32
 }
 
+fn find_search_flag(query: &str, mut split: Vec<String>) -> (Vec<String>, String) {
+    let search = Regex::new(r"@(\S+)")
+        .unwrap()
+        .captures(query)
+        .map(|capture| capture.get(1).map_or("", |start| start.as_str()))
+        .unwrap_or("")
+        .to_string();
+
+    split.retain(|x| !x.starts_with("@"));
+
+    (split, search)
+}
+
 fn start_and_goal_match<T>(regex: Regex, query: T) -> u32
 where
     T: ToString,
@@ -545,7 +559,7 @@ where
 
             str.parse::<u32>().unwrap_or(0)
         })
-        .unwrap_or_else(|| 0)
+        .unwrap_or(0)
 }
 
 fn process_start_and_goal(query: &str, mut split: Vec<String>) -> (Vec<String>, (u32, u32)) {

@@ -1,12 +1,16 @@
-use common::{c1, c2};
 use crate::common::{skill_by_id, skill_id, skills};
 use crate::stats::agility::{Agility, AgilityDetails, AgilityMultipliers};
 
 pub trait Skill {
-    fn all() -> Vec<Self> where Self: Sized;
+    fn all() -> Vec<Self>
+    where
+        Self: Sized;
     fn defaults() -> Vec<Details>;
     fn details(&self) -> Details;
-    fn search<T>(query: T) -> Vec<Self> where T: ToString, Self: Sized;
+    fn search<T>(query: T) -> Vec<Self>
+    where
+        T: ToString,
+        Self: Sized;
 }
 
 #[derive(Clone, PartialOrd, PartialEq)]
@@ -21,8 +25,9 @@ pub trait IntoString {
 impl Details {
     pub fn to_string(&self, xp_difference: f64) -> String {
         match self {
-            Details::Agility(agility) => agility
-        }.to_string(xp_difference)
+            Details::Agility(agility) => agility,
+        }
+        .to_string(xp_difference)
     }
 
     pub fn name(&self) -> String {
@@ -64,9 +69,20 @@ pub enum Multipliers {
     Agility(AgilityMultipliers),
 }
 
-pub fn details_by_skill_id(id: u32) -> Vec<Details> {
-    match skill_by_id(id).as_str() {
-        "Agility" => Agility::defaults(),
-        _ => return vec![],
+pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
+    if query.len() == 0 {
+        return match skill_by_id(id).as_str() {
+            "Agility" => Agility::defaults(),
+            _ => vec![],
+        };
     }
+
+    let mut matches = match skill_by_id(id).as_str() {
+        "Agility" => Agility::all(),
+        _ => vec![],
+    };
+
+    matches.retain(|x| x.name().to_lowercase().contains(&query.to_lowercase()));
+
+    matches.iter().map(|x| x.details()).collect()
 }
