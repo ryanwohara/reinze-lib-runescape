@@ -1,6 +1,6 @@
 use crate::common::{skill_by_id, skill_id, skills};
 use crate::stats::agility::{Agility, AgilityDetails, AgilityMultipliers};
-use crate::stats::construction::ConstructionMultipliers;
+use crate::stats::construction::{Construction, ConstructionDetails, ConstructionMultipliers};
 
 pub trait Skill {
     fn all() -> Vec<Self>
@@ -27,10 +27,10 @@ pub trait IntoString {
 impl Details {
     pub fn to_string(&self, xp_difference: f64) -> String {
         match self {
-            Details::Agility(agility) => agility,
-            Details::Construction(construction) => construction,
+            Details::Agility(agility) => agility.to_string(xp_difference),
+            Details::Construction(construction) => construction.to_string(xp_difference),
         }
-        .to_string(xp_difference)
+
     }
 
     pub fn name(&self) -> String {
@@ -78,14 +78,14 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
     if query.len() == 0 {
         return match skill_by_id(id).as_str() {
             "Agility" => Agility::defaults(),
+            "Construction" => Construction::defaults(),
             _ => vec![],
         };
     }
 
-    let mut matches = match skill_by_id(id).as_str() {
-        "Agility" => Agility::search(query),
+    match skill_by_id(id).as_str() {
+        "Agility" => Agility::search(query).iter().map(|x| x.details()).collect(),
+        "Construction" => Construction::search(query).iter().map(|x| x.details()).collect(),
         _ => vec![],
-    };
-
-    matches.iter().map(|x| x.details()).collect()
+    }
 }
