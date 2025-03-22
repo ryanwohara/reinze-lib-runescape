@@ -1,6 +1,7 @@
 use crate::common::{skill_by_id, skill_id, skills};
 use crate::stats::agility::{Agility, AgilityDetails, AgilityMultipliers};
 use crate::stats::construction::{Construction, ConstructionDetails, ConstructionMultipliers};
+use crate::stats::cooking::{Cooking, CookingDetails};
 
 pub trait Skill {
     fn all() -> Vec<Self>
@@ -18,6 +19,7 @@ pub trait Skill {
 pub enum Details {
     Agility(AgilityDetails),
     Construction(ConstructionDetails),
+    Cooking(CookingDetails),
 }
 
 pub trait IntoString {
@@ -29,8 +31,8 @@ impl Details {
         match self {
             Details::Agility(agility) => agility.to_string(xp_difference),
             Details::Construction(construction) => construction.to_string(xp_difference),
+            Details::Cooking(cooking) => cooking.to_string(xp_difference),
         }
-
     }
 
     pub fn name(&self) -> String {
@@ -49,6 +51,7 @@ impl Details {
         match self {
             Details::Agility(_) => "Agility",
             Details::Construction(_) => "Construction",
+            Details::Cooking(_) => "Cooking",
         }
         .to_owned()
     }
@@ -79,13 +82,18 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
         return match skill_by_id(id).as_str() {
             "Agility" => Agility::defaults(),
             "Construction" => Construction::defaults(),
+            "Cooking" => Cooking::defaults(),
             _ => vec![],
         };
     }
 
     match skill_by_id(id).as_str() {
         "Agility" => Agility::search(query).iter().map(|x| x.details()).collect(),
-        "Construction" => Construction::search(query).iter().map(|x| x.details()).collect(),
+        "Construction" => Construction::search(query)
+            .iter()
+            .map(|x| x.details())
+            .collect(),
+        "Cooking" => Cooking::search(query).iter().map(|x| x.details()).collect(),
         _ => vec![],
     }
 }
