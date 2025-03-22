@@ -233,7 +233,7 @@ impl IntoString for AgilityDetails {
         self.multipliers.iter().for_each(|x| {
             let a = match x {
                 Multipliers::Agility(x) => x,
-                _ => return, // TODO move this logic elsewhere
+                _ => return,
             };
 
             let d = a.details();
