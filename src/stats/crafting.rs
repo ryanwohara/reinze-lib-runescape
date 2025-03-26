@@ -1,4 +1,7 @@
-use crate::stats::skill::{Details, Skill};
+use crate::stats::skill::{Detail, Details, IntoString, Multipliers, Skill};
+use common::{c1, c2, p};
+use regex::Regex;
+use crate::stats::construction::Construction;
 
 pub enum Crafting {
     BallOfWool,
@@ -136,6 +139,37 @@ pub enum Crafting {
     ZenyteNecklace,
     ZenyteBracelet,
     ZenyteAmuletU,
+}
+
+
+impl Detail for Crafting {
+    fn multipliers(&self) -> Vec<Multipliers> {
+        vec![]
+    }
+
+    fn name(&self) -> String {
+        if let Details::Crafting(obj) = self.details() {
+            return obj.name;
+        }
+
+        "".to_string()
+    }
+
+    fn level(&self) -> u32 {
+        if let Details::Crafting(obj) = self.details() {
+            return obj.level;
+        }
+
+        0
+    }
+
+    fn xp(&self) -> f64 {
+        if let Details::Crafting(obj) = self.details() {
+            return obj.xp as f64;
+        }
+
+        0.0
+    }
 }
 
 impl Skill for Crafting {
@@ -283,7 +317,20 @@ impl Skill for Crafting {
     }
 
     fn defaults() -> Vec<Details> {
-        todo!()
+        vec![
+            Self::LeatherBody,
+            Self::WaterBattlestaff,
+            Self::EarthBattlestaff,
+            Self::FireBattlestaff,
+            Self::AirBattlestaff,
+            Self::GreenDhideBody,
+            Self::BlueDhideBody,
+            Self::RedDhideBody,
+            Self::BlackDhideBody,
+        ]
+        .iter()
+        .map(|x| x.details())
+        .collect()
     }
 
     fn details(&self) -> Details {
@@ -344,19 +391,19 @@ impl Skill for Crafting {
             Self::HardleatherBody => ("Hardleather Body", 28, 35.0),
             Self::EmeraldNecklace => ("Emerald Necklace", 29, 60.0),
             Self::JadeBracelet => ("Jade Bracelet", 29, 60.0),
-            Self::Rope => ("Rope", 30, 25),
+            Self::Rope => ("Rope", 30, 25.0),
             Self::EmeraldBracelet => ("Emerald Bracelet", 30, 65.0),
             Self::EmeraldAmuletU => ("Emerald Amulet U", 31, 70.0),
             Self::SpikyVambraces => ("Spiky Vambraces", 32, 6.0),
             Self::TopazNecklace => ("Topaz Necklace", 32, 70.0),
-            Self::Vial => ("Vial", 33, 35),
+            Self::Vial => ("Vial", 33, 35.0),
             Self::JadeAmuletU => ("Jade Amulet U", 34, 70.0),
             Self::RubyRing => ("Ruby Ring", 34, 70.0),
             Self::Ruby => ("Ruby", 34, 85.0),
             Self::TeakBirdHouse => ("Teak Bird House", 35, 30.0),
             Self::BroodooShield => ("Broodoo Shield", 35, 100.0),
             Self::Basket => ("Basket", 36, 56.0),
-            Self::Coif => ("Coif", 38, 37),
+            Self::Coif => ("Coif", 38, 37.0),
             Self::TopazBracelet => ("Topaz Bracelet", 38, 75.0),
             Self::RubyNecklace => ("Ruby Necklace", 40, 75.0),
             Self::HardLeatherShield => ("Hard Leather Shield", 41, 70.0),
@@ -381,14 +428,14 @@ impl Skill for Crafting {
             Self::Dragonstone => ("Dragonstone", 55, 137.5),
             Self::DiamondNecklace => ("Diamond Necklace", 56, 90.0),
             Self::SnakeskinShield => ("Snakeskin Shield", 56, 100.0),
-            Self::GreenDhideVamb => ("Green Dhide Vambraces", 57, 62),
+            Self::GreenDhideVamb => ("Green Dhide Vambraces", 57, 62.0),
             Self::DiamondBracelet => ("Diamond Bracelet", 58, 95.0),
             Self::EarthBattlestaff => ("Earth Battlestaff", 58, 112.5),
             Self::YewBirdHouse => ("Yew Bird House", 60, 45.0),
-            Self::GreenDhideChaps => ("Green Dhide Chaps", 60, 124),
+            Self::GreenDhideChaps => ("Green Dhide Chaps", 60, 124.0),
             Self::GreenDhideShield => ("Green Dhide Shield", 62, 124.0),
             Self::FireBattlestaff => ("Fire Battlestaff", 62, 125.0),
-            Self::GreenDhideBody => ("Green Dhide Body", 63, 186),
+            Self::GreenDhideBody => ("Green Dhide Body", 63, 186.0),
             Self::BlueDhideVamb => ("Blue Dhide Vambraces", 66, 70.0),
             Self::AirBattlestaff => ("Air Battlestaff", 66, 137.5),
             Self::OnyxRing => ("Onyx Ring", 67, 115.0),
@@ -424,12 +471,12 @@ impl Skill for Crafting {
             Self::ZenyteBracelet => ("Zenyte Bracelet 19532", 95, 180.0),
             Self::ZenyteAmuletU => ("Zenyte Amulet U", 98, 200.0),
         };
-        
+
         Details::Crafting(CraftingDetails {
             name: details.0.to_owned(),
             level: details.1,
             xp: details.2,
-        }
+        })
     }
 
     fn search<T>(query: T) -> Vec<Self>
@@ -437,6 +484,41 @@ impl Skill for Crafting {
         T: ToString,
         Self: Sized,
     {
-        todo!()
+        let mut all = Self::all();
+
+        let q = query.to_string().to_lowercase();
+
+        if let Ok(pattern) = Regex::new(q.as_str()) {
+            all.retain(|activity| {
+                pattern
+                    .captures(activity.name().to_lowercase().as_str())
+                    .iter()
+                    .count()
+                    > 0
+            });
+        }
+
+        all
+    }
+}
+
+#[derive(Clone, PartialOrd, PartialEq)]
+pub struct CraftingDetails {
+    name: String,
+    level: u32,
+    xp: f64,
+}
+
+impl IntoString for CraftingDetails {
+    fn to_string(&self, xp_difference: f64) -> String {
+        format!(
+            "{}: {}",
+            c1(self.name.as_str()),
+            c2(common::commas_from_string(
+                format!("{}", (xp_difference / self.xp).ceil()).as_str(),
+                "d"
+            )
+            .as_str())
+        )
     }
 }
