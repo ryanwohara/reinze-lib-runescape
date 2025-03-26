@@ -1,7 +1,6 @@
 use crate::stats::skill::{Detail, Details, IntoString, Multipliers, Skill};
 use common::{c1, c2, p};
 use regex::Regex;
-use crate::stats::construction::Construction;
 
 pub enum Crafting {
     BallOfWool,
@@ -504,9 +503,9 @@ impl Skill for Crafting {
 
 #[derive(Clone, PartialOrd, PartialEq)]
 pub struct CraftingDetails {
-    name: String,
-    level: u32,
-    xp: f64,
+    pub name: String,
+    pub level: u32,
+    pub xp: f64,
 }
 
 impl IntoString for CraftingDetails {
