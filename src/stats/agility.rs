@@ -265,11 +265,11 @@ pub enum AgilityMultipliers {
 impl AgilityMultipliers {
     pub fn details(&self) -> AgilityMultiplierDetails {
         let details = match self {
-            AgilityMultipliers::WildernessAgilityTicket11To50 => ("11-50 Tix", 1.05),
-            AgilityMultipliers::WildernessAgilityTicket51To100 => ("51-100 Tix", 1.1),
-            AgilityMultipliers::WildernessAgilityTicket101Plus => ("101+ Tix", 1.15),
-            AgilityMultipliers::DesertHardDiary => ("Desert Hard Diary", 1016.0 / 890.0),
-            AgilityMultipliers::FremennikHardDiary => ("Fremmy Hard Diary", 920.0 / 780.0),
+            Self::WildernessAgilityTicket11To50 => ("11-50 Tix", 1.05),
+            Self::WildernessAgilityTicket51To100 => ("51-100 Tix", 1.1),
+            Self::WildernessAgilityTicket101Plus => ("101+ Tix", 1.15),
+            Self::DesertHardDiary => ("Desert Hard Diary", 1016.0 / 890.0),
+            Self::FremennikHardDiary => ("Fremmy Hard Diary", 920.0 / 780.0),
         };
 
         AgilityMultiplierDetails {

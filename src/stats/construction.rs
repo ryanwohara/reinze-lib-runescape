@@ -653,7 +653,7 @@ pub enum ConstructionMultipliers {
 impl ConstructionMultipliers {
     pub fn details(&self) -> ConstructionMultiplierDetails {
         let details = match self {
-            ConstructionMultipliers::CarpentersOutfit => ("Outfit", 1.025),
+            Self::CarpentersOutfit => ("Outfit", 1.025),
         };
 
         ConstructionMultiplierDetails {
