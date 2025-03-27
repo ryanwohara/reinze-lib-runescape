@@ -189,7 +189,7 @@ fn list(author: &str) -> Result<Vec<String>, ()> {
 
     match conn.exec(
         "SELECT rsn_ident, rsn FROM rsn WHERE host = :host",
-        params! { host,  },
+        params! { host, },
     ) {
         Ok(rows) => {
             let mapped = rows

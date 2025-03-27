@@ -4,6 +4,7 @@ mod construction;
 mod cooking;
 mod crafting;
 mod farming;
+mod firemaking;
 
 use super::common::{
     get_cmb, get_rsn, get_stats, level_to_xp, process_account_type_flags, skill,
