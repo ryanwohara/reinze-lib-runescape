@@ -8,6 +8,7 @@ use crate::stats::firemaking::{Firemaking, FiremakingDetails, FiremakingMultipli
 use crate::stats::fishing::{Fishing, FishingDetails, FishingMultipliers};
 use crate::stats::fletching::{Fletching, FletchingDetails};
 use crate::stats::herblore::{Herblore, HerbloreDetails};
+use crate::stats::hunter::{Hunter, HunterDetails};
 
 pub trait Skill {
     fn all() -> Vec<Self>
@@ -32,6 +33,7 @@ pub enum Details {
     Fishing(FishingDetails),
     Fletching(FletchingDetails),
     Herblore(HerbloreDetails),
+    Hunter(HunterDetails),
 }
 
 pub trait IntoString {
@@ -50,6 +52,7 @@ impl Details {
             Details::Fishing(fishing) => fishing.to_string(xp_difference),
             Details::Fletching(fletching) => fletching.to_string(xp_difference),
             Details::Herblore(herblore) => herblore.to_string(xp_difference),
+            Details::Hunter(hunter) => hunter.to_string(xp_difference),
         }
     }
 
@@ -76,6 +79,7 @@ impl Details {
             Details::Fishing(_) => "Fishing",
             Details::Fletching(_) => "Fletching",
             Details::Herblore(_) => "Herblore",
+            Details::Hunter(_) => "Hunter",
         }
         .to_owned()
     }
@@ -116,6 +120,7 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             "Fishing" => Fishing::defaults(),
             "Fletching" => Fletching::defaults(),
             "Herblore" => Herblore::defaults(),
+            "Hunter" => Hunter::defaults(),
             _ => vec![],
         };
     }
@@ -148,6 +153,10 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             .map(|x| x.details())
             .collect(),
         "Herblore" => Herblore::search(query)
+            .iter()
+            .map(|x| x.details())
+            .collect(),
+        "Hunter" => Hunter::search(query)
             .iter()
             .map(|x| x.details())
             .collect(),
