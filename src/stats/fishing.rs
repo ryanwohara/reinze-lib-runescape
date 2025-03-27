@@ -200,12 +200,6 @@ impl Skill for Fishing {
     }
 }
 
-pub enum FishingMethod {
-    NormalLogs,
-    PyreLogs,
-    SacredOil,
-}
-
 #[derive(Clone, PartialOrd, PartialEq)]
 pub struct FishingDetails {
     pub name: String,
