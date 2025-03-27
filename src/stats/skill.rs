@@ -4,6 +4,7 @@ use crate::stats::construction::{Construction, ConstructionDetails, Construction
 use crate::stats::cooking::{Cooking, CookingDetails};
 use crate::stats::crafting::{Crafting, CraftingDetails};
 use crate::stats::farming::{Farming, FarmingDetails, FarmingMultipliers};
+use crate::stats::firemaking::{Firemaking, FiremakingDetails, FiremakingMultipliers};
 
 pub trait Skill {
     fn all() -> Vec<Self>
@@ -24,6 +25,7 @@ pub enum Details {
     Cooking(CookingDetails),
     Crafting(CraftingDetails),
     Farming(FarmingDetails),
+    Firemaking(FiremakingDetails),
 }
 
 pub trait IntoString {
@@ -38,6 +40,7 @@ impl Details {
             Details::Cooking(cooking) => cooking.to_string(xp_difference),
             Details::Crafting(crafting) => crafting.to_string(xp_difference),
             Details::Farming(farming) => farming.to_string(xp_difference),
+            Details::Firemaking(firemaking) => firemaking.to_string(xp_difference),
         }
     }
 
@@ -60,6 +63,7 @@ impl Details {
             Details::Cooking(_) => "Cooking",
             Details::Crafting(_) => "Crafting",
             Details::Farming(_) => "Farming",
+            Details::Firemaking(_) => "Firemaking",
         }
         .to_owned()
     }
@@ -84,6 +88,7 @@ pub enum Multipliers {
     Agility(AgilityMultipliers),
     Construction(ConstructionMultipliers),
     Farming(FarmingMultipliers),
+    Firemaking(FiremakingMultipliers),
 }
 
 pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
@@ -94,6 +99,7 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             "Cooking" => Cooking::defaults(),
             "Crafting" => Crafting::defaults(),
             "Farming" => Farming::defaults(),
+            "Firemaking" => Firemaking::defaults(),
             _ => vec![],
         };
     }
@@ -110,6 +116,10 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             .map(|x| x.details())
             .collect(),
         "Farming" => Farming::search(query)
+            .iter()
+            .map(|x| x.details())
+            .collect(),
+        "Firemaking" => Firemaking::search(query)
             .iter()
             .map(|x| x.details())
             .collect(),
