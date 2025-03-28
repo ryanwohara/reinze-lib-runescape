@@ -2,6 +2,7 @@ use crate::stats::construction::ConstructionMultipliers::CarpentersOutfit;
 use crate::stats::skill::{Detail, Details, IntoString, Multipliers, Skill};
 use common::{c1, c2, p};
 use regex::Regex;
+use std::ops::Add;
 
 pub enum Construction {
     Plank,
@@ -556,13 +557,24 @@ impl Skill for Construction {
         let q = query.to_string().to_lowercase();
 
         if let Ok(pattern) = Regex::new(q.as_str()) {
+            let mut index = 0;
             all.retain(|activity| {
-                pattern
+                if pattern
                     .captures(activity.name().to_lowercase().as_str())
                     .iter()
                     .count()
                     > 0
+                    && index < 10
+                {
+                    index = index.add(1);
+
+                    return true;
+                }
+
+                return false;
             });
+        } else {
+            return vec![];
         }
 
         all

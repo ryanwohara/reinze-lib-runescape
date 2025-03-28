@@ -9,6 +9,8 @@ use crate::stats::fishing::{Fishing, FishingDetails, FishingMultipliers};
 use crate::stats::fletching::{Fletching, FletchingDetails};
 use crate::stats::herblore::{Herblore, HerbloreDetails};
 use crate::stats::hunter::{Hunter, HunterDetails};
+use crate::stats::magic::{Magic, MagicDetails};
+use crate::stats::mining::{Mining, MiningDetails, MiningMultipliers};
 
 pub trait Skill {
     fn all() -> Vec<Self>
@@ -34,6 +36,8 @@ pub enum Details {
     Fletching(FletchingDetails),
     Herblore(HerbloreDetails),
     Hunter(HunterDetails),
+    Magic(MagicDetails),
+    Mining(MiningDetails),
 }
 
 pub trait IntoString {
@@ -53,6 +57,8 @@ impl Details {
             Details::Fletching(fletching) => fletching.to_string(xp_difference),
             Details::Herblore(herblore) => herblore.to_string(xp_difference),
             Details::Hunter(hunter) => hunter.to_string(xp_difference),
+            Details::Magic(magic) => magic.to_string(xp_difference),
+            Details::Mining(mining) => mining.to_string(xp_difference),
         }
     }
 
@@ -80,6 +86,8 @@ impl Details {
             Details::Fletching(_) => "Fletching",
             Details::Herblore(_) => "Herblore",
             Details::Hunter(_) => "Hunter",
+            Details::Magic(_) => "Magic",
+            Details::Mining(_) => "Mining",
         }
         .to_owned()
     }
@@ -106,6 +114,7 @@ pub enum Multipliers {
     Farming(FarmingMultipliers),
     Firemaking(FiremakingMultipliers),
     Fishing(FishingMultipliers),
+    Mining(MiningMultipliers),
 }
 
 pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
@@ -121,6 +130,8 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             "Fletching" => Fletching::defaults(),
             "Herblore" => Herblore::defaults(),
             "Hunter" => Hunter::defaults(),
+            "Magic" => Magic::defaults(),
+            "Mining" => Mining::defaults(),
             _ => vec![],
         };
     }
@@ -157,6 +168,14 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             .map(|x| x.details())
             .collect(),
         "Hunter" => Hunter::search(query)
+            .iter()
+            .map(|x| x.details())
+            .collect(),
+        "Magic" => Magic::search(query)
+            .iter()
+            .map(|x| x.details())
+            .collect(),
+        "Mining" => Mining::search(query)
             .iter()
             .map(|x| x.details())
             .collect(),
