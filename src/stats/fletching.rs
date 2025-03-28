@@ -1,6 +1,7 @@
 use crate::stats::skill::{Detail, Details, IntoString, Multipliers, Skill};
 use common::{c1, c2, p};
 use regex::Regex;
+use std::ops::Add;
 
 pub enum Fletching {
     ArrowShaft,
@@ -110,7 +111,6 @@ pub enum Fletching {
     RedwoodShield,
     DragonDart,
 }
-
 
 impl Detail for Fletching {
     fn multipliers(&self) -> Vec<Multipliers> {
@@ -269,9 +269,9 @@ impl Skill for Fletching {
             Self::MagicLongbowU,
             Self::MagicLongbow,
         ]
-            .iter()
-            .map(|x| x.details())
-            .collect()
+        .iter()
+        .map(|x| x.details())
+        .collect()
     }
 
     fn details(&self) -> Details {
@@ -401,13 +401,24 @@ impl Skill for Fletching {
         let q = query.to_string().to_lowercase();
 
         if let Ok(pattern) = Regex::new(q.as_str()) {
+            let mut index = 0;
             all.retain(|activity| {
-                pattern
+                if pattern
                     .captures(activity.name().to_lowercase().as_str())
                     .iter()
                     .count()
                     > 0
+                    && index < 10
+                {
+                    index = index.add(1);
+
+                    return true;
+                }
+
+                return false;
             });
+        } else {
+            return vec![];
         }
 
         all
@@ -430,7 +441,7 @@ impl IntoString for FletchingDetails {
                 format!("{}", (xp_difference / self.xp).ceil()).as_str(),
                 "d"
             )
-                .as_str())
+            .as_str())
         )
     }
 }
