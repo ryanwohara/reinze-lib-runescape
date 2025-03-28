@@ -1,5 +1,5 @@
 use crate::stats::skill::{Detail, Details, IntoString, Multipliers, Skill};
-use common::{c1, c2, p};
+use common::{c1, c2};
 use regex::Regex;
 use std::ops::Add;
 
