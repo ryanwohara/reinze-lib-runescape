@@ -78,7 +78,7 @@ impl Skill for Mining {
     }
 
     fn details(&self) -> Details {
-        let details = match (self) {
+        let details = match self {
             Self::Clay => ("Clay", 1, 5.0),
             Self::RuneEssence => ("Rune Essence", 1, 5.0),
             Self::CopperOre => ("Copper", 1, 17.5),
@@ -223,7 +223,7 @@ pub enum MiningMultipliers {
 impl MiningMultipliers {
     pub fn details(&self) -> MiningMultiplierDetails {
         let details = match self {
-            Self::ProspectorsKit => ("Outfit", 1.025),
+            ProspectorsKit => ("Outfit", 1.025),
         };
 
         MiningMultiplierDetails {

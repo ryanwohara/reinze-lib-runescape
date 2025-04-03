@@ -289,7 +289,7 @@ impl Skill for Cooking {
     }
 
     fn details(&self) -> Details {
-        let details = match (self) {
+        let details = match self {
             Self::Sinew => ("Sinew", 1, 3.0),
             Self::Anchovies => ("Anchovies", 1, 30.0),
             Self::CookedChicken => ("Cooked Chicken", 1, 30.0),

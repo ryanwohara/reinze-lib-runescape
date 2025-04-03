@@ -11,12 +11,13 @@ mod herblore;
 mod hunter;
 mod magic;
 mod mining;
+mod prayer;
 
 use super::common::{
     get_cmb, get_rsn, get_stats, level_to_xp, process_account_type_flags, skill,
     skills, xp_to_level, Combat,
 };
-use crate::stats::skill::{details_by_skill_id, Details, Skill};
+use crate::stats::skill::{details_by_skill_id};
 use common::{c1, c2, commas, commas_from_string, convert_split_to_string, l, p, unranked};
 use mysql::from_row;
 use regex::Regex;

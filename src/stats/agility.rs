@@ -123,7 +123,7 @@ impl Skill for Agility {
     }
 
     fn details(&self) -> Details {
-        let details = match (self) {
+        let details = match self {
             Agility::GnomeStrongholdCourse => ("Gnome Stronghold", 1, 110.5, vec![]),
             Agility::DraynorVillageRooftop => ("Draynor Village Rooftop", 1, 120.0, vec![]),
             Agility::ShayzienBasicCourse => ("Shayzien Basic", 1, 153.5, vec![]),

@@ -11,6 +11,7 @@ use crate::stats::herblore::{Herblore, HerbloreDetails};
 use crate::stats::hunter::{Hunter, HunterDetails};
 use crate::stats::magic::{Magic, MagicDetails};
 use crate::stats::mining::{Mining, MiningDetails, MiningMultipliers};
+use crate::stats::prayer::{Prayer, PrayerDetails, PrayerMultipliers};
 
 pub trait Skill {
     fn all() -> Vec<Self>
@@ -38,6 +39,7 @@ pub enum Details {
     Hunter(HunterDetails),
     Magic(MagicDetails),
     Mining(MiningDetails),
+    Prayer(PrayerDetails),
 }
 
 pub trait IntoString {
@@ -59,9 +61,11 @@ impl Details {
             Details::Hunter(hunter) => hunter.to_string(xp_difference),
             Details::Magic(magic) => magic.to_string(xp_difference),
             Details::Mining(mining) => mining.to_string(xp_difference),
+            Details::Prayer(prayer) => prayer.to_string(xp_difference),
         }
     }
 
+    #[allow(dead_code)]
     pub fn name(&self) -> String {
         if let Some(result) = skills().get(self.skill_id() as usize) {
             return result.clone();
@@ -70,10 +74,12 @@ impl Details {
         "".to_owned()
     }
 
+    #[allow(dead_code)]
     pub fn skill_id(&self) -> u32 {
         skill_id(self.skill())
     }
 
+    #[allow(dead_code)]
     pub fn skill(&self) -> String {
         match self {
             Details::Agility(_) => "Agility",
@@ -88,10 +94,12 @@ impl Details {
             Details::Hunter(_) => "Hunter",
             Details::Magic(_) => "Magic",
             Details::Mining(_) => "Mining",
+            Details::Prayer(_) => "Prayer",
         }
         .to_owned()
     }
 
+    #[allow(dead_code)]
     pub fn multipliers<T>(details: T) -> Vec<Multipliers>
     where
         T: Detail,
@@ -103,7 +111,9 @@ impl Details {
 pub trait Detail {
     fn multipliers(&self) -> Vec<Multipliers>;
     fn name(&self) -> String;
+    #[allow(dead_code)]
     fn level(&self) -> u32;
+    #[allow(dead_code)]
     fn xp(&self) -> f64;
 }
 
@@ -114,7 +124,9 @@ pub enum Multipliers {
     Farming(FarmingMultipliers),
     Firemaking(FiremakingMultipliers),
     Fishing(FishingMultipliers),
+    #[allow(dead_code)]
     Mining(MiningMultipliers),
+    Prayer(PrayerMultipliers),
 }
 
 pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
@@ -132,6 +144,7 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             "Hunter" => Hunter::defaults(),
             "Magic" => Magic::defaults(),
             "Mining" => Mining::defaults(),
+            "Prayer" => Prayer::defaults(),
             _ => vec![],
         };
     }
@@ -176,6 +189,10 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             .map(|x| x.details())
             .collect(),
         "Mining" => Mining::search(query)
+            .iter()
+            .map(|x| x.details())
+            .collect(),
+        "Prayer" => Prayer::search(query)
             .iter()
             .map(|x| x.details())
             .collect(),

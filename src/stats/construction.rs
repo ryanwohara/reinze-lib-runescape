@@ -367,7 +367,7 @@ impl Skill for Construction {
     }
 
     fn details(&self) -> Details {
-        let details = match (self) {
+        let details = match self {
             Self::Plank => ("Plank", 1, 29),
             Self::DockLeaf => ("Dock Leaf", 1, 31),
             Self::FernBigPlant => ("Fern (big plant)", 1, 31),
