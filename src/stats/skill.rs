@@ -14,6 +14,7 @@ use crate::stats::mining::{Mining, MiningDetails, MiningMultipliers};
 use crate::stats::prayer::{Prayer, PrayerDetails, PrayerMultipliers};
 use crate::stats::runecraft::{Runecraft, RunecraftDetails, RunecraftMultipliers};
 use crate::stats::smithing::{Smithing, SmithingDetails, SmithingMultipliers};
+use crate::stats::thieving::{Thieving, ThievingDetails};
 
 pub trait Skill {
     fn all() -> Vec<Self>
@@ -44,6 +45,7 @@ pub enum Details {
     Prayer(PrayerDetails),
     Runecraft(RunecraftDetails),
     Smithing(SmithingDetails),
+    Thieving(ThievingDetails),
 }
 
 pub trait IntoString {
@@ -68,6 +70,7 @@ impl Details {
             Details::Prayer(prayer) => prayer.to_string(xp_difference),
             Details::Runecraft(runecraft) => runecraft.to_string(xp_difference),
             Details::Smithing(smithing) => smithing.to_string(xp_difference),
+            Details::Thieving(thieving) => thieving.to_string(xp_difference),
         }
     }
 
@@ -103,6 +106,7 @@ impl Details {
             Details::Prayer(_) => "Prayer",
             Details::Runecraft(_) => "Runecraft",
             Details::Smithing(_) => "Smithing",
+            Details::Thieving(_) => "Thieving",
         }
         .to_owned()
     }
@@ -157,6 +161,7 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             "Prayer" => Prayer::defaults(),
             "Runecraft" => Runecraft::defaults(),
             "Smithing" => Smithing::defaults(),
+            "Thieving" => Thieving::defaults(),
             _ => vec![],
         };
     }
@@ -172,18 +177,12 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             .iter()
             .map(|x| x.details())
             .collect(),
-        "Farming" => Farming::search(query)
-            .iter()
-            .map(|x| x.details())
-            .collect(),
+        "Farming" => Farming::search(query).iter().map(|x| x.details()).collect(),
         "Firemaking" => Firemaking::search(query)
             .iter()
             .map(|x| x.details())
             .collect(),
-        "Fishing" => Fishing::search(query)
-            .iter()
-            .map(|x| x.details())
-            .collect(),
+        "Fishing" => Fishing::search(query).iter().map(|x| x.details()).collect(),
         "Fletching" => Fletching::search(query)
             .iter()
             .map(|x| x.details())
@@ -192,27 +191,19 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             .iter()
             .map(|x| x.details())
             .collect(),
-        "Hunter" => Hunter::search(query)
-            .iter()
-            .map(|x| x.details())
-            .collect(),
-        "Magic" => Magic::search(query)
-            .iter()
-            .map(|x| x.details())
-            .collect(),
-        "Mining" => Mining::search(query)
-            .iter()
-            .map(|x| x.details())
-            .collect(),
-        "Prayer" => Prayer::search(query)
-            .iter()
-            .map(|x| x.details())
-            .collect(),
+        "Hunter" => Hunter::search(query).iter().map(|x| x.details()).collect(),
+        "Magic" => Magic::search(query).iter().map(|x| x.details()).collect(),
+        "Mining" => Mining::search(query).iter().map(|x| x.details()).collect(),
+        "Prayer" => Prayer::search(query).iter().map(|x| x.details()).collect(),
         "Runecraft" => Runecraft::search(query)
             .iter()
             .map(|x| x.details())
             .collect(),
         "Smithing" => Smithing::search(query)
+            .iter()
+            .map(|x| x.details())
+            .collect(),
+        "Thieving" => Thieving::search(query)
             .iter()
             .map(|x| x.details())
             .collect(),
