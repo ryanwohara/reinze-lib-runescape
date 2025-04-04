@@ -12,6 +12,7 @@ use crate::stats::hunter::{Hunter, HunterDetails};
 use crate::stats::magic::{Magic, MagicDetails};
 use crate::stats::mining::{Mining, MiningDetails, MiningMultipliers};
 use crate::stats::prayer::{Prayer, PrayerDetails, PrayerMultipliers};
+use crate::stats::runecraft::{Runecraft, RunecraftDetails, RunecraftMultipliers};
 
 pub trait Skill {
     fn all() -> Vec<Self>
@@ -40,6 +41,7 @@ pub enum Details {
     Magic(MagicDetails),
     Mining(MiningDetails),
     Prayer(PrayerDetails),
+    Runecraft(RunecraftDetails),
 }
 
 pub trait IntoString {
@@ -62,6 +64,7 @@ impl Details {
             Details::Magic(magic) => magic.to_string(xp_difference),
             Details::Mining(mining) => mining.to_string(xp_difference),
             Details::Prayer(prayer) => prayer.to_string(xp_difference),
+            Details::Runecraft(runecraft) => runecraft.to_string(xp_difference),
         }
     }
 
@@ -95,6 +98,7 @@ impl Details {
             Details::Magic(_) => "Magic",
             Details::Mining(_) => "Mining",
             Details::Prayer(_) => "Prayer",
+            Details::Runecraft(_) => "Runecraft",
         }
         .to_owned()
     }
@@ -127,6 +131,7 @@ pub enum Multipliers {
     #[allow(dead_code)]
     Mining(MiningMultipliers),
     Prayer(PrayerMultipliers),
+    Runecraft(RunecraftMultipliers),
 }
 
 pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
@@ -145,6 +150,7 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             "Magic" => Magic::defaults(),
             "Mining" => Mining::defaults(),
             "Prayer" => Prayer::defaults(),
+            "Runecraft" => Runecraft::defaults(),
             _ => vec![],
         };
     }
@@ -193,6 +199,10 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             .map(|x| x.details())
             .collect(),
         "Prayer" => Prayer::search(query)
+            .iter()
+            .map(|x| x.details())
+            .collect(),
+        "Runecraft" => Runecraft::search(query)
             .iter()
             .map(|x| x.details())
             .collect(),
