@@ -13,6 +13,7 @@ use crate::stats::magic::{Magic, MagicDetails};
 use crate::stats::mining::{Mining, MiningDetails, MiningMultipliers};
 use crate::stats::prayer::{Prayer, PrayerDetails, PrayerMultipliers};
 use crate::stats::runecraft::{Runecraft, RunecraftDetails, RunecraftMultipliers};
+use crate::stats::smithing::{Smithing, SmithingDetails, SmithingMultipliers};
 
 pub trait Skill {
     fn all() -> Vec<Self>
@@ -42,6 +43,7 @@ pub enum Details {
     Mining(MiningDetails),
     Prayer(PrayerDetails),
     Runecraft(RunecraftDetails),
+    Smithing(SmithingDetails),
 }
 
 pub trait IntoString {
@@ -65,6 +67,7 @@ impl Details {
             Details::Mining(mining) => mining.to_string(xp_difference),
             Details::Prayer(prayer) => prayer.to_string(xp_difference),
             Details::Runecraft(runecraft) => runecraft.to_string(xp_difference),
+            Details::Smithing(smithing) => smithing.to_string(xp_difference),
         }
     }
 
@@ -99,6 +102,7 @@ impl Details {
             Details::Mining(_) => "Mining",
             Details::Prayer(_) => "Prayer",
             Details::Runecraft(_) => "Runecraft",
+            Details::Smithing(_) => "Smithing",
         }
         .to_owned()
     }
@@ -132,6 +136,7 @@ pub enum Multipliers {
     Mining(MiningMultipliers),
     Prayer(PrayerMultipliers),
     Runecraft(RunecraftMultipliers),
+    Smithing(SmithingMultipliers),
 }
 
 pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
@@ -151,6 +156,7 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             "Mining" => Mining::defaults(),
             "Prayer" => Prayer::defaults(),
             "Runecraft" => Runecraft::defaults(),
+            "Smithing" => Smithing::defaults(),
             _ => vec![],
         };
     }
@@ -203,6 +209,10 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             .map(|x| x.details())
             .collect(),
         "Runecraft" => Runecraft::search(query)
+            .iter()
+            .map(|x| x.details())
+            .collect(),
+        "Smithing" => Smithing::search(query)
             .iter()
             .map(|x| x.details())
             .collect(),

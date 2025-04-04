@@ -1,8 +1,8 @@
+use crate::stats::runecraft::RunecraftMultipliers::DaeyaltEssence;
 use crate::stats::skill::{Detail, Details, IntoString, Multipliers, Skill};
 use common::{c1, c2, p};
 use regex::Regex;
 use std::ops::Add;
-use crate::stats::runecraft::RunecraftMultipliers::DaeyaltEssence;
 
 pub enum Runecraft {
     AirRune,
@@ -103,9 +103,9 @@ impl Skill for Runecraft {
             Self::ZeahBloodRune,
             Self::SoulRune,
         ]
-            .iter()
-            .map(|x| x.details())
-            .collect()
+        .iter()
+        .map(|x| x.details())
+        .collect()
     }
 
     fn details(&self) -> Details {
@@ -154,7 +154,11 @@ impl Skill for Runecraft {
             name: details.0.to_owned(),
             level: details.1,
             xp: details.2,
-            multipliers: if !details.3 { vec![Multipliers::Runecraft(DaeyaltEssence)] } else { vec![] },
+            multipliers: if !details.3 {
+                vec![Multipliers::Runecraft(DaeyaltEssence)]
+            } else {
+                vec![]
+            },
         })
     }
 
@@ -243,7 +247,7 @@ impl IntoString for RunecraftDetails {
                 format!("{}", (xp_difference / self.xp as f64).ceil()).as_str(),
                 "d"
             )
-                .as_str())
+            .as_str())
         )];
 
         self.multipliers.iter().for_each(|x| {
@@ -259,9 +263,9 @@ impl IntoString for RunecraftDetails {
                     format!("{}", (xp_difference / (self.xp as f64 * d.value)).ceil()).as_str(),
                     "d"
                 )
-                    .as_str())
+                .as_str())
             )
-                .as_str()));
+            .as_str()));
         });
 
         vec.join(" ")
