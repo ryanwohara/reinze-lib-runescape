@@ -15,6 +15,7 @@ use crate::stats::prayer::{Prayer, PrayerDetails, PrayerMultipliers};
 use crate::stats::runecraft::{Runecraft, RunecraftDetails, RunecraftMultipliers};
 use crate::stats::smithing::{Smithing, SmithingDetails, SmithingMultipliers};
 use crate::stats::thieving::{Thieving, ThievingDetails};
+use crate::stats::woodcutting::{Woodcutting, WoodcuttingDetails, WoodcuttingMultipliers};
 
 pub trait Skill {
     fn all() -> Vec<Self>
@@ -46,6 +47,7 @@ pub enum Details {
     Runecraft(RunecraftDetails),
     Smithing(SmithingDetails),
     Thieving(ThievingDetails),
+    Woodcutting(WoodcuttingDetails),
 }
 
 pub trait IntoString {
@@ -71,6 +73,7 @@ impl Details {
             Details::Runecraft(runecraft) => runecraft.to_string(xp_difference),
             Details::Smithing(smithing) => smithing.to_string(xp_difference),
             Details::Thieving(thieving) => thieving.to_string(xp_difference),
+            Details::Woodcutting(woodcutting) => woodcutting.to_string(xp_difference),
         }
     }
 
@@ -107,6 +110,7 @@ impl Details {
             Details::Runecraft(_) => "Runecraft",
             Details::Smithing(_) => "Smithing",
             Details::Thieving(_) => "Thieving",
+            Details::Woodcutting(_) => "Woodcutting",
         }
         .to_owned()
     }
@@ -141,6 +145,7 @@ pub enum Multipliers {
     Prayer(PrayerMultipliers),
     Runecraft(RunecraftMultipliers),
     Smithing(SmithingMultipliers),
+    Woodcutting(WoodcuttingMultipliers),
 }
 
 pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
@@ -162,6 +167,7 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             "Runecraft" => Runecraft::defaults(),
             "Smithing" => Smithing::defaults(),
             "Thieving" => Thieving::defaults(),
+            "Woodcutting" => Woodcutting::defaults(),
             _ => vec![],
         };
     }
@@ -204,6 +210,10 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             .map(|x| x.details())
             .collect(),
         "Thieving" => Thieving::search(query)
+            .iter()
+            .map(|x| x.details())
+            .collect(),
+        "Woodcutting" => Woodcutting::search(query)
             .iter()
             .map(|x| x.details())
             .collect(),
