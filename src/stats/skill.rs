@@ -141,6 +141,7 @@ pub enum Multipliers {
     Farming(FarmingMultipliers),
     Firemaking(FiremakingMultipliers),
     Fishing(FishingMultipliers),
+    #[allow(dead_code)]
     Mining(MiningMultipliers),
     Prayer(PrayerMultipliers),
     Runecraft(RunecraftMultipliers),
