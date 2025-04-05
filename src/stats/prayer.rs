@@ -332,7 +332,9 @@ impl Skill for Prayer {
                     Multipliers::Prayer(PrayerMultipliers::BothBlessedSunfireWineAndZealotRobes),
                 ],
                 PrayerMethod::Bones => vec![
-                    Multipliers::Prayer(PrayerMultipliers::EitherSinisterOfferingOrSacredBoneBurner),
+                    Multipliers::Prayer(
+                        PrayerMultipliers::EitherSinisterOfferingOrSacredBoneBurner,
+                    ),
                     Multipliers::Prayer(PrayerMultipliers::LitGildedAltar),
                     Multipliers::Prayer(PrayerMultipliers::BothLitGildedAltarAndZealotRobes),
                     Multipliers::Prayer(PrayerMultipliers::Ectofuntus),
@@ -341,9 +343,9 @@ impl Skill for Prayer {
                     Multipliers::Prayer(PrayerMultipliers::ZealotRobes),
                 ],
                 PrayerMethod::Ashes => {
-                    vec![
-                        Multipliers::Prayer(PrayerMultipliers::EitherDemonicOfferingOrSacredBoneBurner),
-                    ]
+                    vec![Multipliers::Prayer(
+                        PrayerMultipliers::EitherDemonicOfferingOrSacredBoneBurner,
+                    )]
                 }
                 PrayerMethod::EnsouledHead => {
                     vec![Multipliers::Prayer(PrayerMultipliers::ZealotRobes)]
@@ -351,9 +353,9 @@ impl Skill for Prayer {
                 PrayerMethod::Fish => {
                     vec![Multipliers::Prayer(PrayerMultipliers::ZealotRobes)]
                 }
-                PrayerMethod::Shade => vec![
-                    Multipliers::Prayer(PrayerMultipliers::MorytaniaDiary3Shades),
-                ],
+                PrayerMethod::Shade => vec![Multipliers::Prayer(
+                    PrayerMultipliers::MorytaniaDiary3Shades,
+                )],
             },
         })
     }

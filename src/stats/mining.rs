@@ -1,8 +1,8 @@
+use crate::stats::mining::MiningMultipliers::ProspectorsKit;
 use crate::stats::skill::{Detail, Details, IntoString, Multipliers, Skill};
 use common::{c1, c2, p};
 use regex::Regex;
 use std::ops::Add;
-use crate::stats::mining::MiningMultipliers::ProspectorsKit;
 
 pub enum Mining {
     Clay,
@@ -71,10 +71,19 @@ impl Skill for Mining {
     }
 
     fn defaults() -> Vec<Details> {
-        vec![Self::IronOre, Self::Coal, Self::GemRocks, Self::GoldOre, Self::MithrilOre, Self::AdamantiteOre, Self::RuniteOre, Self::Amethyst]
-            .iter()
-            .map(|x| x.details())
-            .collect()
+        vec![
+            Self::IronOre,
+            Self::Coal,
+            Self::GemRocks,
+            Self::GoldOre,
+            Self::MithrilOre,
+            Self::AdamantiteOre,
+            Self::RuniteOre,
+            Self::Amethyst,
+        ]
+        .iter()
+        .map(|x| x.details())
+        .collect()
     }
 
     fn details(&self) -> Details {
@@ -195,7 +204,7 @@ impl IntoString for MiningDetails {
                 format!("{}", (xp_difference / self.xp as f64).ceil()).as_str(),
                 "d"
             )
-                .as_str())
+            .as_str())
         )];
 
         let a = ProspectorsKit;
@@ -207,9 +216,9 @@ impl IntoString for MiningDetails {
                 format!("{}", (xp_difference / (self.xp as f64 * d.value)).ceil()).as_str(),
                 "d"
             )
-                .as_str())
+            .as_str())
         )
-            .as_str()));
+        .as_str()));
 
         vec.join(" ")
     }
