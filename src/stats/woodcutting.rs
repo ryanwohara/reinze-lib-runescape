@@ -60,21 +60,21 @@ impl Skill for Woodcutting {
 
     fn details(&self) -> Details {
         let details = match self {
-            Self::AcheyTreeLogs => ("Achey_Tree_Logs", 1, 25.0),
+            Self::AcheyTreeLogs => ("Achey Tree Logs", 1, 25.0),
             Self::Logs => ("Logs", 1, 25.0),
-            Self::OakLogs => ("Oak_Logs", 15, 37.5),
-            Self::WillowLogs => ("Willow_Logs", 30, 67.5),
-            Self::TeakLogs => ("Teak_Logs", 35, 85.0),
-            Self::JuniperLogs => ("Juniper_Logs", 42, 35.0),
+            Self::OakLogs => ("Oak Logs", 15, 37.5),
+            Self::WillowLogs => ("Willow Logs", 30, 67.5),
+            Self::TeakLogs => ("Teak Logs", 35, 85.0),
+            Self::JuniperLogs => ("Juniper Logs", 42, 35.0),
             Self::Bark => ("Bark", 45, 82.5),
-            Self::MapleLogs => ("Maple_Logs", 45, 100.0),
-            Self::MahoganyLogs => ("Mahogany_Logs", 50, 125.0),
-            Self::ArcticPineLogs => ("Arctic_Pine_Logs", 54, 40.0),
-            Self::YewLogs => ("Yew_Logs", 60, 175.0),
-            Self::BlisterwoodLogs => ("Blisterwood_Logs", 62, 76.0),
+            Self::MapleLogs => ("Maple Logs", 45, 100.0),
+            Self::MahoganyLogs => ("Mahogany Logs", 50, 125.0),
+            Self::ArcticPineLogs => ("Arctic Pine Logs", 54, 40.0),
+            Self::YewLogs => ("Yew Logs", 60, 175.0),
+            Self::BlisterwoodLogs => ("Blisterwood Logs", 62, 76.0),
             Self::Sulliusceps => ("Sulliusceps", 65, 127.0),
-            Self::MagicLogs => ("Magic_Logs", 75, 250.0),
-            Self::RedwoodLogs => ("Redwood_Logs", 90, 380.0),
+            Self::MagicLogs => ("Magic Logs", 75, 250.0),
+            Self::RedwoodLogs => ("Redwood Logs", 90, 380.0),
         };
 
         Details::Woodcutting(WoodcuttingDetails {
