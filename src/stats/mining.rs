@@ -181,7 +181,7 @@ impl Detail for Mining {
 
     fn xp(&self) -> f64 {
         if let Details::Mining(obj) = self.details() {
-            return obj.xp as f64;
+            return obj.xp;
         }
 
         0.0
@@ -201,19 +201,19 @@ impl IntoString for MiningDetails {
             "{}: {}",
             c1(self.name.as_str()),
             c2(common::commas_from_string(
-                format!("{}", (xp_difference / self.xp as f64).ceil()).as_str(),
+                format!("{}", (xp_difference / self.xp).ceil()).as_str(),
                 "d"
             )
             .as_str())
         )];
 
-        let a = ProspectorsKit;
-        let d = a.details();
+        let details = ProspectorsKit.details();
+
         vec.push(p(format!(
             "{} {}",
-            c1(format!("{}:", d.name.as_str()).as_str()),
+            c1(format!("{}:", details.name.as_str()).as_str()),
             c2(common::commas_from_string(
-                format!("{}", (xp_difference / (self.xp as f64 * d.value)).ceil()).as_str(),
+                format!("{}", (xp_difference / (self.xp * details.value)).ceil()).as_str(),
                 "d"
             )
             .as_str())

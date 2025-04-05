@@ -30,6 +30,7 @@ pub trait Skill {
 }
 
 #[derive(Clone, PartialOrd, PartialEq)]
+#[allow(dead_code)]
 pub enum Details {
     Agility(AgilityDetails),
     Construction(ConstructionDetails),
