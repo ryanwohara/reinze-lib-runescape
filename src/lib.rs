@@ -188,7 +188,7 @@ slay(er)?
 farm(ing)?
 r(une)?c(raft)?
 hunt(er)?
-con(struction)?$
+con(struction)?\d*$
 wiki"
             .split("\n")
             .map(|s| s.to_string())
