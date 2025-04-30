@@ -1,5 +1,4 @@
 mod agility;
-mod skill;
 mod construction;
 mod cooking;
 mod crafting;
@@ -13,15 +12,16 @@ mod magic;
 mod mining;
 mod prayer;
 mod runecraft;
+mod skill;
 mod smithing;
 mod thieving;
 mod woodcutting;
 
 use super::common::{
-    get_cmb, get_rsn, get_stats, level_to_xp, process_account_type_flags, skill,
-    skills, xp_to_level, Combat,
+    get_cmb, get_rsn, get_stats, level_to_xp, process_account_type_flags, skill, skills,
+    xp_to_level, Combat,
 };
-use crate::stats::skill::{details_by_skill_id};
+use crate::stats::skill::details_by_skill_id;
 use common::{c1, c2, commas, commas_from_string, convert_split_to_string, l, p, unranked};
 use mysql::from_row;
 use regex::Regex;
@@ -42,7 +42,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
 
     let (split, mut prefix, base_url) = process_account_type_flags(query, split);
 
-    let (split, (flag_sort, flag_exp, flag_rank)) = process_ser_flags(query, split);
+    let (split, (flag_sort, flag_exp, flag_rank, flag_order)) = process_sero_flags(query, split);
 
     let (split, (start, goal)) = process_start_and_goal(query, split);
 
@@ -61,6 +61,8 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
         prefix = vec![l(&skill), prefix, p("Rank")].join(" ");
     } else if flag_sort {
         prefix = vec![l(&skill), prefix, p("XP to Level")].join(" ");
+    } else if flag_order {
+        prefix = vec![l(&skill), prefix, p("Low->High")].join(" ");
     } else if combat_command {
         prefix = l("Combat");
     } else {
@@ -300,6 +302,9 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                         if level < 99 {
                             sortable_data.push(((rank, level, xp, xp_difference), index));
                         }
+                    } else if flag_order {
+                        // if -o was passed
+                        sortable_data.push(((rank, level, xp, xp_difference), index));
                     } else if flag_exp {
                         // if -e was passed
                         skill_data.push(format!(
@@ -351,6 +356,22 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                 "{} {}",
                 c1(&format!("{}:", &skills[index as usize])),
                 c2(&commas(xp_difference as f64, "d")),
+            ));
+        }
+    } else if flag_order {
+        // sort the skills by xp_difference
+        sortable_data.sort_by(|a, b| a.0 .2.cmp(&b.0 .2));
+
+        skill_data = Vec::new();
+
+        for data in sortable_data {
+            let level = data.0 .1;
+            let index = data.1;
+
+            skill_data.push(format!(
+                "{} {}",
+                c1(&format!("{}:", &skills[index as usize])),
+                c2(&level.to_string()),
             ));
         }
     } else if skill_id == 0 && !skill_data.is_empty() {
@@ -589,9 +610,12 @@ fn process_start_and_goal(query: &str, mut split: Vec<String>) -> (Vec<String>, 
     (split, (start, goal))
 }
 
-fn process_ser_flags(query: &str, mut split: Vec<String>) -> (Vec<String>, (bool, bool, bool)) {
-    let re_ser = Regex::new(r"(?:^|\b|\s)-([ser])(?:\s|\b|$)").unwrap();
-    let nil = (false, false, false);
+fn process_sero_flags(
+    query: &str,
+    mut split: Vec<String>,
+) -> (Vec<String>, (bool, bool, bool, bool)) {
+    let re_ser = Regex::new(r"(?:^|\b|\s)-([sero])(?:\s|\b|$)").unwrap();
+    let nil = (false, false, false, false);
 
     let (output, flag) = re_ser
         .captures(query)
@@ -599,9 +623,10 @@ fn process_ser_flags(query: &str, mut split: Vec<String>) -> (Vec<String>, (bool
             let flag = capture.get(1).map_or("", |flag| flag.as_str());
             (
                 match flag {
-                    "s" => (true, false, false),
-                    "e" => (false, true, false),
-                    "r" => (false, false, true),
+                    "s" => (true, false, false, false),
+                    "e" => (false, true, false, false),
+                    "r" => (false, false, true, false),
+                    "o" => (false, false, false, true),
                     _ => nil,
                 },
                 flag,
