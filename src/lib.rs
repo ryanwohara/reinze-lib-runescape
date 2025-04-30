@@ -78,7 +78,7 @@ pub extern "C" fn exported(
     match match command {
         "bh" | "bounty" | "bhunter" | "bountyhunter" => bh::lookup(query, author, rsn_n),
         "boost" | "boosts" => boost::boost(query),
-        "boss" | "bosses" => bosses::lookup(query, author, rsn_n),
+        "boss" | "bosses" | "kc" => bosses::lookup(query, author, rsn_n),
         "clue" | "clues" => clues::lookup(query, author, rsn_n),
         "colo" | "colosseum" => colosseum::lookup(query, author, rsn_n),
         "coll" | "collection" | "collectionlog" => collectionlog::lookup(query, author, rsn_n),
@@ -113,15 +113,14 @@ pub extern "C" fn exported(
         "wiki" => wiki::wiki(query),
         "help" => Ok(r"bh[N]
 boost
-boss[N]
 clues[N]
 colosseum[N]
 collectionlog[N]
 combat[N]
 congrats
 ge
+kc[N]
 level
-xp
 leagues[N]
 lms[N]
 noburn
@@ -134,13 +133,15 @@ rifts[N]
 rsn[N]
 sw[N]
 stats[N]
-wiki"
+wiki
+xp"
             .split("\n")
             .map(|s| s.to_string())
             .collect::<Vec<String>>()),
         "" => Ok(r"b(ounty)?h(unter)?\d*
 boost
 boss\d*
+kc\d*
 clues?\d*
 co?mb(at)?\d*
 colo(sseum)?\d*
