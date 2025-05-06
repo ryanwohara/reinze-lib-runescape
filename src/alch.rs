@@ -8,7 +8,7 @@ pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
         Err(_) => return Err(()),
     };
 
-    let mut output = l("Price");
+    let mut output = l("Alch");
     let mut found_items: Vec<String> = vec![];
 
     for item in item_db.iter() {
