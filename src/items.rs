@@ -25,6 +25,7 @@ pub struct Mapping {
     pub highalch: Option<u64>,
     pub limit: Option<u64>,
     pub value: u64,
+    pub total: Option<u64>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]

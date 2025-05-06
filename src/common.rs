@@ -1,6 +1,7 @@
 use crate::items::Mapping;
 use common::{database, *};
 use itertools::Itertools;
+use meval::eval_str;
 use mysql::{prelude::*, *};
 use regex::Regex;
 use std::fs::read_to_string;
@@ -340,7 +341,8 @@ pub fn parse_item_db(overall_query: &str) -> Result<Vec<Mapping>, ()> {
             continue;
         }
 
-        let regex_string = format!(r"(?i){}", replace_item_abbreviations(query));
+        let (query, count) = parse_query(query);
+        let regex_string = format!(r"(?i){}", replace_item_abbreviations(&query));
         let re = match Regex::new(&regex_string) {
             Ok(re) => re,
             Err(e) => {
@@ -352,7 +354,10 @@ pub fn parse_item_db(overall_query: &str) -> Result<Vec<Mapping>, ()> {
         for item in item_db.iter() {
             let matched = re.captures(&item.name);
             if matched.is_some() {
-                found_items.push(item.to_owned());
+                let mut item_with_total = item.to_owned();
+                item_with_total.total = Some(count);
+
+                found_items.push(item_with_total);
             }
 
             if found_items.len() >= 6 {
@@ -361,7 +366,73 @@ pub fn parse_item_db(overall_query: &str) -> Result<Vec<Mapping>, ()> {
         }
     }
 
-    Ok(found_items.iter().unique_by(|i| i.id).map(|i| i.to_owned()).collect())
+    Ok(found_items
+        .iter()
+        .unique_by(|i| i.id)
+        .map(|i| i.to_owned())
+        .collect())
+}
+
+pub fn eval_query<T>(q: T) -> std::result::Result<f64, ()>
+where
+    T: ToString,
+{
+    let query = q.to_string();
+
+    let re_kmb = Regex::new(r"(?P<num>[\d.]+)(?P<kmb>[kmb])").unwrap();
+    let processed = re_kmb.replace_all(&query, replace_all).to_string();
+
+    eval_str(&processed).map_err(|e| {
+        println!("Error: {}", e);
+        ()
+    })
+}
+
+pub fn replace_all(caps: &regex::Captures) -> String {
+    let (num, kmb) = (
+        caps.name("num").unwrap().as_str(),
+        caps.name("kmb").unwrap().as_str(),
+    );
+    let mut num = num.parse::<f64>().unwrap_or_default();
+
+    if let Some(factor) = match kmb {
+        "k" => Some(1_000.0),
+        "m" => Some(1_000_000.0),
+        "b" => Some(1_000_000_000.0),
+        _ => None,
+    } {
+        num *= factor;
+    }
+    num.to_string()
+}
+
+pub fn parse_query(query: &str) -> (String, u64) {
+    let err = (query.to_string(), 0);
+
+    let re = match Regex::new(r"^(\d+[kmb]?)\s*(.+)$") {
+        Ok(x) => x,
+        Err(_) => return err,
+    };
+
+    let matched = match re.captures(query) {
+        Some(captures) => captures,
+        None => return err,
+    };
+
+    let count = match matched.get(1) {
+        Some(c) => match eval_query(c.as_str()) {
+            Ok(r) => r as u64,
+            Err(_) => 0,
+        },
+        None => return err,
+    };
+
+    let name = match matched.get(2) {
+        Some(n) => n.as_str().to_string(),
+        None => return err,
+    };
+
+    (name, count)
 }
 
 pub fn replace_item_abbreviations(query: &str) -> String {

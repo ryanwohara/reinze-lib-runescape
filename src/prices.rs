@@ -42,15 +42,29 @@ pub fn prices(query: &str) -> Result<Vec<String>, ()> {
             }
         };
 
-        found_items.push(format!(
-            "{}: {}{}",
-            c1(&item.name),
-            match item_values.high {
-                Some(value) => c2(&commas(value as f64, "d")),
-                None => c2("0"),
-            },
-            c1("gp")
-        ));
+        if item.total == Some(0) || item.total == Some(1) {
+            found_items.push(format!(
+                "{}: {}{}",
+                c1(&item.name),
+                match item_values.high {
+                    Some(value) => c2(&commas(value as f64, "d")),
+                    None => c2("0"),
+                },
+                c1("gp")
+            ));
+        } else {
+            let total = item.total.unwrap_or_else(|| 1);
+
+            found_items.push(format!(
+                "{}: {}{}",
+                c1(&format!("{}x {}", commas(total as f64, "d"), item.name)),
+                match item_values.high {
+                    Some(value) => c2(&commas(value as f64 * total as f64, "d")),
+                    None => c2("0"),
+                },
+                c1("gp")
+            ));
+        }
 
         if found_items.len() >= 10 {
             break;

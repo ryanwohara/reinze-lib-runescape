@@ -1,6 +1,6 @@
 use super::items::{Ge, GeItemPrice, StrOrNum};
-use crate::common::parse_item_db;
-use common::{c1, c2, c3, c4, c5, l, not_found, p};
+use crate::common::{eval_query, parse_item_db};
+use common::{c1, c2, c3, c4, c5, commas, l, not_found, p};
 use serde_json;
 
 // Scan lib/item_db.json for up to 10 items that match the query
@@ -49,13 +49,30 @@ pub fn ge(query: &str) -> Result<Vec<String>, ()> {
 
         let ge_json = &json.item;
 
-        found_items.push(format!(
-            "{}: {}{} {}",
-            c1(&item.name),
-            c2(&str_from_enum(ge_json.current.price)),
-            c1("gp"),
-            price_change(&ge_json.today)
-        ));
+        let count = item.total.unwrap_or_else(|| 0);
+
+        if count == 0 {
+            found_items.push(format!(
+                "{}: {}{} {}",
+                c1(&item.name),
+                c2(&str_from_enum(ge_json.current.price)),
+                c1("gp"),
+                price_change(&ge_json.today, count)
+            ));
+        } else {
+            let total = match eval_query(str_from_enum(ge_json.current.price).replace(" ", "")) {
+                Ok(t) => t * count as f64,
+                Err(_) => 0.0,
+            };
+
+            found_items.push(format!(
+                "{}: {}{} {}",
+                c1(&format!("{}x {}", commas(count as f64, "d"), item.name)),
+                c2(&commas(total, "d")),
+                c1("gp"),
+                price_change(&ge_json.today, count)
+            ));
+        }
     }
 
     output = format!("{} {}", output, not_found(found_items));
@@ -65,19 +82,24 @@ pub fn ge(query: &str) -> Result<Vec<String>, ()> {
     Ok(output_vec)
 }
 
-fn price_change(today: &GeItemPrice) -> String {
+fn price_change(today: &GeItemPrice, count: u64) -> String {
     let mut output = String::new();
+    let str_price = str_from_enum(today.price).replace(" ", "");
+
+    let price = match count {
+        0..2 => str_price,
+        _ => match eval_query(str_price.clone()) {
+            Ok(s) => commas(s * count as f64, "d"),
+            Err(_) => str_price,
+        },
+    };
 
     if today.trend == "neutral" {
-        output = format!("{}{}", c5(&str_from_enum(today.price)), c5("▬"));
+        output = format!("{}{}", c5(&price), c5("▬"));
     } else if today.trend == "positive" {
-        output = format!("{}{}", c4(&str_from_enum(today.price)), c4("▲"));
+        output = format!("{}{}", c4(&price), c4("▲"));
     } else if today.trend == "negative" {
-        output = format!(
-            "{}{}",
-            c3(&str_from_enum(today.price).replace(" ", "")),
-            c3("▼")
-        );
+        output = format!("{}{}", c3(&price), c3("▼"));
     }
 
     p(&output)

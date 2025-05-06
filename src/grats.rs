@@ -1,6 +1,5 @@
 extern crate common;
-use crate::common::skill as get_skill;
-use meval::eval_str;
+use crate::common::{eval_query, skill as get_skill};
 use regex::Regex;
 
 pub fn get(query: &str, author: &str) -> Result<Vec<String>, ()> {
@@ -138,34 +137,6 @@ pub fn get(query: &str, author: &str) -> Result<Vec<String>, ()> {
     }
 
     Ok(vec![output])
-}
-
-fn eval_query(query: String) -> Result<f64, ()> {
-    let re_kmb = Regex::new(r"(?P<num>[\d.]+)(?P<kmb>[kmb])").unwrap();
-    let processed = re_kmb.replace_all(&query, replace_all).to_string();
-
-    eval_str(&processed).map_err(|e| {
-        println!("Error: {}", e);
-        ()
-    })
-}
-
-fn replace_all(caps: &regex::Captures) -> String {
-    let (num, kmb) = (
-        caps.name("num").unwrap().as_str(),
-        caps.name("kmb").unwrap().as_str(),
-    );
-    let mut num = num.parse::<f64>().unwrap_or_default();
-
-    if let Some(factor) = match kmb {
-        "k" => Some(1_000.0),
-        "m" => Some(1_000_000.0),
-        "b" => Some(1_000_000_000.0),
-        _ => None,
-    } {
-        num *= factor;
-    }
-    num.to_string()
 }
 
 fn rs3_skill(s: &str) -> String {

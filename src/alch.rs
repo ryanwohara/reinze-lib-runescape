@@ -12,19 +12,41 @@ pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
     let mut found_items: Vec<String> = vec![];
 
     for item in item_db.iter() {
-        found_items.push(format!(
-            "{}: {}{} {}",
-            c1(&item.name),
-            match item.highalch {
-                Some(value) => c2(&commas(value as f64, "d")),
-                None => c2("0"),
-            },
-            c1("gp"),
-            match item.lowalch {
-                Some(value) => p(&format!("{}{}", commas(value as f64, "d"), c1("gp"))),
-                None => p(&format!("0{}", c1("gp"))),
-            }
-        ));
+        let total = item.total.unwrap_or_else(|| 0);
+
+        if total < 2 {
+            found_items.push(format!(
+                "{}: {}{} {}",
+                c1(&item.name),
+                match item.highalch {
+                    Some(value) => c2(&commas(value as f64, "d")),
+                    None => c2("0"),
+                },
+                c1("gp"),
+                match item.lowalch {
+                    Some(value) => p(&format!("{}{}", commas(value as f64, "d"), c1("gp"))),
+                    None => p(&format!("0{}", c1("gp"))),
+                }
+            ));
+        } else {
+            found_items.push(format!(
+                "{}: {}{} {}",
+                c1(&item.name),
+                match item.highalch {
+                    Some(value) => c2(&commas((total * value) as f64, "d")),
+                    None => c2("0"),
+                },
+                c1("gp"),
+                match item.lowalch {
+                    Some(value) => p(&format!(
+                        "{}{}",
+                        commas((total * value) as f64, "d"),
+                        c1("gp")
+                    )),
+                    None => p(&format!("0{}", c1("gp"))),
+                }
+            ));
+        }
 
         if found_items.len() >= 10 {
             break;
