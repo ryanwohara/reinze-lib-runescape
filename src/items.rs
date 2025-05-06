@@ -23,8 +23,8 @@ pub struct Mapping {
     pub members: bool,
     pub lowalch: Option<u64>,
     pub highalch: Option<u64>,
-    pub value: u64,
     pub limit: Option<u64>,
+    pub value: u64,
 }
 
 #[derive(Deserialize, Serialize, Debug)]

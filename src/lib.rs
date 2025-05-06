@@ -26,6 +26,7 @@ mod soulwars;
 mod stats;
 mod wiki;
 mod xp;
+mod alch;
 
 use regex::Regex;
 use std::ffi::{CStr, CString};
@@ -76,6 +77,7 @@ pub extern "C" fn exported(
     }
 
     match match command {
+        "alch" | "alchemy" => alch::lookup(query),
         "bh" | "bounty" | "bhunter" | "bountyhunter" => bh::lookup(query, author, rsn_n),
         "boost" | "boosts" => boost::boost(query),
         "boss" | "bosses" | "kc" => bosses::lookup(query, author, rsn_n),
@@ -111,7 +113,8 @@ pub extern "C" fn exported(
             soulwars::lookup(query, author, rsn_n)
         }
         "wiki" => wiki::wiki(query),
-        "help" => Ok(r"bh[N]
+        "help" => Ok(r"alchemy
+bh[N]
 boost
 clues[N]
 colosseum[N]
@@ -138,7 +141,8 @@ xp"
             .split("\n")
             .map(|s| s.to_string())
             .collect::<Vec<String>>()),
-        "" => Ok(r"b(ounty)?h(unter)?\d*
+        "" => Ok(r"alch(emy)?$
+b(ounty)?h(unter)?\d*
 boost
 boss\d*
 kc\d*
