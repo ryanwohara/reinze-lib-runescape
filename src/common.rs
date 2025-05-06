@@ -33,7 +33,7 @@ pub fn skill(s: &str) -> String {
         "construction" | "con" => "Construction",
         _ => "",
     }
-    .to_string()
+        .to_string()
 }
 
 // Returns a vector of all skills
@@ -64,9 +64,9 @@ pub fn skills() -> Vec<String> {
         "Hunter",
         "Construction",
     ]
-    .iter()
-    .map(|x| x.to_string())
-    .collect()
+        .iter()
+        .map(|x| x.to_string())
+        .collect()
 }
 
 pub fn skill_id<T>(skill: T) -> u32
@@ -322,7 +322,7 @@ pub fn get_item_db() -> Result<Vec<Mapping>, ()> {
     }
 }
 
-pub fn parse_item_db(query: &str) -> Result<Vec<Mapping>, ()> {
+pub fn parse_item_db(overall_query: &str) -> Result<Vec<Mapping>, ()> {
     let mut found_items: Vec<Mapping> = vec![];
 
     let item_db = match get_item_db() {
@@ -330,27 +330,29 @@ pub fn parse_item_db(query: &str) -> Result<Vec<Mapping>, ()> {
         Err(_) => return Err(()),
     };
 
-    let query = replace_item_abbreviations(query);
+    let str_replaced_query = replace_item_abbreviations(overall_query);
 
-    let regex_string = format!(r"(?i){}", query);
-    let re = match Regex::new(&regex_string) {
-        Ok(re) => re,
-        Err(e) => {
-            println!("Error creating regex: {}", e);
-            return Err(());
+    for query in str_replaced_query.split(",").into_iter().map(|index| index.trim()) {
+        let regex_string = format!(r"(?i){}", query);
+        let re = match Regex::new(&regex_string) {
+            Ok(re) => re,
+            Err(e) => {
+                println!("Error creating regex: {}", e);
+                return Err(());
+            }
+        };
+
+        for item in item_db.iter() {
+            let matched = re.captures(&item.name);
+            if matched.is_some() {
+                found_items.push(item.to_owned());
+            }
+
+            if found_items.len() >= 6 {
+                break;
+            }
         }
     };
-
-    for item in item_db.iter() {
-        let matched = re.captures(&item.name);
-        if matched.is_some() {
-            found_items.push(item.to_owned());
-        }
-
-        if found_items.len() >= 6 {
-            break;
-        }
-    }
 
     Ok(found_items)
 }
@@ -488,9 +490,9 @@ mod tests {
                 "Hunter",
                 "Construction",
             ]
-            .iter()
-            .map(|x| x.to_string())
-            .collect::<Vec<String>>()
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<String>>()
         );
     }
 
