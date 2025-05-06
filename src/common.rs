@@ -1,5 +1,6 @@
 use crate::items::Mapping;
 use common::{database, *};
+use itertools::Itertools;
 use mysql::{prelude::*, *};
 use regex::Regex;
 use std::fs::read_to_string;
@@ -33,7 +34,7 @@ pub fn skill(s: &str) -> String {
         "construction" | "con" => "Construction",
         _ => "",
     }
-        .to_string()
+    .to_string()
 }
 
 // Returns a vector of all skills
@@ -64,9 +65,9 @@ pub fn skills() -> Vec<String> {
         "Hunter",
         "Construction",
     ]
-        .iter()
-        .map(|x| x.to_string())
-        .collect()
+    .iter()
+    .map(|x| x.to_string())
+    .collect()
 }
 
 pub fn skill_id<T>(skill: T) -> u32
@@ -330,10 +331,12 @@ pub fn parse_item_db(overall_query: &str) -> Result<Vec<Mapping>, ()> {
         Err(_) => return Err(()),
     };
 
-    let str_replaced_query = replace_item_abbreviations(overall_query);
-
-    for query in str_replaced_query.split(",").into_iter().map(|index| index.trim()) {
-        let regex_string = format!(r"(?i){}", query);
+    for query in overall_query
+        .split(",")
+        .into_iter()
+        .map(|index| index.trim())
+    {
+        let regex_string = format!(r"(?i){}", replace_item_abbreviations(query));
         let re = match Regex::new(&regex_string) {
             Ok(re) => re,
             Err(e) => {
@@ -352,9 +355,9 @@ pub fn parse_item_db(overall_query: &str) -> Result<Vec<Mapping>, ()> {
                 break;
             }
         }
-    };
+    }
 
-    Ok(found_items)
+    Ok(found_items.iter().unique_by(|i| i.id).map(|i| i.to_owned()).collect())
 }
 
 pub fn replace_item_abbreviations(query: &str) -> String {
@@ -490,9 +493,9 @@ mod tests {
                 "Hunter",
                 "Construction",
             ]
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<String>>()
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
         );
     }
 
