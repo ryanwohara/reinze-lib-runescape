@@ -336,6 +336,10 @@ pub fn parse_item_db(overall_query: &str) -> Result<Vec<Mapping>, ()> {
         .into_iter()
         .map(|index| index.trim())
     {
+        if query.len() == 0 {
+            continue;
+        }
+
         let regex_string = format!(r"(?i){}", replace_item_abbreviations(query));
         let re = match Regex::new(&regex_string) {
             Ok(re) => re,
