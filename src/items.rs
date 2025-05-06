@@ -16,10 +16,15 @@ use std::collections::HashMap;
   },
 */
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Mapping {
     pub id: u32,
     pub name: String,
+    pub members: bool,
+    pub lowalch: Option<u64>,
+    pub highalch: Option<u64>,
+    pub value: u64,
+    pub limit: Option<u64>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]

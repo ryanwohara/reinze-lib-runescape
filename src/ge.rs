@@ -14,19 +14,11 @@ pub fn ge(query: &str) -> Result<Vec<String>, ()> {
     let mut output = l("Grand Exchange");
     let mut found_items: Vec<String> = vec![];
 
-    for item_str in item_db.iter() {
-        let result = match serde_json::from_str::<Ge>(item_str) {
-            Ok(json) => json,
-            Err(e) => {
-                println!("Error deserializing item mapping in GE: {e}");
-                return Err(());
-            }
-        };
-
+    for item in item_db.iter() {
         // Hit the OSRS API with the item ID
         let url = format!(
             "http://services.runescape.com/m=itemdb_oldschool/api/catalogue/detail.json?item={}",
-            result.item.id
+            item.id
         );
 
         let rt = tokio::runtime::Runtime::new().unwrap();
@@ -59,7 +51,7 @@ pub fn ge(query: &str) -> Result<Vec<String>, ()> {
 
         found_items.push(format!(
             "{}: {}{} {}",
-            c1(&result.item.name),
+            c1(&item.name),
             c2(&str_from_enum(ge_json.current.price)),
             c1("gp"),
             price_change(&ge_json.today)

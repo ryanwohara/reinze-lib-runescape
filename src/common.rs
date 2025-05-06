@@ -322,8 +322,8 @@ pub fn get_item_db() -> Result<Vec<Mapping>, ()> {
     }
 }
 
-pub fn parse_item_db(query: &str) -> Result<Vec<String>, ()> {
-    let mut found_items: Vec<String> = vec![];
+pub fn parse_item_db(query: &str) -> Result<Vec<Mapping>, ()> {
+    let mut found_items: Vec<Mapping> = vec![];
 
     let item_db = match get_item_db() {
         Ok(item_db) => item_db,
@@ -344,31 +344,7 @@ pub fn parse_item_db(query: &str) -> Result<Vec<String>, ()> {
     for item in item_db.iter() {
         let matched = re.captures(&item.name);
         if matched.is_some() {
-            // Hit the OSRS API with &item.id
-            let url = format!(
-                "http://services.runescape.com/m=itemdb_oldschool/api/catalogue/detail.json?item={}",
-                &item.id
-            );
-
-            let rt = tokio::runtime::Runtime::new().unwrap();
-
-            let response = match rt.block_on(reqwest::get(&url)) {
-                Ok(response) => response,
-                Err(e) => {
-                    println!("Error getting response from OSRS API: {}", e);
-                    return Err(());
-                }
-            };
-
-            let j: String = match rt.block_on(response.text()) {
-                Ok(j) => j,
-                Err(e) => {
-                    println!("Error parsing response from OSRS API into JSON: {}", e);
-                    return Err(());
-                }
-            };
-
-            found_items.push(j);
+            found_items.push(item.to_owned());
         }
 
         if found_items.len() >= 6 {

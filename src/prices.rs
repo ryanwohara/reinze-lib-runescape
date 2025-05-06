@@ -33,16 +33,7 @@ pub fn prices(query: &str) -> Result<Vec<String>, ()> {
 
     let ge_data = ge_json.data;
 
-    for item_str in item_db.iter() {
-        let result = match serde_json::from_str::<Ge>(item_str) {
-            Ok(json) => json,
-            Err(e) => {
-                println!("Error deserializing item mapping in GE: {e}");
-                return Err(());
-            }
-        };
-        let item = result.item;
-
+    for item in item_db.iter() {
         let item_values = match ge_data.get(&item.id) {
             Some(item) => item,
             None => {
@@ -50,6 +41,7 @@ pub fn prices(query: &str) -> Result<Vec<String>, ()> {
                 continue;
             }
         };
+
         found_items.push(format!(
             "{}: {}{}",
             c1(&item.name),
