@@ -1,5 +1,6 @@
 extern crate core;
 
+mod alch;
 mod bh;
 mod boost;
 mod bosses;
@@ -13,6 +14,7 @@ mod items;
 mod leagues;
 mod level;
 mod lms;
+mod money;
 mod noburn;
 mod params;
 mod patch;
@@ -26,7 +28,6 @@ mod soulwars;
 mod stats;
 mod wiki;
 mod xp;
-mod alch;
 
 use regex::Regex;
 use std::ffi::{CStr, CString};
@@ -93,6 +94,7 @@ pub extern "C" fn exported(
         "lms" | "lmstanding" | "lmanstanding" | "lastmstanding" | "lastmanstanding" => {
             lms::lookup(query, author, rsn_n)
         }
+        "mp" | "money" | "moneyprinter" | "profit" | "printer" | "profitprinter" => money::printer(),
         "noburn" | "burn" => noburn::noburn(query),
         "param" | "params" => params::params(query),
         "patch" => patch::patch(query),
@@ -126,6 +128,7 @@ kc[N]
 level
 leagues[N]
 lms[N]
+money
 noburn
 params
 plant
@@ -138,9 +141,9 @@ sw[N]
 stats[N]
 wiki
 xp"
-            .split("\n")
-            .map(|s| s.to_string())
-            .collect::<Vec<String>>()),
+        .split("\n")
+        .map(|s| s.to_string())
+        .collect::<Vec<String>>()),
         "" => Ok(r"alch(emy)?$
 b(ounty)?h(unter)?\d*
 boost
@@ -156,6 +159,7 @@ l(ast)?m(an)?s(tanding)?\d*
 level
 leagues?\d*
 lvl
+mp|money|moneyprinter|profit|printer|profitprinter
 (no)?burn
 params?
 patch

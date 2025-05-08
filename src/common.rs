@@ -359,10 +359,6 @@ pub fn parse_item_db(overall_query: &str) -> Result<Vec<Mapping>, ()> {
 
                 found_items.push(item_with_total);
             }
-
-            if found_items.len() >= 10 {
-                break;
-            }
         }
     }
 
