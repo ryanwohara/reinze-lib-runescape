@@ -77,7 +77,7 @@ pub fn printer() -> Result<Vec<String>, ()> {
     sorted_items.retain(|_x| {
         iterator += 1;
 
-        iterator <= 5
+        iterator <= 15
     });
 
     output = format!("{} {}", output, not_found(sorted_items));
