@@ -341,7 +341,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
         }
     }
 
-    // if -s was passed
+    // if -s was passed (NOT -sk)
     if flag_sort {
         // sort the skills by xp_difference
         sortable_data.sort_by(|a, b| a.0 .3.cmp(&b.0 .3));
@@ -359,7 +359,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
             ));
         }
     } else if flag_order {
-        // sort the skills by xp_difference
+        // sort the skills by xp_difference if -o was passed
         sortable_data.sort_by(|a, b| a.0 .2.cmp(&b.0 .2));
 
         skill_data = Vec::new();
