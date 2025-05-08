@@ -94,7 +94,7 @@ pub extern "C" fn exported(
         "lms" | "lmstanding" | "lmanstanding" | "lastmstanding" | "lastmanstanding" => {
             lms::lookup(query, author, rsn_n)
         }
-        "mp" | "money" | "moneyprinter" | "profit" | "printer" | "profitprinter" => money::printer(),
+        "mp" | "money" | "moneyprinter" | "profit" | "printer" | "profitprinter" => money::printer(query),
         "noburn" | "burn" => noburn::noburn(query),
         "param" | "params" => params::params(query),
         "patch" => patch::patch(query),

@@ -5,8 +5,14 @@ use std::fs::read_to_string;
 
 const NATURE_RUNE_ID: u32 = 561;
 
-pub fn printer() -> Result<Vec<String>, ()> {
-    let item_db = match parse_item_db(".*") {
+pub fn printer(query: &str) -> Result<Vec<String>, ()> {
+    let input = if query.is_empty() {
+        r"^(rune|adamant|mithril)[\w\s]+$"
+    } else {
+        query
+    };
+
+    let item_db = match parse_item_db(input) {
         Ok(item_db) => item_db,
         Err(_) => return Err(()),
     };
