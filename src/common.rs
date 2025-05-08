@@ -122,8 +122,8 @@ pub struct Combat {
 impl Combat {
     pub fn new(level: f64, style: String) -> Combat {
         Combat {
-            level: level,
-            style: style,
+            level,
+            style,
         }
     }
 }
@@ -147,19 +147,19 @@ pub fn get_cmb(
     let level = f64::round((base + max_contribution) * 1000.0) / 1000.0;
 
     if melee > ranged && melee > magic {
-        return Combat::new(level, "Melee".to_string());
+        Combat::new(level, "Melee".to_string())
     } else if ranged > melee && ranged > magic {
-        return Combat::new(level, "Ranged".to_string());
+        Combat::new(level, "Ranged".to_string())
     } else {
         // if magic > melee && magic > ranged
-        return Combat::new(level, "Magic".to_string());
+        Combat::new(level, "Magic".to_string())
     }
 }
 
 pub fn get_rsn(
     author: &str,
     rsn_n: &str,
-) -> core::result::Result<Vec<mysql::Row>, mysql::error::Error> {
+) -> core::result::Result<Vec<Row>, Error> {
     let mut conn = match database::connect() {
         Ok(conn) => conn,
         Err(e) => {
@@ -319,7 +319,7 @@ pub fn get_item_db() -> Result<Vec<Mapping>, ()> {
         Ok(json) => Ok(json),
         Err(e) => {
             println!("Error parsing item_db.json into JSON: {}", e);
-            return Err(());
+            Err(())
         }
     }
 }
