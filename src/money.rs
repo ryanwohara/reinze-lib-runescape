@@ -1,11 +1,24 @@
-use crate::common::parse_item_db;
+use crate::common::{eval_query, parse_item_db};
 use crate::items::{Data, Mapping};
 use common::{c1, c2, commas, l, not_found, p};
+use regex::Regex;
 use std::fs::read_to_string;
 
 const NATURE_RUNE_ID: u32 = 561;
 
 pub fn printer(query: &str) -> Result<Vec<String>, ()> {
+    let limit_flag_re = Regex::new(r"-l ?(\d+[kmb])").unwrap();
+    let limit_flag = match limit_flag_re.captures(query) {
+        Some(captured) => captured.get(1).map_or(0i64, | limit | eval_query(limit.as_str()).unwrap_or(0f64) as i64),
+        None => 0i64,
+    };
+
+    let query = if limit_flag > 0 {
+        &limit_flag_re.replace(query, "").to_string()
+    } else {
+        query
+    };
+
     let input = if query.is_empty() {
         r"^(rune|adamant|mithril|magic|yew|arrow)[\w\s]+$"
     } else {
@@ -72,18 +85,26 @@ pub fn printer(query: &str) -> Result<Vec<String>, ()> {
         .map(|(item, profit)| {
             let limit = commas(item.limit.unwrap_or(0) as f64, "d");
 
-            format!(
-                "{}: {}{} {}",
-                c1(&item.name),
-                c2(&commas(profit as f64, "d")),
-                c1("gp"),
-                p(&format!("Limit: {}", limit))
-            )
+            if item.limit.unwrap_or(0) >= limit_flag as u64 {
+                format!(
+                    "{}: {}{} {}",
+                    c1(&item.name),
+                    c2(&commas(profit as f64, "d")),
+                    c1("gp"),
+                    p(&format!("L:{}", limit))
+                )
+            } else {
+                "".to_string()
+            }
         })
         .collect();
 
     let mut iterator = 0;
-    sorted_items.retain(|_x| {
+    sorted_items.retain(|x| {
+        if x.is_empty() {
+            return false
+        }
+
         iterator += 1;
 
         iterator <= 15
