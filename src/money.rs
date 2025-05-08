@@ -57,15 +57,11 @@ pub fn printer() -> Result<Vec<String>, ()> {
         if profit > 0 {
             found_items.push((item, profit));
         }
-
-        if found_items.len() >= 10 {
-            break;
-        }
     }
 
     found_items.sort_by(|(_item1, profit1), (_item2, profit2)| profit2.cmp(profit1));
 
-    let sorted_items = found_items
+    let mut sorted_items: Vec<String> = found_items
         .into_iter()
         .map(|(item, profit)| {
             format!(
@@ -76,6 +72,13 @@ pub fn printer() -> Result<Vec<String>, ()> {
             )
         })
         .collect();
+
+    let mut iterator = 0;
+    sorted_items.retain(|_x| {
+        iterator += 1;
+
+        iterator <= 5
+    });
 
     output = format!("{} {}", output, not_found(sorted_items));
 
