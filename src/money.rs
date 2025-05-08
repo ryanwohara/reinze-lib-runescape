@@ -1,13 +1,13 @@
 use crate::common::parse_item_db;
 use crate::items::{Data, Mapping};
-use common::{c1, c2, commas, l, not_found};
+use common::{c1, c2, commas, l, not_found, p};
 use std::fs::read_to_string;
 
 const NATURE_RUNE_ID: u32 = 561;
 
 pub fn printer(query: &str) -> Result<Vec<String>, ()> {
     let input = if query.is_empty() {
-        r"^(rune|adamant|mithril)[\w\s]+$"
+        r"^(rune|adamant|mithril|magic|yew|arrow)[\w\s]+$"
     } else {
         query
     };
@@ -18,7 +18,7 @@ pub fn printer(query: &str) -> Result<Vec<String>, ()> {
     };
 
     let ge_filename = "lib/ge.json";
-    let mut output = l("$Money$");
+    let mut output = l("$ Alch Profit $");
     let mut found_items: Vec<(&Mapping, i64)> = vec![];
 
     let ge_file_contents = match read_to_string(ge_filename) {
@@ -70,11 +70,14 @@ pub fn printer(query: &str) -> Result<Vec<String>, ()> {
     let mut sorted_items: Vec<String> = found_items
         .into_iter()
         .map(|(item, profit)| {
+            let limit = commas(item.limit.unwrap_or(0) as f64, "d");
+
             format!(
-                "{}: {}{}",
+                "{}: {}{} {}",
                 c1(&item.name),
                 c2(&commas(profit as f64, "d")),
-                c1("gp")
+                c1("gp"),
+                p(&format!("Limit: {}", limit))
             )
         })
         .collect();
