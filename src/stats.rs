@@ -27,6 +27,163 @@ use mysql::from_row;
 use regex::Regex;
 use std::collections::HashMap;
 
+struct StatsFlags {
+    filter_by: Option<Filter>,
+    filter_at: u32,
+    prefix: Option<Prefix>,
+    account_type: AccountType,
+    flag: MutuallyExclusiveFlag,
+    start: u32,
+    end: u32,
+    search: String,
+}
+
+enum Filter {
+    EqualTo,
+    FewerThan,
+    FewerThanOrEqualTo,
+    GreaterThan,
+    GreaterThanOrEqualTo,
+}
+
+impl Filter {
+    fn to_string(self) -> String {
+        match self {
+            Self::EqualTo => "=",
+            Self::FewerThan => "<",
+            Self::FewerThanOrEqualTo => "<=",
+            Self::GreaterThan => ">",
+            Self::GreaterThanOrEqualTo => ">=",
+        }
+        .to_string()
+    }
+}
+
+impl From<&str> for Filter {
+    fn from(value: &str) -> Self {
+        match value.to_string().as_str() {
+            "<" => Filter::FewerThan,
+            "<=" => Filter::FewerThanOrEqualTo,
+            ">" => Filter::GreaterThan,
+            ">=" => Filter::GreaterThanOrEqualTo,
+            "=" | _ => Filter::EqualTo,
+        }
+    }
+}
+
+enum Prefix {
+    Combat,
+    Level,
+    LowToHigh,
+    Rank,
+    Xp,
+    XpToLevel,
+}
+
+impl Prefix {
+    fn to_string(&self) -> String {
+        let prefix = match self {
+            Self::Combat => "Combat",
+            Self::Level => "Level",
+            Self::LowToHigh => "Low->High",
+            Self::Rank => "Rank",
+            Self::Xp => "XP",
+            Self::XpToLevel => "XPtoLevel",
+        };
+
+        p(prefix)
+    }
+}
+
+enum AccountType {
+    Default,
+    Iron,
+    Ultimate,
+    Hardcore,
+    Deadman,
+    Leagues,
+    Tourmament,
+    OneDefence,
+    Skiller,
+    FreshStart,
+}
+
+impl AccountType {
+    fn link(&self) -> String {
+        match self {
+            Self::Default => "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=",
+            Self::Iron => "https://secure.runescape.com/m=hiscore_oldschool_ironman/index_lite.ws?player=",
+            Self::Ultimate => "https://secure.runescape.com/m=hiscore_oldschool_ultimate/index_lite.ws?player=",
+            Self::Hardcore => "https://secure.runescape.com/m=hiscore_oldschool_hardcore_ironman/index_lite.ws?player=",
+            Self::Deadman => "https://secure.runescape.com/m=hiscore_oldschool_deadman/index_lite.ws?player=",
+            Self::Leagues => "https://secure.runescape.com/m=hiscore_oldschool_seasonal/index_lite.ws?player=",
+            Self::Tourmament => "https://secure.runescape.com/m=hiscore_oldschool_tournament/index_lite.ws?player=",
+            Self::OneDefence => "https://secure.runescape.com/m=hiscore_oldschool_skiller_defence/index_lite.ws?player=",
+            Self::Skiller => "https://secure.runescape.com/m=hiscore_oldschool_skiller/index_lite.ws?player=",
+            Self::FreshStart => "https://secure.runescape.com/m=hiscore_oldschool_fresh_start/index_lite.ws?player=",
+        }
+            .to_string()
+    }
+
+    fn name(&self) -> Option<String> {
+        let name = match self {
+            Self::Default => None,
+            Self::Iron => Some("Iron"),
+            Self::Ultimate => Some("Ultimate"),
+            Self::Hardcore => Some("Hardcore"),
+            Self::Deadman => Some("Deadman"),
+            Self::Leagues => Some("Leagues"),
+            Self::Tourmament => Some("Tourmament"),
+            Self::OneDefence => Some("1 Def"),
+            Self::Skiller => Some("Skiller"),
+            Self::FreshStart => Some("Fresh Start"),
+        };
+
+        match name {
+            Some(name) => Some(name.to_string()),
+            _ => None,
+        }
+    }
+
+    fn details(self) -> AccountTypeDetails {
+        AccountTypeDetails {
+            account_prefix: self.name(),
+            hiscores_link: self.link(),
+            account_type: self,
+        }
+    }
+}
+
+struct AccountTypeDetails {
+    account_prefix: Option<String>,
+    account_type: AccountType,
+    hiscores_link: String,
+}
+
+enum MutuallyExclusiveFlag {
+    None,
+    Order,
+    Rank,
+    Sort,
+    Xp,
+}
+
+impl MutuallyExclusiveFlag {
+    fn from(s: &str) -> Self {
+        match s {
+            "-o" => Self::Order,
+            "-s" => Self::Sort,
+            "-r" => Self::Rank,
+            "-x" => Self::Xp,
+            _ => Self::None,
+        }
+    }
+}
+
+fn stats_parameters(query: &str) -> StatsFlags {
+    todo!()
+}
+
 pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
     let skill = skill(command);
     let skills = skills();
