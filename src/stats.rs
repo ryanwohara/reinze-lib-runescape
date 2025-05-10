@@ -18,27 +18,28 @@ mod thieving;
 mod woodcutting;
 
 use super::common::{
-    get_cmb, get_rsn, get_stats, level_to_xp, process_account_type_flags, skill, skills,
-    xp_to_level, Combat,
+    eval_query, get_cmb, get_rsn, get_stats, level_to_xp, process_account_type_flags, skill,
+    skills, xp_to_level, Combat,
 };
 use crate::stats::skill::details_by_skill_id;
 use common::{c1, c2, commas, commas_from_string, convert_split_to_string, l, p, unranked};
 use mysql::from_row;
-use regex::Regex;
+use regex::{Captures, Regex};
 use std::collections::HashMap;
 
-struct StatsFlags {
-    filter_by: Option<Filter>,
-    filter_at: u32,
-    prefix: Option<Prefix>,
-    account_type: AccountType,
-    flag: MutuallyExclusiveFlag,
-    start: u32,
-    end: u32,
-    search: String,
+pub struct StatsFlags {
+    pub filter_by: Option<Filter>,
+    pub filter_at: u32,
+    pub prefix: Option<Prefix>,
+    pub account_type: AccountType,
+    pub flag: MutuallyExclusiveFlag,
+    pub start: u32,
+    pub end: u32,
+    pub search: String,
 }
 
-enum Filter {
+#[derive(Clone, Debug)]
+pub enum Filter {
     EqualTo,
     FewerThan,
     FewerThanOrEqualTo,
@@ -47,7 +48,7 @@ enum Filter {
 }
 
 impl Filter {
-    fn to_string(self) -> String {
+    pub fn to_string(self) -> String {
         match self {
             Self::EqualTo => "=",
             Self::FewerThan => "<",
@@ -71,7 +72,7 @@ impl From<&str> for Filter {
     }
 }
 
-enum Prefix {
+pub enum Prefix {
     Combat,
     Level,
     LowToHigh,
@@ -81,7 +82,7 @@ enum Prefix {
 }
 
 impl Prefix {
-    fn to_string(&self) -> String {
+    pub fn to_string(&self) -> String {
         let prefix = match self {
             Self::Combat => "Combat",
             Self::Level => "Level",
@@ -95,7 +96,7 @@ impl Prefix {
     }
 }
 
-enum AccountType {
+pub enum AccountType {
     Default,
     Iron,
     Ultimate,
@@ -109,7 +110,7 @@ enum AccountType {
 }
 
 impl AccountType {
-    fn link(&self) -> String {
+    pub fn link(&self) -> String {
         match self {
             Self::Default => "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=",
             Self::Iron => "https://secure.runescape.com/m=hiscore_oldschool_ironman/index_lite.ws?player=",
@@ -125,7 +126,7 @@ impl AccountType {
             .to_string()
     }
 
-    fn name(&self) -> Option<String> {
+    pub fn name(&self) -> Option<String> {
         let name = match self {
             Self::Default => None,
             Self::Iron => Some("Iron"),
@@ -145,7 +146,7 @@ impl AccountType {
         }
     }
 
-    fn details(self) -> AccountTypeDetails {
+    pub fn details(self) -> AccountTypeDetails {
         AccountTypeDetails {
             account_prefix: self.name(),
             hiscores_link: self.link(),
@@ -154,34 +155,81 @@ impl AccountType {
     }
 }
 
-struct AccountTypeDetails {
-    account_prefix: Option<String>,
-    account_type: AccountType,
-    hiscores_link: String,
+pub struct AccountTypeDetails {
+    pub account_prefix: Option<String>,
+    pub account_type: AccountType,
+    pub hiscores_link: String,
 }
 
-enum MutuallyExclusiveFlag {
+pub enum MutuallyExclusiveFlag {
+    Exp,
     None,
     Order,
     Rank,
     Sort,
-    Xp,
 }
 
-impl MutuallyExclusiveFlag {
+impl From<&str> for MutuallyExclusiveFlag {
     fn from(s: &str) -> Self {
         match s {
             "-o" => Self::Order,
             "-s" => Self::Sort,
             "-r" => Self::Rank,
-            "-x" => Self::Xp,
+            "-x" => Self::Exp,
             _ => Self::None,
         }
     }
 }
 
-fn stats_parameters(query: &str) -> StatsFlags {
-    todo!()
+pub fn stats_parameters(query: &str) -> StatsFlags {
+    let mut stats = StatsFlags {
+        filter_by: None,
+        filter_at: 0,
+        prefix: None,
+        account_type: AccountType::Default,
+        flag: MutuallyExclusiveFlag::None,
+        start: 0,
+        end: 0,
+        search: "".to_string(),
+    };
+
+    let re_match = Regex::new(r"(?:^|\b|\s)(?:-([iuhdlt1]|sk|fs)|([<>=]=?)\s?(\d+)|([#^])([\d,.]+[kmb]?)|-([serox]))(?:\s|\b|$)").unwrap();
+
+    re_match.captures(query).map(|capture| {
+        let flag_identifier = capture.get(1).map_or("", |flag| flag.as_str());
+
+        match flag_identifier {
+            "i" => stats.account_type = AccountType::Iron,
+            "u" => stats.account_type = AccountType::Ultimate,
+            "h" => stats.account_type = AccountType::Hardcore,
+            "d" => stats.account_type = AccountType::Deadman,
+            "l" => stats.account_type = AccountType::Leagues,
+            "t" => stats.account_type = AccountType::Tourmament,
+            "1" => stats.account_type = AccountType::OneDefence,
+            "sk" => stats.account_type = AccountType::Skiller,
+            "fs" => stats.account_type = AccountType::FreshStart,
+            "s" => stats.flag = MutuallyExclusiveFlag::Sort,
+            "o" => stats.flag = MutuallyExclusiveFlag::Order,
+            "r" => stats.flag = MutuallyExclusiveFlag::Rank,
+            "e" | "x" => stats.flag = MutuallyExclusiveFlag::Exp,
+            "^" => stats.start = second_capture_to_u32(capture),
+            "#" => stats.end = second_capture_to_u32(capture),
+            "@" => stats.search = capture.get(2).map_or("", |flag| flag.as_str()).to_string(),
+            ">" | "<" | ">=" | "<=" | "=" => {
+                stats.filter_by = Some(Filter::from(flag_identifier));
+                stats.filter_at = second_capture_to_u32(capture)
+            }
+            _ => {}
+        };
+    });
+
+    stats
+}
+
+fn second_capture_to_u32(capture: Captures) -> u32 {
+    capture
+        .get(2)
+        .map_or(0, |flag| eval_query(flag.as_str()).unwrap_or(0.0) as u32)
 }
 
 pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
