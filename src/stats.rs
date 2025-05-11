@@ -24,7 +24,7 @@ use super::common::{
 use crate::stats::skill::details_by_skill_id;
 use common::{c1, c2, commas, commas_from_string, convert_split_to_string, l, p, unranked};
 use mysql::from_row;
-use regex::{Captures, Regex};
+use regex::Regex;
 use std::collections::HashMap;
 
 pub struct StatsFlags {
@@ -48,20 +48,6 @@ pub enum FilterBy {
     None,
 }
 
-impl FilterBy {
-    pub fn to_string(self) -> String {
-        match self {
-            Self::EqualTo => "=",
-            Self::FewerThan => "<",
-            Self::FewerThanOrEqualTo => "<=",
-            Self::GreaterThan => ">",
-            Self::GreaterThanOrEqualTo => ">=",
-            Self::None => "",
-        }
-        .to_string()
-    }
-}
-
 impl From<&str> for FilterBy {
     fn from(value: &str) -> Self {
         match value.to_string().as_str() {
@@ -75,6 +61,7 @@ impl From<&str> for FilterBy {
     }
 }
 
+#[allow(dead_code)]
 pub enum Prefix {
     Combat,
     Level,
@@ -154,20 +141,6 @@ impl AccountType {
             _ => None,
         }
     }
-
-    pub fn details(self) -> AccountTypeDetails {
-        AccountTypeDetails {
-            account_prefix: self.name(),
-            hiscores_link: self.link(),
-            account_type: self,
-        }
-    }
-}
-
-pub struct AccountTypeDetails {
-    pub account_prefix: Option<String>,
-    pub account_type: AccountType,
-    pub hiscores_link: String,
 }
 
 #[derive(PartialEq)]
@@ -237,12 +210,6 @@ pub fn stats_parameters(query: &str) -> StatsFlags {
     }
 
     stats
-}
-
-fn second_capture_to_u32(capture: Captures) -> u32 {
-    capture
-        .get(2)
-        .map_or(0, |flag| eval_query(flag.as_str()).unwrap_or(0.0) as u32)
 }
 
 pub fn strip_stats_parameters(query: &str) -> String {
@@ -782,107 +749,6 @@ fn parse_skill_data_for_cmb(
         },
     }
     .ceil() as u32
-}
-
-fn find_search_flag(query: &str, mut split: Vec<String>) -> (Vec<String>, String) {
-    let search = Regex::new(r"@(\S+)")
-        .unwrap()
-        .captures(query)
-        .map(|capture| capture.get(1).map_or("", |start| start.as_str()))
-        .unwrap_or("")
-        .to_string();
-
-    split.retain(|x| !x.starts_with("@"));
-
-    (split, search)
-}
-
-fn start_and_goal_match<T>(regex: Regex, query: T) -> u32
-where
-    T: ToString,
-{
-    regex
-        .captures(&query.to_string())
-        .map(|capture| {
-            let str = capture.get(1).map_or("", |start| start.as_str());
-
-            str.parse::<u32>().unwrap_or(0)
-        })
-        .unwrap_or(0)
-}
-
-fn process_start_and_goal(query: &str, mut split: Vec<String>) -> (Vec<String>, (u32, u32)) {
-    let re_start = Regex::new(r"(?:^|\b|\s)\^([\d,.]+[kmb]?)(?:\s|\b|$)").unwrap();
-    let re_goal = Regex::new(r"(?:^|\b|\s)#([\d,.]+[kmb]?)(?:\s|\b|$)").unwrap();
-
-    let start = start_and_goal_match(re_start, query);
-    let goal = start_and_goal_match(re_goal, query);
-
-    split.retain(|arg| !arg.starts_with("^") && !arg.starts_with("#"));
-
-    (split, (start, goal))
-}
-
-fn process_sero_flags(
-    query: &str,
-    mut split: Vec<String>,
-) -> (Vec<String>, (bool, bool, bool, bool)) {
-    let re_ser = Regex::new(r"(?:^|\b|\s)-([sero])(?:\s|\b|$)").unwrap();
-    let nil = (false, false, false, false);
-
-    let (output, flag) = re_ser
-        .captures(query)
-        .map(|capture| {
-            let flag = capture.get(1).map_or("", |flag| flag.as_str());
-            (
-                match flag {
-                    "s" => (true, false, false, false),
-                    "e" => (false, true, false, false),
-                    "r" => (false, false, true, false),
-                    "o" => (false, false, false, true),
-                    _ => nil,
-                },
-                flag,
-            )
-        })
-        .unwrap_or_else(|| (nil, ""));
-
-    if !flag.is_empty() {
-        split.retain(|arg| arg != &format!("-{}", flag));
-    }
-
-    (split.into_iter().map(|s| s.to_string()).collect(), output)
-}
-
-fn process_filter_by_flags(query: &str, mut split: Vec<String>) -> (Vec<String>, (String, u32)) {
-    let re_filter = Regex::new(r"(?:^|\b|\s)([<>=]=?)\s?(\d+)(?:\s|\b|$)").unwrap();
-    let nil = ("".to_string(), 0);
-
-    let (flag, filter_at) = re_filter
-        .captures(query)
-        .map(|capture| {
-            let flag = capture.get(1).map_or("", |flag| flag.as_str());
-            let filter_at = capture
-                .get(2)
-                .map_or("", |filter_at| filter_at.as_str())
-                .parse::<u32>()
-                .unwrap_or(1);
-            match flag {
-                ">" | "<" | ">=" | "<=" | "=" => (flag.to_string(), u32::max(filter_at, 1)),
-                _ => nil.to_owned(),
-            }
-        })
-        .unwrap_or(nil);
-
-    if !flag.is_empty() {
-        split.retain(|arg| {
-            arg != &flag
-                && arg != &filter_at.to_string()
-                && arg != &format!("{}{}", flag, filter_at)
-        });
-    }
-
-    (split, (flag, filter_at))
 }
 
 pub fn process_stats_subsection(
