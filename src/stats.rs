@@ -28,9 +28,9 @@ use regex::{Captures, Regex};
 use std::collections::HashMap;
 
 pub struct StatsFlags {
-    pub filter_by: Option<Filter>,
+    pub filter_by: FilterBy,
     pub filter_at: u32,
-    pub prefix: Option<Prefix>,
+    pub prefix: Prefix,
     pub account_type: AccountType,
     pub flag: MutuallyExclusiveFlag,
     pub start: u32,
@@ -38,16 +38,17 @@ pub struct StatsFlags {
     pub search: String,
 }
 
-#[derive(Clone, Debug)]
-pub enum Filter {
+#[derive(Clone, Debug, PartialEq)]
+pub enum FilterBy {
     EqualTo,
     FewerThan,
     FewerThanOrEqualTo,
     GreaterThan,
     GreaterThanOrEqualTo,
+    None,
 }
 
-impl Filter {
+impl FilterBy {
     pub fn to_string(self) -> String {
         match self {
             Self::EqualTo => "=",
@@ -55,19 +56,21 @@ impl Filter {
             Self::FewerThanOrEqualTo => "<=",
             Self::GreaterThan => ">",
             Self::GreaterThanOrEqualTo => ">=",
+            Self::None => "",
         }
         .to_string()
     }
 }
 
-impl From<&str> for Filter {
+impl From<&str> for FilterBy {
     fn from(value: &str) -> Self {
         match value.to_string().as_str() {
-            "<" => Filter::FewerThan,
-            "<=" => Filter::FewerThanOrEqualTo,
-            ">" => Filter::GreaterThan,
-            ">=" => Filter::GreaterThanOrEqualTo,
-            "=" | _ => Filter::EqualTo,
+            "<" => FilterBy::FewerThan,
+            "<=" => FilterBy::FewerThanOrEqualTo,
+            ">" => FilterBy::GreaterThan,
+            ">=" => FilterBy::GreaterThanOrEqualTo,
+            "=" => FilterBy::EqualTo,
+            _ => FilterBy::None,
         }
     }
 }
@@ -76,6 +79,7 @@ pub enum Prefix {
     Combat,
     Level,
     LowToHigh,
+    None,
     Rank,
     Xp,
     XpToLevel,
@@ -87,12 +91,17 @@ impl Prefix {
             Self::Combat => "Combat",
             Self::Level => "Level",
             Self::LowToHigh => "Low->High",
+            Self::None => "",
             Self::Rank => "Rank",
             Self::Xp => "XP",
             Self::XpToLevel => "XPtoLevel",
         };
 
-        p(prefix)
+        if prefix.len() > 0 {
+            p(prefix)
+        } else {
+            "".to_string()
+        }
     }
 }
 
@@ -161,6 +170,7 @@ pub struct AccountTypeDetails {
     pub hiscores_link: String,
 }
 
+#[derive(PartialEq)]
 pub enum MutuallyExclusiveFlag {
     Exp,
     None,
@@ -181,11 +191,15 @@ impl From<&str> for MutuallyExclusiveFlag {
     }
 }
 
+pub fn get_stats_regex() -> Regex {
+    Regex::new(r"(?:^|\b|\s)(?:(-([serox]|[iuhdlt1]|sk|fs))|([<>=]=?)\s?(\d+)|([#^])([\d,.]+[kmb]?))(?:\b|$)").unwrap()
+}
+
 pub fn stats_parameters(query: &str) -> StatsFlags {
     let mut stats = StatsFlags {
-        filter_by: None,
+        filter_by: FilterBy::None,
         filter_at: 0,
-        prefix: None,
+        prefix: Prefix::None,
         account_type: AccountType::Default,
         flag: MutuallyExclusiveFlag::None,
         start: 0,
@@ -193,35 +207,34 @@ pub fn stats_parameters(query: &str) -> StatsFlags {
         search: "".to_string(),
     };
 
-    let re_match = Regex::new(r"(?:^|\b|\s)(?:-([iuhdlt1]|sk|fs)|([<>=]=?)\s?(\d+)|([#^])([\d,.]+[kmb]?)|-([serox]))(?:\s|\b|$)").unwrap();
-
-    re_match.captures(query).map(|capture| {
-        let flag_identifier = capture.get(1).map_or("", |flag| flag.as_str());
-
+    for (_, [flag_identifier, detail]) in get_stats_regex()
+        .captures_iter(query)
+        .map(|capture| capture.extract())
+    {
         match flag_identifier {
-            "i" => stats.account_type = AccountType::Iron,
-            "u" => stats.account_type = AccountType::Ultimate,
-            "h" => stats.account_type = AccountType::Hardcore,
-            "d" => stats.account_type = AccountType::Deadman,
-            "l" => stats.account_type = AccountType::Leagues,
-            "t" => stats.account_type = AccountType::Tourmament,
-            "1" => stats.account_type = AccountType::OneDefence,
-            "sk" => stats.account_type = AccountType::Skiller,
-            "fs" => stats.account_type = AccountType::FreshStart,
-            "s" => stats.flag = MutuallyExclusiveFlag::Sort,
-            "o" => stats.flag = MutuallyExclusiveFlag::Order,
-            "r" => stats.flag = MutuallyExclusiveFlag::Rank,
-            "e" | "x" => stats.flag = MutuallyExclusiveFlag::Exp,
-            "^" => stats.start = second_capture_to_u32(capture),
-            "#" => stats.end = second_capture_to_u32(capture),
-            "@" => stats.search = capture.get(2).map_or("", |flag| flag.as_str()).to_string(),
-            ">" | "<" | ">=" | "<=" | "=" => {
-                stats.filter_by = Some(Filter::from(flag_identifier));
-                stats.filter_at = second_capture_to_u32(capture)
+            "-i" => stats.account_type = AccountType::Iron,
+            "-u" => stats.account_type = AccountType::Ultimate,
+            "-h" => stats.account_type = AccountType::Hardcore,
+            "-d" => stats.account_type = AccountType::Deadman,
+            "-l" => stats.account_type = AccountType::Leagues,
+            "-t" => stats.account_type = AccountType::Tourmament,
+            "-1" => stats.account_type = AccountType::OneDefence,
+            "-sk" => stats.account_type = AccountType::Skiller,
+            "-fs" => stats.account_type = AccountType::FreshStart,
+            "-s" => stats.flag = MutuallyExclusiveFlag::Sort,
+            "-o" => stats.flag = MutuallyExclusiveFlag::Order,
+            "-r" => stats.flag = MutuallyExclusiveFlag::Rank,
+            "-e" | "-x" => stats.flag = MutuallyExclusiveFlag::Exp,
+            "^" => stats.start = eval_query(detail).unwrap_or(0.0) as u32,
+            "#" => stats.end = eval_query(detail).unwrap_or(0.0) as u32,
+            "@" => stats.search = detail.to_string(),
+            ">" | "<" | ">=" | "<=" | "=" | "==" => {
+                stats.filter_by = FilterBy::from(flag_identifier);
+                stats.filter_at = eval_query(detail).unwrap_or(0.0) as u32;
             }
             _ => {}
         };
-    });
+    }
 
     stats
 }
@@ -232,7 +245,11 @@ fn second_capture_to_u32(capture: Captures) -> u32 {
         .map_or(0, |flag| eval_query(flag.as_str()).unwrap_or(0.0) as u32)
 }
 
-pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
+pub fn strip_stats_parameters(query: &str) -> String {
+    get_stats_regex().replace_all(query, "").to_string()
+}
+
+pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
     let skill = skill(command);
     let skills = skills();
     // Get the skill ID from the skill name
@@ -241,40 +258,28 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
         .position(|r| r.to_string() == skill)
         .unwrap_or(0);
 
+    let flags = stats_parameters(input);
+    let query = strip_stats_parameters(input);
     let split: Vec<String> = convert_split_to_string(query.split(" ").collect());
-
-    let (split, (flag_filter_by, flag_filter_at)) = process_filter_by_flags(query, split);
-
-    let (split, mut prefix, base_url) = process_account_type_flags(query, split);
-
-    let (split, (flag_sort, flag_exp, flag_rank, flag_order)) = process_sero_flags(query, split);
-
-    let (split, (start, goal)) = process_start_and_goal(query, split);
-
-    let (split, search) = find_search_flag(query, split);
 
     let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
 
-    let mut combat_command = false;
-    if command == "combat" || command == "cmb" {
-        combat_command = true;
-    }
+    let combat_command = command == "combat" || command == "cmb";
 
-    if flag_exp {
-        prefix = vec![l(&skill), prefix, p("XP")].join(" ");
-    } else if flag_rank {
-        prefix = vec![l(&skill), prefix, p("Rank")].join(" ");
-    } else if flag_sort {
-        prefix = vec![l(&skill), prefix, p("XP to Level")].join(" ");
-    } else if flag_order {
-        prefix = vec![l(&skill), prefix, p("Low->High")].join(" ");
-    } else if combat_command {
-        prefix = l("Combat");
-    } else {
-        prefix = vec![l(&skill), prefix, p("Level")].join(" ");
-    }
-
-    prefix = prefix.replace("  ", " ");
+    let prefix = vec![
+        if combat_command {
+            l("Combat")
+        } else {
+            l(&skill)
+        },
+        flags
+            .account_type
+            .name()
+            .map_or("".to_string(), |name| l(&name)),
+        flags.prefix.to_string(),
+    ]
+    .join(" ")
+    .replace("  ", " ");
 
     let not_found = vec![format!(
         "{} {} {} {} {} {} {} {} {}",
@@ -287,15 +292,16 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
         c2("|"),
         c1("Rank"),
         p("N/A")
-    )];
+    )
+    .replace("  ", " ")];
 
     let hiscores_collected: Vec<Vec<&str>>;
     let mut hiscores_len = 24;
     let string_hiscores_collected;
     let string;
 
-    if start == 0 {
-        let rsn = if start > 0 {
+    if flags.start == 0 {
+        let rsn = if flags.start > 0 {
             nick
         } else if split.is_empty() || split[0].is_empty() {
             get_rsn(author, rsn_n)
@@ -306,7 +312,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
             split.join(" ")
         };
 
-        string = match reqwest::blocking::get(&format!("{}{}", base_url, rsn)) {
+        string = match reqwest::blocking::get(&format!("{}{}", flags.account_type.link(), rsn)) {
             Ok(resp) => match resp.text() {
                 Ok(string) => string,
                 Err(e) => {
@@ -332,10 +338,10 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
             .map(|x| x.split(',').collect::<Vec<&str>>())
             .collect::<Vec<Vec<&str>>>();
     } else {
-        let start_xp = if start > 126 {
-            start
+        let start_xp = if flags.start > 126 {
+            flags.start
         } else {
-            level_to_xp(start)
+            level_to_xp(flags.start)
         };
 
         let start_level = xp_to_level(start_xp);
@@ -382,13 +388,13 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
 
             let next_level;
             let next_level_xp;
-            if goal > 0 {
-                if goal <= 126 {
-                    next_level = goal;
-                    next_level_xp = level_to_xp(goal);
+            if flags.end > 0 {
+                if flags.end <= 126 {
+                    next_level = flags.end;
+                    next_level_xp = level_to_xp(flags.end);
                 } else {
-                    next_level_xp = goal;
-                    next_level = xp_to_level(goal);
+                    next_level_xp = flags.end;
+                    next_level = xp_to_level(flags.end);
                 }
             } else {
                 next_level = actual_level + 1;
@@ -449,7 +455,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                 return Ok(vec![message]);
             }
 
-            let details = details_by_skill_id(skill_id as u32, search.as_str());
+            let details = details_by_skill_id(skill_id as u32, flags.search.as_str());
 
             let calc = details
                 .iter()
@@ -494,30 +500,30 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                 skill_xp_lookup_data.insert(&skills[index as usize], xp);
 
                 // if filters were passed
-                if (flag_filter_by.len() == 0)
-                    || (flag_filter_by.len() > 0
-                        && ((flag_filter_by == ">" && level > flag_filter_at)
-                            || (flag_filter_by == "<" && level < flag_filter_at)
-                            || (flag_filter_by == ">=" && level >= flag_filter_at)
-                            || (flag_filter_by == "<=" && level <= flag_filter_at)
-                            || (flag_filter_by.starts_with("=") && level == flag_filter_at)))
+                if (flags.filter_by == FilterBy::None)
+                    || (flags.filter_by == FilterBy::GreaterThan && level > flags.filter_at)
+                    || (flags.filter_by == FilterBy::FewerThan && level < flags.filter_at)
+                    || (flags.filter_by == FilterBy::GreaterThanOrEqualTo
+                        && level >= flags.filter_at)
+                    || (flags.filter_by == FilterBy::FewerThanOrEqualTo && level <= flags.filter_at)
+                    || (flags.filter_by == FilterBy::EqualTo && level == flags.filter_at)
                 {
-                    if flag_sort {
+                    if flags.flag == MutuallyExclusiveFlag::Sort {
                         // if -s was passed
                         if level < 99 {
                             sortable_data.push(((rank, level, xp, xp_difference), index));
                         }
-                    } else if flag_order {
+                    } else if flags.flag == MutuallyExclusiveFlag::Order {
                         // if -o was passed
                         sortable_data.push(((rank, level, xp, xp_difference), index));
-                    } else if flag_exp {
+                    } else if flags.flag == MutuallyExclusiveFlag::Exp {
                         // if -e was passed
                         skill_data.push(format!(
                             "{}{}",
                             c1(&format!("{}:", &skills[index as usize])),
                             c2(&commas(xp as f64, "d")),
                         ));
-                    } else if flag_rank {
+                    } else if flags.flag == MutuallyExclusiveFlag::Rank {
                         // if -r was passed
                         skill_data.push(format!(
                             "{}{}",
@@ -547,7 +553,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
     }
 
     // if -s was passed (NOT -sk)
-    if flag_sort {
+    if flags.flag == MutuallyExclusiveFlag::Sort {
         // sort the skills by xp_difference
         sortable_data.sort_by(|a, b| a.0 .3.cmp(&b.0 .3));
 
@@ -563,7 +569,7 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
                 c2(&commas(xp_difference as f64, "d")),
             ));
         }
-    } else if flag_order {
+    } else if flags.flag == MutuallyExclusiveFlag::Order {
         // sort the skills by xp_difference if -o was passed
         sortable_data.sort_by(|a, b| a.0 .2.cmp(&b.0 .2));
 
@@ -675,7 +681,9 @@ pub fn stats(command: &str, query: &str, author: &str, rsn_n: &str) -> Result<Ve
 
     // wrap up the data and return it
     if skill_data.len() > 0 {
-        return Ok(vec![format!("{} {}", prefix, skill_data.join(" "))]);
+        return Ok(vec![
+            format!("{} {}", prefix, skill_data.join(" ")).replace("  ", " ")
+        ]);
     }
 
     Ok(not_found)
