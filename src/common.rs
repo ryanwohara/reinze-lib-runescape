@@ -121,10 +121,7 @@ pub struct Combat {
 
 impl Combat {
     pub fn new(level: f64, style: String) -> Combat {
-        Combat {
-            level,
-            style,
-        }
+        Combat { level, style }
     }
 }
 
@@ -156,10 +153,7 @@ pub fn get_cmb(
     }
 }
 
-pub fn get_rsn(
-    author: &str,
-    rsn_n: &str,
-) -> core::result::Result<Vec<Row>, Error> {
+pub fn get_rsn(author: &str, rsn_n: &str) -> core::result::Result<Vec<Row>, Error> {
     let mut conn = match database::connect() {
         Ok(conn) => conn,
         Err(e) => {
@@ -559,7 +553,10 @@ pub fn replace_item_abbreviations(q: &str) -> String {
         (r"^p ?pot$", "prayer potion"),
         (r"^prims?$", "primordial boots"),
         (r"^prossy$", "proselyte"),
-        (r"^mega( ?rare)?$", "twisted bow|tumeken's shadow|scythe of vitur"),
+        (
+            r"^mega( ?rare)?$",
+            "twisted bow|tumeken's shadow|scythe of vitur",
+        ),
         (r"^r2h$", "rune 2h sword"),
         (r"^rangers$", "ranger boots"),
         (r"^rcb$", "rune crossbow"),
