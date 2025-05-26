@@ -490,7 +490,7 @@ impl Detail for Cooking {
 
     fn xp(&self) -> f64 {
         if let Details::Cooking(obj) = self.details() {
-            return obj.xp as f64;
+            return obj.xp;
         }
 
         0.0

@@ -165,7 +165,7 @@ impl From<&str> for MutuallyExclusiveFlag {
 }
 
 pub fn get_stats_regex() -> Regex {
-    Regex::new(r"(?:^|\b|\s)(?:(-([serox]|[iuhdlt1]|sk|fs))|([<>=]=?)\s?(\d+)|([#^])([\d,.]+[kmb]?))(?:\b|$)").unwrap()
+    Regex::new(r"(?:^|\b|\s)(?:(-([serox]|[iuhdlt1]|sk|fs))|([<>=]=?)\s?(\d+)|([#^])([\d,.]+[kmb]?)|(@)(\S+))(?:\b|$)").unwrap()
 }
 
 pub fn stats_parameters(query: &str) -> StatsFlags {
