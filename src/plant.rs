@@ -8,41 +8,17 @@ pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
         return Ok(vec![format!("{} {}", prefix, c1("No query provided"))]);
     }
 
-    let underscored = query.replace(" ", "_");
-
-    let plants = match ini::Ini::load_from_file("lib/plants.ini") {
-        Ok(plants) => plants,
-        Err(e) => {
-            println!("Error loading plants.ini: {}", e);
-            return Err(());
-        }
-    };
-
-    let section = match plants.section(Some("plants")) {
-        Some(section) => section,
-        None => {
-            println!("Error getting section: plants");
-            return Err(());
-        }
-    };
+    let plants = Plant::all();
 
     let mut found_params: Vec<PlantDetails> = vec![];
 
-    for (k, v) in section.iter() {
-        if k.to_ascii_lowercase()
-            .contains(&underscored.to_ascii_lowercase())
+    for plant in plants {
+        let details = plant.details();
+
+        if details.name.to_ascii_lowercase()
+            .contains(&query.to_ascii_lowercase())
         {
-            let split = v.split(",").collect::<Vec<&str>>();
-            let plant = PlantDetails::from(
-                k.replace("_", " "),
-                split.get(0).unwrap_or(&"0").parse::<u32>().unwrap_or(0),
-                split.get(1).unwrap_or(&"0").parse::<f64>().unwrap_or(0.0),
-                split.get(2).unwrap_or(&"0").parse::<f64>().unwrap_or(0.0),
-                split.get(3).unwrap_or(&"0").parse::<f64>().unwrap_or(0.0),
-                split.get(4).unwrap_or(&"0").parse::<f64>().unwrap_or(0.0),
-                split.get(5).unwrap_or(&"err").to_string(),
-            );
-            found_params.push(plant);
+            found_params.push(details);
             break;
         }
     }
@@ -571,11 +547,15 @@ impl PlantDetails {
         }
     }
 
+    fn name(&self) -> String {
+        self.name.replace("_", " ")
+    }
+
     fn to_string(&self) -> String {
         format!(
             "{} {} {} {} {} {} {} {} {} {} {} {} {}",
-            p(&self.name),
-            c1("Req Lvl:"),
+            p(&self.name()),
+            c1("Level:"),
             c2(&self.level.to_string()),
             c1("Time:"),
             c2(&self.time.to_string()),
