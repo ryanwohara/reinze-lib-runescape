@@ -110,6 +110,9 @@ enum Plant {
     TeakTree,
     MahoganyTree,
     WhiteLily,
+    Attas,
+    Iasor,
+    Kronos,
     CrystalTree,
     Hespori,
 }
@@ -183,6 +186,9 @@ impl Plant {
             Self::TeakTree,
             Self::MahoganyTree,
             Self::WhiteLily,
+            Self::Attas,
+            Self::Iasor,
+            Self::Kronos,
             Self::CrystalTree,
             Self::Hespori,
         ]
@@ -517,6 +523,9 @@ impl Plant {
             Plant::CrystalTree => {
                 PlantDetails::from("Crystal Tree", 74, 480.0, 126.0, 13240.0, 0.0, "")
             }
+            Plant::Attas => PlantDetails::from("Attas plant", 76, 5120.0, 100.0, 0.0, 0.0, ""),
+            Plant::Iasor => PlantDetails::from("Iasor plant", 76, 5120.0, 100.0, 0.0, 0.0, ""),
+            Plant::Kronos => PlantDetails::from("Kronos plant", 76, 5120.0, 100.0, 0.0, 0.0, ""),
             Plant::Hespori => PlantDetails::from("Hespori", 65, 1920.0, 62.0, 0.0, 12600.0, ""),
         }
     }
