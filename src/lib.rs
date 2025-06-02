@@ -29,6 +29,7 @@ mod stats;
 mod wiki;
 mod xp;
 mod bolts;
+mod fairy;
 
 use regex::Regex;
 use std::ffi::{CStr, CString};
@@ -90,6 +91,7 @@ pub extern "C" fn exported(
         "congratulations" | "congratulation" | "congrats" | "congratz" | "grats" | "gratz"
         | "gz" => grats::get(query, author),
         "experience" | "xperience" | "exp" | "xp" => xp::xp(query),
+        "fairy" => fairy::lookup(query),
         "ge" => ge::ge(query),
         "level" | "lvl" => level::level(query),
         "league" | "leagues" => leagues::lookup(query, author, rsn_n),
@@ -126,6 +128,7 @@ colosseum[N]
 collectionlog[N]
 combat[N]
 congrats
+fairy
 ge
 kc[N]
 level
@@ -152,6 +155,7 @@ bolts?
 b(ounty)?h(unter)?\d*
 boost
 boss\d*
+fairy
 kc\d*
 clues?\d*
 co?mb(at)?\d*
