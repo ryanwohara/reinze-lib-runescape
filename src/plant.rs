@@ -8,11 +8,7 @@ pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
         return Ok(vec![format!("{} {}", prefix, c1("No query provided"))]);
     }
 
-    let plants = Plant::all();
-
-    let mut found_params: Vec<PlantDetails> = vec![];
-
-    for plant in plants {
+    for plant in Plant::all() {
         let details = plant.details();
 
         if details
@@ -20,27 +16,15 @@ pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
             .to_ascii_lowercase()
             .contains(&query.to_ascii_lowercase())
         {
-            found_params.push(details);
-            break;
+            return Ok(vec![format!(
+                "{} {}",
+                prefix,
+                details.to_string(),
+            )]);
         }
     }
 
-    if found_params.len() == 0 {
-        return Ok(vec![format!("{}: {}", prefix, c1("No results found"))]);
-    }
-
-    let output = format!(
-        "{} {}",
-        prefix,
-        not_found(
-            found_params
-                .into_iter()
-                .map(|p| p.to_string())
-                .collect::<Vec<String>>()
-        )
-    );
-
-    Ok(vec![output])
+    Ok(vec![format!("{}: {}", prefix, c1("No results found"))])
 }
 
 enum Plant {
