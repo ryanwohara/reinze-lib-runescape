@@ -11,9 +11,13 @@ pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
         let details = bolt.details();
 
         if details
-            .name
+            .bolt
             .to_ascii_lowercase()
             .contains(&query.to_ascii_lowercase())
+            || details
+                .name
+                .to_ascii_lowercase()
+                .contains(&query.to_ascii_lowercase())
         {
             return Ok(vec![format!("{} {}", prefix, details.to_string(),)]);
         }

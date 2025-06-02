@@ -1,4 +1,4 @@
-use common::{c1, c2, commas, l, not_found, p, remove_trailing_zeroes};
+use common::{c1, c2, commas, l, p, remove_trailing_zeroes};
 use serde::{Deserialize, Serialize};
 
 pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
@@ -16,11 +16,7 @@ pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
             .to_ascii_lowercase()
             .contains(&query.to_ascii_lowercase())
         {
-            return Ok(vec![format!(
-                "{} {}",
-                prefix,
-                details.to_string(),
-            )]);
+            return Ok(vec![format!("{} {}", prefix, details.to_string(),)]);
         }
     }
 
