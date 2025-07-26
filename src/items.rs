@@ -24,7 +24,7 @@ pub struct Mapping {
     pub lowalch: Option<u64>,
     pub highalch: Option<u64>,
     pub limit: Option<u64>,
-    pub value: u64,
+    pub value: Option<u64>,
     pub total: Option<u64>,
 }
 
