@@ -69,6 +69,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         "Vet'ion",
         "Vorkath",
         "Wintertodt",
+        "Yama",
         "Zalcano",
         "Zulrah",
     ];
