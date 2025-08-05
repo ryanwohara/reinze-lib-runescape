@@ -26,6 +26,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         "Dagannoth Rex",
         "Dagannoth Supreme",
         "Deranged Archaeologist",
+        "Doom of Mokhaiotl",
         "Duke Sucellus",
         "General Graardor",
         "Giant Mole",
