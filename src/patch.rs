@@ -1,10 +1,12 @@
+use std::fmt;
+use std::str::FromStr;
 use common::{c2, convert_split_to_string, l, not_found, p};
 
 pub fn patch(query: &str) -> Result<Vec<String>, ()> {
     let prefix = l("Patch");
-    let patch = Patch::from(query);
+    let patch: Patch = query.parse()?;
 
-    let locations = patch.locations().into_iter().map(|location| c2(&location)).collect();
+    let locations = patch.locations().iter().map(|location| c2(&location)).collect();
 
     let output = format!(
         "{} {}{}",
@@ -17,13 +19,14 @@ pub fn patch(query: &str) -> Result<Vec<String>, ()> {
 }
 
 fn format_patch(patch: &str) -> String {
-    if patch.len() > 0 {
+    if !patch.is_empty() {
         format!("{} ", p(&patch))
     } else {
         "".to_string()
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Patch {
     Allotment,
     Flower,
@@ -73,33 +76,6 @@ impl Patch {
             Self::Hardwood,
             Self::None,
         ]
-    }
-
-    fn to_string(&self) -> String {
-        match self {
-            Self::Allotment => "Allotment",
-            Self::Flower => "Flower",
-            Self::Herb => "Herb",
-            Self::Bush => "Bush",
-            Self::Tree => "Tree",
-            Self::Fruit => "Fruit",
-            Self::Hops => "Hops",
-            Self::Spirit => "Spirit",
-            Self::Belladonna => "Belladonna",
-            Self::Calquat => "Calquat",
-            Self::Mushroom => "Mushroom",
-            Self::Celastrus => "Celastrus",
-            Self::Redwood => "Redwood",
-            Self::Crystal => "Crystal",
-            Self::Seaweed => "Seaweed",
-            Self::Grape => "Grape",
-            Self::Hespori => "Hespori",
-            Self::Anima => "Anima",
-            Self::Cactus => "Cactus",
-            Self::Hardwood => "Hardwood",
-            Self::None => "",
-        }
-        .to_string()
     }
 
     fn locations(&self) -> Vec<String> {
@@ -191,20 +167,44 @@ impl Patch {
 
         convert_split_to_string(locations)
     }
+}
 
-    fn from(query: &str) -> Self {
-        let patches = Self::all();
+impl FromStr for Patch {
+    type Err = ();
 
-        for patch in patches {
-            if patch
-                .to_string()
-                .to_lowercase()
-                .contains(&query.to_lowercase())
-            {
-                return patch;
-            }
-        }
+    fn from_str(query: &str) -> Result<Self, Self::Err> {
+        Patch::all()
+            .into_iter()
+            .find(|patch| patch.to_string().to_lowercase().contains(&query.to_lowercase()))
+            .ok_or(())
+    }
+}
 
-        Patch::None
+impl fmt::Display for Patch {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            Patch::Allotment => "Allotment",
+            Patch::Flower => "Flower",
+            Patch::Herb => "Herb",
+            Patch::Bush => "Bush",
+            Patch::Tree => "Tree",
+            Patch::Fruit => "Fruit",
+            Patch::Hops => "Hops",
+            Patch::Spirit => "Spirit",
+            Patch::Belladonna => "Belladonna",
+            Patch::Calquat => "Calquat",
+            Patch::Mushroom => "Mushroom",
+            Patch::Celastrus => "Celastrus",
+            Patch::Redwood => "Redwood",
+            Patch::Crystal => "Crystal",
+            Patch::Seaweed => "Seaweed",
+            Patch::Grape => "Grape",
+            Patch::Hespori => "Hespori",
+            Patch::Anima => "Anima",
+            Patch::Cactus => "Cactus",
+            Patch::Hardwood => "Hardwood",
+            Patch::None => "",
+        };
+        write!(f, "{}", s)
     }
 }
