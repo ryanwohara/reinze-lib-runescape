@@ -150,6 +150,7 @@ impl Patch {
                 "Taverley",
                 "Gnome Stronghold",
                 "Farming Guild",
+                "Auburnvale"
             ],
             Self::Fruit => vec![
                 "Catherby East",
