@@ -584,6 +584,7 @@ pub fn replace_item_abbreviations(q: &str) -> String {
         (r"\bhally\b", "halberd"),
         (r"\bobby\b", "obsidian"),
         (r"\bd\b", "dragon"),
+        (r"\bnezzy\b", "Helm of Neitiznot")
     ];
 
     for (pattern, replacement) in patterns.iter() {
