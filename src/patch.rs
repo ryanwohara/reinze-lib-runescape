@@ -1,6 +1,6 @@
 use std::fmt;
 use std::str::FromStr;
-use common::{c2, convert_split_to_string, l, not_found, p};
+use common::{c2, l, not_found, p};
 
 pub fn patch(query: &str) -> Result<Vec<String>, ()> {
     let prefix = l("Patch");
@@ -78,9 +78,9 @@ impl Patch {
         ]
     }
 
-    fn locations(&self) -> Vec<String> {
-        let locations = match self {
-            Self::Allotment => vec![
+    fn locations(&self) -> &'static [&'static str] {
+        match self {
+            Self::Allotment => &[
                 "Falador South",
                 "Port Phasmatys",
                 "Harmony Island",
@@ -90,7 +90,7 @@ impl Patch {
                 "Hosidius South-west",
                 "Civitas illa Fortis West",
             ],
-            Self::Flower => vec![
+            Self::Flower => &[
                 "Falador South",
                 "Port Phasmatys",
                 "Catherby North",
@@ -99,7 +99,7 @@ impl Patch {
                 "Hosidius South-west",
                 "Civitas illa Fortis West",
             ],
-            Self::Herb => vec![
+            Self::Herb => &[
                 "Falador South",
                 "Troll Stronghold Rooftop",
                 "Port Phasmatys",
@@ -112,14 +112,14 @@ impl Patch {
                 "Hosidius South-west",
                 "Civitas illa Fortis West",
             ],
-            Self::Bush => vec![
+            Self::Bush => &[
                 "Champions' Guild",
                 "Rimmington",
                 "Ardougne South",
                 "Etceteria South-west",
                 "Farming Guild",
             ],
-            Self::Tree => vec![
+            Self::Tree => &[
                 "Lumbridge West",
                 "Varrock Castle",
                 "Falador Park",
@@ -128,7 +128,7 @@ impl Patch {
                 "Farming Guild",
                 "Auburnvale"
             ],
-            Self::Fruit => vec![
+            Self::Fruit => &[
                 "Catherby East",
                 "Tree Gnome Maze West",
                 "Brimhaven North",
@@ -136,36 +136,34 @@ impl Patch {
                 "Lletya",
                 "Farming Guild",
             ],
-            Self::Hops => vec![
+            Self::Hops => &[
                 "Lumbridge North",
                 "McGrubor's Woods North",
                 "Yanille",
                 "Entrana",
                 "Aldarin",
             ],
-            Self::Spirit => vec![
+            Self::Spirit => &[
                 "Etceteria South-east",
                 "Port Sarim East",
                 "Brimhaven East",
                 "Farming Guild",
                 "Hosidius South-west",
             ],
-            Self::Belladonna => vec!["Draynor Village Manor"],
-            Self::Calquat => vec!["Tai Bwo Wannai North"],
-            Self::Mushroom => vec!["Canifis"],
-            Self::Celastrus => vec!["Farming Guild"],
-            Self::Redwood => vec!["Farming Guild"],
-            Self::Crystal => vec!["Prifddinas North"],
-            Self::Seaweed => vec!["Underwater (Fossil Island)"],
-            Self::Grape => vec!["Hosidius Vinery"],
-            Self::Hespori => vec!["Farming Guild"],
-            Self::Anima => vec!["Farming Guild"],
-            Self::Cactus => vec!["Al Kharid", "Farming Guild"],
-            Self::Hardwood => vec!["Fossil Island (Mushroom Forest)", "Locus Oasis (Varlamore)"],
-            Self::None => vec![],
-        };
-
-        convert_split_to_string(locations)
+            Self::Belladonna => &["Draynor Village Manor"],
+            Self::Calquat => &["Tai Bwo Wannai North"],
+            Self::Mushroom => &["Canifis"],
+            Self::Celastrus => &["Farming Guild"],
+            Self::Redwood => &["Farming Guild"],
+            Self::Crystal => &["Prifddinas North"],
+            Self::Seaweed => &["Underwater (Fossil Island)"],
+            Self::Grape => &["Hosidius Vinery"],
+            Self::Hespori => &["Farming Guild"],
+            Self::Anima => &["Farming Guild"],
+            Self::Cactus => &["Al Kharid", "Farming Guild"],
+            Self::Hardwood => &["Fossil Island (Mushroom Forest)", "Locus Oasis (Varlamore)"],
+            Self::None => &[],
+        }
     }
 }
 
