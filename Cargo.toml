@@ -6,18 +6,18 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.55"
+anyhow = "1.0.100"
 common = { git = "https://github.com/ryanwohara/reinze-lib-common.git", branch = "main", package = "reinze-lib-common" }
 format_num = "0.1.0"
 meval = { git = "https://github.com/ryanwohara/meval-rs.git", branch = "main" }
-mysql = "26.0.0"
-regex = "1.7.1"
-reqwest = { version = "0.12", features = ["json", "blocking"] }
-rust-ini = "0.21.0"
-select = "0.6.0"
-serde = { version = "1.0.130", features = ["derive"] }
-serde_json = "1.0.90"
-tokio = { version = "1.23.0", features = ["full"] }
+mysql = "26.0.1"
+regex = "1.11.3"
+reqwest = { version = "0.12.23", features = ["json", "blocking"] }
+rust-ini = "0.21.3"
+select = "0.6.1"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+tokio = { version = "1.47.1", features = ["full"] }
 itertools = "0.14.0"
 
 [lib]
