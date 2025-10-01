@@ -1,4 +1,4 @@
-name: Build and Test
+name: Deploy
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  deploy:
     runs-on: reinze
     steps:
       - name: Pull code && deploy
