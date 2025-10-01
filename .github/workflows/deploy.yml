@@ -1,0 +1,17 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: reinze
+    steps:
+      - name: Pull code && deploy
+        run: |
+          cd /var/www/rshelp.com/reinze-lib-runescape
+          git pull
+          ./bin/bd-prod.sh
