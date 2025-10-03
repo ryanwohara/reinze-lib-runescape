@@ -14,6 +14,7 @@ pub fn prices(query: &str) -> Result<Vec<String>, ()> {
     let ge_filename = "lib/ge.json";
     let mut output = l("Price");
     let mut found_items: Vec<String> = vec![];
+    let mut total_value = 0.0;
 
     let ge_file_contents = match read_to_string(ge_filename) {
         Ok(file) => file,
@@ -42,28 +43,37 @@ pub fn prices(query: &str) -> Result<Vec<String>, ()> {
             }
         };
 
-        if item.total == Some(0) || item.total == Some(1) {
-            found_items.push(format!(
-                "{}: {}{}",
-                c1(&item.name),
-                match item_values.high {
-                    Some(value) => c2(&commas(value as f64, "d")),
-                    None => c2("0"),
-                },
-                c1("gp")
-            ));
-        } else {
-            let total = item.total.unwrap_or_else(|| 1);
+        match item.total {
+            Some(0) | Some(1) => {
+                found_items.push(format!(
+                    "{}: {}{}",
+                    c1(&item.name),
+                    match item_values.high {
+                        Some(value) => {
+                            total_value += value as f64;
+                            c2(&commas(value as f64, "d"))
+                        }
+                        None => c2("0"),
+                    },
+                    c1("gp")
+                ));
+            }
+            total => {
+                let total = total.unwrap_or_else(|| 1);
 
-            found_items.push(format!(
-                "{}: {}{}",
-                c1(&format!("{}x {}", commas(total as f64, "d"), item.name)),
-                match item_values.high {
-                    Some(value) => c2(&commas(value as f64 * total as f64, "d")),
-                    None => c2("0"),
-                },
-                c1("gp")
-            ));
+                found_items.push(format!(
+                    "{}: {}{}",
+                    c1(&format!("{}x {}", commas(total as f64, "d"), item.name)),
+                    match item_values.high {
+                        Some(value) => {
+                            let multiplied_value = value as f64 * total as f64;
+                            total_value += multiplied_value;
+                            c2(&commas(multiplied_value, "d")) },
+                        None => c2("0"),
+                    },
+                    c1("gp")
+                ));
+            }
         }
 
         if found_items.len() >= 10 {
@@ -71,9 +81,18 @@ pub fn prices(query: &str) -> Result<Vec<String>, ()> {
         }
     }
 
+    let item_count = found_items.len();
     output = format!("{} {}", output, not_found(found_items));
 
-    let output_vec: Vec<String> = vec![output];
+    let mut output_vec: Vec<String> = vec![output];
+    if item_count > 1 {
+        output_vec.push(format!(
+            "{} {}{}",
+            l("Total"),
+            c2(&commas(total_value, "d")),
+            c1("gp")
+        ));
+    }
 
     Ok(output_vec)
 }
