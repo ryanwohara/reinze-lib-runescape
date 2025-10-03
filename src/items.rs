@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
-
+use crate::common::eval_query;
 /*
   {
     "examine": "Fabulously ancient mage protection enchanted in the 3rd Age.",
@@ -126,3 +126,19 @@ pub enum StrOrNum<'a> {
 }
 // https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=939c50d5e1945dae3855bdf02e1e12bd
 // https://stackoverflow.com/questions/56582722/serde-json-deserialize-any-number
+
+impl StrOrNum<'_> {
+    pub fn str(self) -> String {
+        match self {
+            StrOrNum::Str(s) => s.to_string(),
+            StrOrNum::Num(n) => n.to_string(),
+        }
+    }
+
+    pub fn num(self) -> f64 {
+        match self {
+            StrOrNum::Str(s) => eval_query(s).unwrap_or_else(|_| 0.0),
+            StrOrNum::Num(n) => n as f64,
+        }
+    }
+}

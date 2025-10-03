@@ -1,4 +1,4 @@
-use super::items::{Ge, GeItemPrice, StrOrNum};
+use super::items::{Ge, GeItemPrice};
 use crate::common::{eval_query, parse_item_db};
 use common::{c1, c2, c3, c4, c5, commas, l, not_found, p};
 use serde_json;
@@ -13,6 +13,7 @@ pub fn ge(query: &str) -> Result<Vec<String>, ()> {
 
     let mut output = l("Grand Exchange");
     let mut found_items: Vec<String> = vec![];
+    let mut total_value = 0.0;
 
     for item in item_db.iter() {
         // Hit the OSRS API with the item ID
@@ -52,18 +53,21 @@ pub fn ge(query: &str) -> Result<Vec<String>, ()> {
         let count = item.total.unwrap_or_else(|| 0);
 
         if count == 0 {
+            total_value += ge_json.current.price.num();
+
             found_items.push(format!(
                 "{}: {}{} {}",
                 c1(&item.name),
-                c2(&str_from_enum(ge_json.current.price)),
+                c2(&ge_json.current.price.str()),
                 c1("gp"),
                 price_change(&ge_json.today, count)
             ));
         } else {
-            let total = match eval_query(str_from_enum(ge_json.current.price).replace(" ", "")) {
+            let total = match eval_query(ge_json.current.price.str().replace(" ", "")) {
                 Ok(t) => t * count as f64,
                 Err(_) => 0.0,
             };
+            total_value += total;
 
             found_items.push(format!(
                 "{}: {}{} {}",
@@ -75,16 +79,25 @@ pub fn ge(query: &str) -> Result<Vec<String>, ()> {
         }
     }
 
+    let item_count = found_items.len();
     output = format!("{} {}", output, not_found(found_items));
 
-    let output_vec = vec![output];
+    let mut output_vec = vec![output];
+    if item_count > 1 {
+        output_vec.push(format!(
+            "{} {}{}",
+            l("Total"),
+            c2(&commas(total_value, "d")),
+            c1("gp")
+        ));
+    }
 
     Ok(output_vec)
 }
 
 fn price_change(today: &GeItemPrice, count: u64) -> String {
     let mut output = String::new();
-    let str_price = str_from_enum(today.price).replace(" ", "");
+    let str_price = today.price.str().replace(" ", "");
 
     let price = match count {
         0..2 => str_price,
@@ -103,11 +116,4 @@ fn price_change(today: &GeItemPrice, count: u64) -> String {
     }
 
     p(&output)
-}
-
-fn str_from_enum(price: StrOrNum) -> String {
-    match price {
-        StrOrNum::Str(s) => s.to_string(),
-        StrOrNum::Num(n) => n.to_string(),
-    }
 }
