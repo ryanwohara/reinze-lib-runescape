@@ -268,16 +268,23 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
     let string;
 
     if flags.start == 0 {
-        let rsn = if flags.start > 0 {
+        let re = Regex::new(r"\s").unwrap();
+
+        let rsn_with_spaces = if flags.start > 0 {
+            println!("{}", nick);
             nick
         } else if split.is_empty() || split[0].is_empty() {
+            println!("2");
             get_rsn(author, rsn_n)
                 .ok()
                 .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
                 .unwrap_or(nick)
         } else {
+            println!("{:?}", split);
             split.join(" ")
         };
+
+        let rsn = re.replace_all(&rsn_with_spaces, "_").to_string();
 
         string = match reqwest::blocking::get(&format!("{}{}", flags.account_type.link(), rsn)) {
             Ok(resp) => match resp.text() {
@@ -785,7 +792,7 @@ pub fn process_stats_subsection(
         }
     }
 
-    let rsn = if split.is_empty() || split[0].is_empty() {
+    let rsn_with_spaces = if split.is_empty() || split[0].is_empty() {
         get_rsn(author, rsn_n)
             .ok()
             .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
@@ -793,6 +800,9 @@ pub fn process_stats_subsection(
     } else {
         split.join(" ")
     };
+
+    let re = Regex::new(r"\s").unwrap();
+    let rsn = re.replace_all(&rsn_with_spaces, "_").to_string();
 
     let stats = match get_stats(&rsn, &base_url) {
         Ok(stats) => stats,
