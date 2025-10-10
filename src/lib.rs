@@ -111,7 +111,7 @@ pub extern "C" fn exported(
         | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
         | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
         | "hunt" | "construction" | "con" => stats::stats(command, query, author, rsn_n),
-        "plant" | "plants" => plant::lookup(query),
+        "payment" | "plant" | "plants" => plant::lookup(query),
         "pvparena" | "pvp" | "arena" => pvparena::lookup(query, author, rsn_n),
         "rift" | "rifts" => rifts::lookup(query, author, rsn_n),
         "rsn" => rsn::process(query, author, rsn_n),
@@ -171,7 +171,7 @@ mp|money|moneyprinter|profit|printer|profitprinter
 (no)?burn
 params?
 patch
-plants?
+payment|plants?
 players
 price
 (pvparena|pvp|arena)\d*
