@@ -6,4 +6,4 @@
 cargo update && \
   cargo build --release && \
   rm -rf ../rust-reinze/plugins/libreinze_lib_runescape* && \
-  cp "target/release/libreinze_lib_runescape${extension}" "../rust-reinze/plugins/libreinze_lib_runescape_$(date "+%Y%m%dT%H%M%S")${extension}"
+  mv "target/release/libreinze_lib_runescape${extension}" "../rust-reinze/plugins/libreinze_lib_runescape_$(date "+%Y%m%dT%H%M%S")${extension}"
