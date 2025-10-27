@@ -30,6 +30,7 @@ mod wiki;
 mod xp;
 mod bolts;
 mod fairy;
+mod gridmaster;
 
 use regex::Regex;
 use std::ffi::{CStr, CString};
@@ -93,6 +94,7 @@ pub extern "C" fn exported(
         "experience" | "xperience" | "exp" | "xp" => xp::xp(query),
         "fairy" => fairy::lookup(query),
         "ge" => ge::ge(query),
+        "grid" => gridmaster::lookup(query, author, rsn_n),
         "level" | "lvl" => level::level(query),
         "league" | "leagues" => leagues::lookup(query, author, rsn_n),
         "lms" | "lmstanding" | "lmanstanding" | "lastmstanding" | "lastmanstanding" => {
@@ -130,6 +132,7 @@ combat[N]
 congrats
 fairy
 ge
+grid[N]
 kc[N]
 level
 leagues[N]
@@ -163,6 +166,7 @@ colo(sseum)?\d*
 coll(ection(log)?)?\d*
 ((con)?grat[sz]?(ulations?)?|gz)
 ^ge
+^grid
 l(ast)?m(an)?s(tanding)?\d*
 level
 leagues?\d*

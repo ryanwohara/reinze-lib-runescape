@@ -2,9 +2,9 @@ use super::stats::process_stats_subsection;
 use common::l;
 
 pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
-    const OFFSET: isize = 25;
+    const OFFSET: isize = 24;
 
-    let categories: Vec<&str> = vec!["League Points"];
+    let categories: Vec<&str> = vec!["Grid Points"];
 
     let query = format!("{} -l", query);
 
