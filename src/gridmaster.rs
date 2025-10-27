@@ -6,7 +6,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
 
     let categories: Vec<&str> = vec!["Grid Points"];
 
-    let query = format!("{} -l", query);
+    let query = format!("{} -t", query);
 
     process_stats_subsection(&query, author, rsn_n, &l("Tournament"), categories, OFFSET)
 }
