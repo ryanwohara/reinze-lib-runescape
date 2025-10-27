@@ -837,7 +837,7 @@ pub fn process_stats_subsection(
                     p(&commas_from_string(rank, "d"))
                 ));
 
-                if offset == 24 {
+                if offset == 25 {
                     let points = points.parse::<u32>().unwrap_or(0);
 
                     let tier = match points {

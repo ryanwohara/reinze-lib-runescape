@@ -8,5 +8,5 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
 
     let query = format!("{} -l", query);
 
-    process_stats_subsection(&query, author, rsn_n, &l("Seasonal"), categories, OFFSET)
+    process_stats_subsection(&query, author, rsn_n, &l("Tournament"), categories, OFFSET)
 }
