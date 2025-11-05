@@ -227,7 +227,7 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
 
     let flags = stats_parameters(input);
     let query = strip_stats_parameters(input);
-    let split: Vec<String> = convert_split_to_string(query.split(" ").collect());
+    let split: Vec<String> = convert_split_to_string(query.split_whitespace().collect());
 
     let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
 
@@ -273,7 +273,7 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
         let rsn_with_spaces = if flags.start > 0 {
             println!("{}", nick);
             nick
-        } else if split.is_empty() || split[0].is_empty() {
+        } else if split.is_empty() {
             println!("2");
             get_rsn(author, rsn_n)
                 .ok()
