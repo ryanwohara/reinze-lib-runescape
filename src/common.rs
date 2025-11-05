@@ -113,9 +113,9 @@ pub fn level_to_xp(level: u32) -> u32 {
 
 // Converts experience to a level
 pub fn xp_to_level(xp: u32) -> u32 {
-    for level in 1..=126 {
-        if xp <= level_to_xp(level) {
-            return level;
+    for level in 2..=127 {
+        if xp < level_to_xp(level) {
+            return level - 1
         }
     }
 
@@ -756,45 +756,48 @@ mod tests {
         assert_eq!(xp_to_level(0), 1);
         assert_eq!(xp_to_level(83), 2);
         assert_eq!(xp_to_level(174), 3);
-        assert_eq!(xp_to_level(275), 4);
-        assert_eq!(xp_to_level(387), 5);
-        assert_eq!(xp_to_level(511), 6);
-        assert_eq!(xp_to_level(648), 7);
-        assert_eq!(xp_to_level(799), 8);
-        assert_eq!(xp_to_level(966), 9);
-        assert_eq!(xp_to_level(1151), 10);
-        assert_eq!(xp_to_level(1355), 11);
-        assert_eq!(xp_to_level(1580), 12);
-        assert_eq!(xp_to_level(1829), 13);
-        assert_eq!(xp_to_level(2103), 14);
-        assert_eq!(xp_to_level(2406), 15);
-        assert_eq!(xp_to_level(2740), 16);
-        assert_eq!(xp_to_level(3109), 17);
-        assert_eq!(xp_to_level(3517), 18);
-        assert_eq!(xp_to_level(3967), 19);
-        assert_eq!(xp_to_level(4463), 20);
-        assert_eq!(xp_to_level(5011), 21);
-        assert_eq!(xp_to_level(5616), 22);
-        assert_eq!(xp_to_level(6283), 23);
-        assert_eq!(xp_to_level(7020), 24);
-        assert_eq!(xp_to_level(7833), 25);
-        assert_eq!(xp_to_level(8730), 26);
-        assert_eq!(xp_to_level(9720), 27);
-        assert_eq!(xp_to_level(10813), 28);
-        assert_eq!(xp_to_level(12020), 29);
-        assert_eq!(xp_to_level(13352), 30);
-        assert_eq!(xp_to_level(61495), 45);
-        assert_eq!(xp_to_level(166614), 55);
-        assert_eq!(xp_to_level(1210391), 75);
-        assert_eq!(xp_to_level(6517217), 92);
-        assert_eq!(xp_to_level(8771521), 95);
-        assert_eq!(xp_to_level(9684539), 96);
-        assert_eq!(xp_to_level(10692591), 97);
-        assert_eq!(xp_to_level(11805568), 98);
-        assert_eq!(xp_to_level(13034392), 99);
-        assert_eq!(xp_to_level(13034392), 99);
+        assert_eq!(xp_to_level(276), 4);
+        assert_eq!(xp_to_level(388), 5);
+        assert_eq!(xp_to_level(512), 6);
+        assert_eq!(xp_to_level(650), 7);
+        assert_eq!(xp_to_level(801), 8);
+        assert_eq!(xp_to_level(969), 9);
+        assert_eq!(xp_to_level(1154), 10);
+        assert_eq!(xp_to_level(1358), 11);
+        assert_eq!(xp_to_level(1584), 12);
+        assert_eq!(xp_to_level(1833), 13);
+        assert_eq!(xp_to_level(2107), 14);
+        assert_eq!(xp_to_level(2411), 15);
+        assert_eq!(xp_to_level(2746), 16);
+        assert_eq!(xp_to_level(3115), 17);
+        assert_eq!(xp_to_level(3523), 18);
+        assert_eq!(xp_to_level(3973), 19);
+        assert_eq!(xp_to_level(4470), 20);
+        assert_eq!(xp_to_level(5018), 21);
+        assert_eq!(xp_to_level(5624), 22);
+        assert_eq!(xp_to_level(6291), 23);
+        assert_eq!(xp_to_level(7028), 24);
+        assert_eq!(xp_to_level(7842), 25);
+        assert_eq!(xp_to_level(8740), 26);
+        assert_eq!(xp_to_level(9730), 27);
+        assert_eq!(xp_to_level(10824), 28);
+        assert_eq!(xp_to_level(12031), 29);
+        assert_eq!(xp_to_level(13363), 30);
+        assert_eq!(xp_to_level(61512), 45);
+        assert_eq!(xp_to_level(166636), 55);
+        assert_eq!(xp_to_level(1210421), 75);
+        assert_eq!(xp_to_level(6517253), 92);
+        assert_eq!(xp_to_level(8771558), 95);
+        assert_eq!(xp_to_level(9684577), 96);
+        assert_eq!(xp_to_level(10692629), 97);
+        assert_eq!(xp_to_level(11805606), 98);
+        assert_eq!(xp_to_level(12352331), 98);
+        assert_eq!(xp_to_level(13034431), 99);
         assert_eq!(xp_to_level(14391160), 100);
+        assert_eq!(xp_to_level(23611006), 105);
+        assert_eq!(xp_to_level(38737661), 110);
         assert_eq!(xp_to_level(63555443), 115);
+        assert_eq!(xp_to_level(104273167), 120);
         assert_eq!(xp_to_level(188884740), 126);
         assert_eq!(xp_to_level(200000000), 126);
     }
