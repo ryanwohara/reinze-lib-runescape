@@ -91,26 +91,35 @@ pub fn skill_by_id(skill: u32) -> String {
 
 // Converts a level to experience
 pub fn level_to_xp(level: u32) -> u32 {
-    let mut xp = 0;
+    let mut xp = 0.0;
 
     for i in 1..level {
         let x: f32 = i as f32;
 
-        xp += (x + 300.0 * 2.0_f32.powf(x / 7.0)).floor() as u32 / 4;
+        xp += (x + 300.0 * 2.0_f32.powf(x / 7.0)).floor() / 4.0;
     }
 
-    xp
+    xp.floor() as u32 +
+        match level {
+            96..=99 => 1,
+            105..110 => 2,
+            110..115 => 5,
+            115..120 => 3,
+            120..126 => 7,
+            126 => 4,
+            _ => 0,
+        }
 }
 
 // Converts experience to a level
 pub fn xp_to_level(xp: u32) -> u32 {
-    for level in 1..=127 {
-        if xp < level_to_xp(level) {
-            return level - 1;
+    for level in 1..=126 {
+        if xp <= level_to_xp(level) {
+            return level;
         }
     }
 
-    0
+    126
 }
 
 #[derive(Debug, Clone)]
@@ -697,42 +706,49 @@ mod tests {
         assert_eq!(level_to_xp(1), 0);
         assert_eq!(level_to_xp(2), 83);
         assert_eq!(level_to_xp(3), 174);
-        assert_eq!(level_to_xp(4), 275);
-        assert_eq!(level_to_xp(5), 387);
-        assert_eq!(level_to_xp(6), 511);
-        assert_eq!(level_to_xp(7), 648);
-        assert_eq!(level_to_xp(8), 799);
-        assert_eq!(level_to_xp(9), 966);
-        assert_eq!(level_to_xp(10), 1151);
-        assert_eq!(level_to_xp(11), 1355);
-        assert_eq!(level_to_xp(12), 1580);
-        assert_eq!(level_to_xp(13), 1829);
-        assert_eq!(level_to_xp(14), 2103);
-        assert_eq!(level_to_xp(15), 2406);
-        assert_eq!(level_to_xp(16), 2740);
-        assert_eq!(level_to_xp(17), 3109);
-        assert_eq!(level_to_xp(18), 3517);
-        assert_eq!(level_to_xp(19), 3967);
-        assert_eq!(level_to_xp(20), 4463);
-        assert_eq!(level_to_xp(21), 5011);
-        assert_eq!(level_to_xp(22), 5616);
-        assert_eq!(level_to_xp(23), 6283);
-        assert_eq!(level_to_xp(24), 7020);
-        assert_eq!(level_to_xp(25), 7833);
-        assert_eq!(level_to_xp(26), 8730);
-        assert_eq!(level_to_xp(27), 9720);
-        assert_eq!(level_to_xp(28), 10813);
-        assert_eq!(level_to_xp(29), 12020);
-        assert_eq!(level_to_xp(30), 13352);
-        assert_eq!(level_to_xp(45), 61495);
-        assert_eq!(level_to_xp(55), 166614);
-        assert_eq!(level_to_xp(75), 1210391);
-        assert_eq!(level_to_xp(92), 6517217);
-        assert_eq!(level_to_xp(95), 8771521);
-        assert_eq!(level_to_xp(96), 9684539);
-        assert_eq!(level_to_xp(97), 10692591);
-        assert_eq!(level_to_xp(98), 11805568);
-        assert_eq!(level_to_xp(99), 13034392);
+        assert_eq!(level_to_xp(4), 276);
+        assert_eq!(level_to_xp(5), 388);
+        assert_eq!(level_to_xp(6), 512);
+        assert_eq!(level_to_xp(7), 650);
+        assert_eq!(level_to_xp(8), 801);
+        assert_eq!(level_to_xp(9), 969);
+        assert_eq!(level_to_xp(10), 1154);
+        assert_eq!(level_to_xp(11), 1358);
+        assert_eq!(level_to_xp(12), 1584);
+        assert_eq!(level_to_xp(13), 1833);
+        assert_eq!(level_to_xp(14), 2107);
+        assert_eq!(level_to_xp(15), 2411);
+        assert_eq!(level_to_xp(16), 2746);
+        assert_eq!(level_to_xp(17), 3115);
+        assert_eq!(level_to_xp(18), 3523);
+        assert_eq!(level_to_xp(19), 3973);
+        assert_eq!(level_to_xp(20), 4470);
+        assert_eq!(level_to_xp(21), 5018);
+        assert_eq!(level_to_xp(22), 5624);
+        assert_eq!(level_to_xp(23), 6291);
+        assert_eq!(level_to_xp(24), 7028);
+        assert_eq!(level_to_xp(25), 7842);
+        assert_eq!(level_to_xp(26), 8740);
+        assert_eq!(level_to_xp(27), 9730);
+        assert_eq!(level_to_xp(28), 10824);
+        assert_eq!(level_to_xp(29), 12031);
+        assert_eq!(level_to_xp(30), 13363);
+        assert_eq!(level_to_xp(45), 61512);
+        assert_eq!(level_to_xp(55), 166636);
+        assert_eq!(level_to_xp(75), 1210421);
+        assert_eq!(level_to_xp(92), 6517253);
+        assert_eq!(level_to_xp(95), 8771558);
+        assert_eq!(level_to_xp(96), 9684577);
+        assert_eq!(level_to_xp(97), 10692629);
+        assert_eq!(level_to_xp(98), 11805606);
+        assert_eq!(level_to_xp(99), 13034431);
+        assert_eq!(level_to_xp(100), 14391160);
+        assert_eq!(level_to_xp(105), 23611006);
+        assert_eq!(level_to_xp(110), 38737661);
+        assert_eq!(level_to_xp(115), 63555443);
+        assert_eq!(level_to_xp(120), 104273167);
+        assert_eq!(level_to_xp(126), 188884740);
+        assert_eq!(level_to_xp(127), 208545568);
     }
 
     #[test]
@@ -776,6 +792,11 @@ mod tests {
         assert_eq!(xp_to_level(10692591), 97);
         assert_eq!(xp_to_level(11805568), 98);
         assert_eq!(xp_to_level(13034392), 99);
+        assert_eq!(xp_to_level(13034392), 99);
+        assert_eq!(xp_to_level(14391160), 100);
+        assert_eq!(xp_to_level(63555443), 115);
+        assert_eq!(xp_to_level(188884740), 126);
+        assert_eq!(xp_to_level(200000000), 126);
     }
 
     #[test]
