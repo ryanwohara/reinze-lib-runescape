@@ -299,9 +299,9 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
 
         let hiscores_split = string.split('\n').collect::<Vec<&str>>();
         hiscores_len = hiscores_split.len() - 1;
-        if hiscores_len > 24 {
-            // 23 skills
-            hiscores_len = 24;
+        if hiscores_len > 25 {
+            // 24 skills
+            hiscores_len = 25;
         }
 
         hiscores_collected = hiscores_split[0..=hiscores_len]
