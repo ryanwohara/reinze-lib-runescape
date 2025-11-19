@@ -33,6 +33,7 @@ pub fn skill(s: &str) -> String {
         "runecraft" | "rc" => "Runecraft",
         "hunter" | "hunt" => "Hunter",
         "construction" | "con" => "Construction",
+        "sail" | "sailing" => "Sailing",
         _ => "",
     }
     .to_string()
@@ -65,6 +66,7 @@ pub fn skills() -> Vec<String> {
         "Runecraft",
         "Hunter",
         "Construction",
+        "Sailing",
     ]
     .iter()
     .map(|x| x.to_string())
@@ -99,8 +101,8 @@ pub fn level_to_xp(level: u32) -> u32 {
         xp += (x + 300.0 * 2.0_f32.powf(x / 7.0)).floor() / 4.0;
     }
 
-    xp.floor() as u32 +
-        match level {
+    xp.floor() as u32
+        + match level {
             96..=99 => 1,
             105..110 => 2,
             110..115 => 5,
@@ -115,7 +117,7 @@ pub fn level_to_xp(level: u32) -> u32 {
 pub fn xp_to_level(xp: u32) -> u32 {
     for level in 2..=127 {
         if xp < level_to_xp(level) {
-            return level - 1
+            return level - 1;
         }
     }
 
@@ -593,7 +595,7 @@ pub fn replace_item_abbreviations(q: &str) -> String {
         (r"\bhally\b", "halberd"),
         (r"\bobby\b", "obsidian"),
         (r"\bd\b", "dragon"),
-        (r"\bnezzy\b", "Helm of Neitiznot")
+        (r"\bnezzy\b", "Helm of Neitiznot"),
     ];
 
     for (pattern, replacement) in patterns.iter() {

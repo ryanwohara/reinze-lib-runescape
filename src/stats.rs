@@ -271,16 +271,13 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
         let re = Regex::new(r"\s").unwrap();
 
         let rsn_with_spaces = if flags.start > 0 {
-            println!("{}", nick);
             nick
         } else if split.is_empty() {
-            println!("2");
             get_rsn(author, rsn_n)
                 .ok()
                 .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
                 .unwrap_or(nick)
         } else {
-            println!("{:?}", split);
             split.join(" ")
         };
 
@@ -837,7 +834,7 @@ pub fn process_stats_subsection(
                     p(&commas_from_string(rank, "d"))
                 ));
 
-                if offset == 25 {
+                if offset == 26 {
                     let points = points.parse::<u32>().unwrap_or(0);
 
                     let tier = match points {

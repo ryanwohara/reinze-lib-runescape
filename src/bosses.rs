@@ -2,7 +2,7 @@ use super::stats::process_stats_subsection;
 use common::l;
 
 pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
-    const OFFSET: isize = 44;
+    const OFFSET: isize = 45;
 
     let categories: Vec<&str> = vec![
         "Abyssal Sire",
@@ -47,6 +47,7 @@ pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()>
         "Sarachnis",
         "Scorpia",
         "Scurrius",
+        "Shellbane Gryphon",
         "Skotizo",
         "Sol Heredit",
         "Spindel",

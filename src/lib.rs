@@ -2,14 +2,17 @@ extern crate core;
 
 mod alch;
 mod bh;
+mod bolts;
 mod boost;
 mod bosses;
 mod clues;
 mod collectionlog;
 mod colosseum;
 mod common;
+mod fairy;
 mod ge;
 mod grats;
+mod gridmaster;
 mod items;
 mod leagues;
 mod level;
@@ -28,9 +31,6 @@ mod soulwars;
 mod stats;
 mod wiki;
 mod xp;
-mod bolts;
-mod fairy;
-mod gridmaster;
 
 use regex::Regex;
 use std::ffi::{CStr, CString};
@@ -100,7 +100,9 @@ pub extern "C" fn exported(
         "lms" | "lmstanding" | "lmanstanding" | "lastmstanding" | "lastmanstanding" => {
             lms::lookup(query, author, rsn_n)
         }
-        "mp" | "money" | "moneyprinter" | "profit" | "printer" | "profitprinter" => money::printer(query),
+        "mp" | "money" | "moneyprinter" | "profit" | "printer" | "profitprinter" => {
+            money::printer(query)
+        }
         "noburn" | "burn" => noburn::noburn(query),
         "param" | "params" => params::params(query),
         "patch" => patch::patch(query),
@@ -112,7 +114,9 @@ pub extern "C" fn exported(
         | "fishing" | "fish" | "firemaking" | "fm" | "crafting" | "craft" | "smithing"
         | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
         | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
-        | "hunt" | "construction" | "con" => stats::stats(command, query, author, rsn_n),
+        | "hunt" | "construction" | "con" | "sail" | "sailing" => {
+            stats::stats(command, query, author, rsn_n)
+        }
         "payment" | "plant" | "plants" => plant::lookup(query),
         "pvparena" | "pvp" | "arena" => pvparena::lookup(query, author, rsn_n),
         "rift" | "rifts" => rifts::lookup(query, author, rsn_n),
@@ -210,6 +214,7 @@ farm(ing)?
 r(une)?c(raft)?
 hunt(er)?
 con(struction)?\d*$
+sail(ing)?\d*
 wiki"
             .split("\n")
             .map(|s| s.to_string())
