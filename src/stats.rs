@@ -263,7 +263,7 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
     .replace("  ", " ")];
 
     let hiscores_collected: Vec<Vec<&str>>;
-    let mut hiscores_len = 24;
+    let mut hiscores_len = 25;
     let string_hiscores_collected;
     let string;
 
