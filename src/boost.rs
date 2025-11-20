@@ -160,11 +160,11 @@ fn get_modifiers(skill: &str) -> Vec<(String, String)> {
             ("Orange spicy stew", "-5/+5"),
         ],
         "Sailing" => vec![
-            ("Kraken ink stout", "1"),
-            ("Perildance bitter", "1"),
-            ("Trawler's trust", "2"),
-            ("Whirlpool surprise", "3"),
-            ("Horizon's lure", "4"),
+            ("Kraken ink stout", "+1"),
+            ("Perildance bitter", "+1"),
+            ("Trawler's trust", "+2"),
+            ("Whirlpool surprise", "+3"),
+            ("Horizon's lure", "+4"),
             ("Yellow spicy stew", "-5/+5"),
         ],
         "Slayer" => vec![
