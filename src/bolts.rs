@@ -57,16 +57,56 @@ impl Bolt {
 
     fn details(&self) -> BoltDetails {
         match self {
-            Bolt::Opal => BoltDetails::from("Opal", "Lucky Lightning", "Chance of a lighting bolt striking your opponent and causing extra damage."),
-            Bolt::Sapphire => BoltDetails::from("Sapphire","Clear Mind","Chance of lowering target's Prayer points and giving part of them to the attacker. Only works in PvP."),
-            Bolt::Jade => BoltDetails::from("Jade","Earth's Fury","Chance of knocking their target to the ground, although agile opponents may resist this."),
-            Bolt::Pearl => BoltDetails::from("Pearl","Sea Curse","Chance of waterfall hitting oppenent. This ability is negated by opponents wielding water staves but increased by opponents wearing fiery garments."),
-            Bolt::Emerald => BoltDetails::from("Emerald","Magical Poison","Chance of poisoning opponent. Damage of 5, with poison."),
-            Bolt::Topaz => BoltDetails::from("Topaz","Down to Earth","Chance of lowering opponents Magic level. Only works in PvP."),
-            Bolt::Ruby => BoltDetails::from("Ruby","Blood Forfeit","Chance of removing 10% of attacker's Hitpoints and 20% of their target's Hitpoints."),
-            Bolt::Diamond => BoltDetails::from("Diamond","Armour Piercing","Chance of negating a sizable portion of opponent's Defence bonuses againts Ranged attacks."),
-            Bolt::Dragonstone => BoltDetails::from("Dragonstone","Dragon's Breath","Chance of inflicting a dragon's breath hit against oppenent, unless they have an AntiDragon Shield, have used an AntiFire Potion, or are some type of fiery beast."),
-            Bolt::Onyx => BoltDetails::from("Onyx","Life Leech","Chance of doing extra damage of healing the attacker's Hitpoints by 25% of the damage dealt. This does not work on the undead, as they have no life to leech."),
+            Bolt::Opal => BoltDetails::from(
+                "Opal",
+                "Lucky Lightning",
+                "Chance of a lighting bolt striking your opponent and causing extra damage.",
+            ),
+            Bolt::Sapphire => BoltDetails::from(
+                "Sapphire",
+                "Clear Mind",
+                "Chance of lowering target's Prayer points and giving part of them to the attacker. Only works in PvP.",
+            ),
+            Bolt::Jade => BoltDetails::from(
+                "Jade",
+                "Earth's Fury",
+                "Chance of knocking their target to the ground, although agile opponents may resist this.",
+            ),
+            Bolt::Pearl => BoltDetails::from(
+                "Pearl",
+                "Sea Curse",
+                "Chance of waterfall hitting oppenent. This ability is negated by opponents wielding water staves but increased by opponents wearing fiery garments.",
+            ),
+            Bolt::Emerald => BoltDetails::from(
+                "Emerald",
+                "Magical Poison",
+                "Chance of poisoning opponent. Damage of 5, with poison.",
+            ),
+            Bolt::Topaz => BoltDetails::from(
+                "Topaz",
+                "Down to Earth",
+                "Chance of lowering opponents Magic level. Only works in PvP.",
+            ),
+            Bolt::Ruby => BoltDetails::from(
+                "Ruby",
+                "Blood Forfeit",
+                "Chance of removing 10% of attacker's Hitpoints and 20% of their target's Hitpoints.",
+            ),
+            Bolt::Diamond => BoltDetails::from(
+                "Diamond",
+                "Armour Piercing",
+                "Chance of negating a sizable portion of opponent's Defence bonuses againts Ranged attacks.",
+            ),
+            Bolt::Dragonstone => BoltDetails::from(
+                "Dragonstone",
+                "Dragon's Breath",
+                "Chance of inflicting a dragon's breath hit against oppenent, unless they have an AntiDragon Shield, have used an AntiFire Potion, or are some type of fiery beast.",
+            ),
+            Bolt::Onyx => BoltDetails::from(
+                "Onyx",
+                "Life Leech",
+                "Chance of doing extra damage of healing the attacker's Hitpoints by 25% of the damage dealt. This does not work on the undead, as they have no life to leech.",
+            ),
         }
     }
 }

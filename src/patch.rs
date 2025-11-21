@@ -1,12 +1,16 @@
+use common::{c2, l, not_found, p};
 use std::fmt;
 use std::str::FromStr;
-use common::{c2, l, not_found, p};
 
 pub fn patch(query: &str) -> Result<Vec<String>, ()> {
     let prefix = l("Patch");
     let patch: Patch = query.parse()?;
 
-    let locations = patch.locations().iter().map(|location| c2(&location)).collect();
+    let locations = patch
+        .locations()
+        .iter()
+        .map(|location| c2(&location))
+        .collect();
 
     let output = format!(
         "{} {}{}",
@@ -48,6 +52,7 @@ enum Patch {
     Anima,
     Cactus,
     Hardwood,
+    Coral,
     None,
 }
 
@@ -74,6 +79,7 @@ impl Patch {
             Self::Anima,
             Self::Cactus,
             Self::Hardwood,
+            Self::Coral,
             Self::None,
         ]
     }
@@ -126,7 +132,7 @@ impl Patch {
                 "Taverley",
                 "Gnome Stronghold",
                 "Farming Guild",
-                "Auburnvale"
+                "Auburnvale",
             ],
             Self::Fruit => &[
                 "Catherby East",
@@ -151,7 +157,7 @@ impl Patch {
                 "Hosidius South-west",
             ],
             Self::Belladonna => &["Draynor Village Manor"],
-            Self::Calquat => &["Tai Bwo Wannai North"],
+            Self::Calquat => &["Tai Bwo Wannai North", "The Great Conch"],
             Self::Mushroom => &["Canifis"],
             Self::Celastrus => &["Farming Guild"],
             Self::Redwood => &["Farming Guild"],
@@ -162,6 +168,7 @@ impl Patch {
             Self::Anima => &["Farming Guild"],
             Self::Cactus => &["Al Kharid", "Farming Guild"],
             Self::Hardwood => &["Fossil Island (Mushroom Forest)", "Locus Oasis (Varlamore)"],
+            Self::Coral => &["Coral Nurseries (East. Great Conch)"],
             Self::None => &[],
         }
     }
@@ -173,7 +180,12 @@ impl FromStr for Patch {
     fn from_str(query: &str) -> Result<Self, Self::Err> {
         Patch::all()
             .into_iter()
-            .find(|patch| patch.to_string().to_lowercase().contains(&query.to_lowercase()))
+            .find(|patch| {
+                patch
+                    .to_string()
+                    .to_lowercase()
+                    .contains(&query.to_lowercase())
+            })
             .ok_or(())
     }
 }
@@ -201,6 +213,7 @@ impl fmt::Display for Patch {
             Patch::Anima => "Anima",
             Patch::Cactus => "Cactus",
             Patch::Hardwood => "Hardwood",
+            Patch::Coral => "Coral",
             Patch::None => "",
         };
         write!(f, "{}", s)

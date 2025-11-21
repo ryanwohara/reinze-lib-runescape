@@ -18,8 +18,8 @@ mod thieving;
 mod woodcutting;
 
 use super::common::{
-    eval_query, get_cmb, get_rsn, get_stats, level_to_xp, process_account_type_flags, skill,
-    skills, xp_to_level, Combat,
+    Combat, eval_query, get_cmb, get_rsn, get_stats, level_to_xp, process_account_type_flags,
+    skill, skills, xp_to_level,
 };
 use crate::stats::skill::details_by_skill_id;
 use common::{c1, c2, commas, commas_from_string, convert_split_to_string, l, p, unranked};
@@ -248,19 +248,21 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
     .join(" ")
     .replace("  ", " ");
 
-    let not_found = vec![format!(
-        "{} {} {} {} {} {} {} {} {}",
-        prefix,
-        c1("Level"),
-        p("N/A"),
-        c2("|"),
-        c1("XP"),
-        p("N/A"),
-        c2("|"),
-        c1("Rank"),
-        p("N/A")
-    )
-    .replace("  ", " ")];
+    let not_found = vec![
+        format!(
+            "{} {} {} {} {} {} {} {} {}",
+            prefix,
+            c1("Level"),
+            p("N/A"),
+            c2("|"),
+            c1("XP"),
+            p("N/A"),
+            c2("|"),
+            c1("Rank"),
+            p("N/A")
+        )
+        .replace("  ", " "),
+    ];
 
     let hiscores_collected: Vec<Vec<&str>>;
     let mut hiscores_len = 25;
@@ -526,12 +528,12 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
     // if -s was passed (NOT -sk)
     if flags.flag == MutuallyExclusiveFlag::Sort {
         // sort the skills by xp_difference
-        sortable_data.sort_by(|a, b| a.0 .3.cmp(&b.0 .3));
+        sortable_data.sort_by(|a, b| a.0.3.cmp(&b.0.3));
 
         skill_data = Vec::new();
 
         for data in sortable_data {
-            let xp_difference = data.0 .3;
+            let xp_difference = data.0.3;
             let index = data.1;
 
             skill_data.push(format!(
@@ -542,12 +544,12 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
         }
     } else if flags.flag == MutuallyExclusiveFlag::Order {
         // sort the skills by xp_difference if -o was passed
-        sortable_data.sort_by(|a, b| a.0 .2.cmp(&b.0 .2));
+        sortable_data.sort_by(|a, b| a.0.2.cmp(&b.0.2));
 
         skill_data = Vec::new();
 
         for data in sortable_data {
-            let level = data.0 .1;
+            let level = data.0.1;
             let index = data.1;
 
             skill_data.push(format!(
@@ -653,7 +655,7 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
     // wrap up the data and return it
     if skill_data.len() > 0 {
         return Ok(vec![
-            format!("{} {}", prefix, skill_data.join(" ")).replace("  ", " ")
+            format!("{} {}", prefix, skill_data.join(" ")).replace("  ", " "),
         ]);
     }
 

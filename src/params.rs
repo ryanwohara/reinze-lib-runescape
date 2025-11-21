@@ -16,7 +16,7 @@ pub fn params(query: &str) -> Result<Vec<String>, ()> {
                 "{} {}",
                 prefix,
                 c2("Invalid number of arguments")
-            )])
+            )]);
         }
     };
 

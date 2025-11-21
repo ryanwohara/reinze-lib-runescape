@@ -95,6 +95,9 @@ enum Plant {
     Kronos,
     CrystalTree,
     Hespori,
+    Elkhorn,
+    Pillar,
+    Umbral,
 }
 
 impl Plant {
@@ -171,6 +174,9 @@ impl Plant {
             Self::Kronos,
             Self::CrystalTree,
             Self::Hespori,
+            Self::Elkhorn,
+            Self::Pillar,
+            Self::Umbral,
         ]
     }
 
@@ -507,6 +513,15 @@ impl Plant {
             Plant::Iasor => PlantDetails::from("Iasor plant", 76, 5120.0, 100.0, 0.0, 0.0, ""),
             Plant::Kronos => PlantDetails::from("Kronos plant", 76, 5120.0, 100.0, 0.0, 0.0, ""),
             Plant::Hespori => PlantDetails::from("Hespori", 65, 1920.0, 62.0, 0.0, 12600.0, ""),
+            Plant::Elkhorn => {
+                PlantDetails::from("Elkhorn", 28, 160.0, 20.5, 0.0, 24.0, "5 Giant seaweed")
+            }
+            Plant::Pillar => {
+                PlantDetails::from("Pillar", 52, 160.0, 0.5, 0.0, 60.0, "5 Elkhorn coral")
+            }
+            Plant::Umbral => {
+                PlantDetails::from("Umbral", 77, 160.0, 136.0, 0.0, 159.0, "5 Pillar seaweed")
+            },
         }
     }
 }

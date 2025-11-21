@@ -68,7 +68,8 @@ pub fn prices(query: &str) -> Result<Vec<String>, ()> {
                         Some(value) => {
                             let multiplied_value = value as f64 * total as f64;
                             total_value += multiplied_value;
-                            c2(&commas(multiplied_value, "d")) },
+                            c2(&commas(multiplied_value, "d"))
+                        }
                         None => c2("0"),
                     },
                     c1("gp")

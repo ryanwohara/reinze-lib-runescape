@@ -127,11 +127,20 @@ pub fn get(query: &str, author: &str) -> Result<Vec<String>, ()> {
             nick, comma_milestone, skill
         )
     } else if processed_milestone <= 100000000 {
-        output = format!("{0}: You might be insane! Incredible congratulations on {1} xp! Everyone else is super jelly of your {2} skillz.", nick, comma_milestone, skill)
+        output = format!(
+            "{0}: You might be insane! Incredible congratulations on {1} xp! Everyone else is super jelly of your {2} skillz.",
+            nick, comma_milestone, skill
+        )
     } else if processed_milestone < 200000000 {
-        output = format!("{0}: I have no more words for you. I am Hulk green with envy. Go train {1} more you beast. (Okay, congrats on {2} xp!)", nick, skill, comma_milestone)
+        output = format!(
+            "{0}: I have no more words for you. I am Hulk green with envy. Go train {1} more you beast. (Okay, congrats on {2} xp!)",
+            nick, skill, comma_milestone
+        )
     } else if processed_milestone == 200000000 {
-        output = format!("{0}: Okay, you win. You are on the highscores forever. Endless congratulations on maxing {1}. Go get some sunshine and a nice snack to celebrate!", nick, skill)
+        output = format!(
+            "{0}: Okay, you win. You are on the highscores forever. Endless congratulations on maxing {1}. Go get some sunshine and a nice snack to celebrate!",
+            nick, skill
+        )
     } else {
         output = format!("{0}: That is not even a thing, get out of here.", nick)
     }

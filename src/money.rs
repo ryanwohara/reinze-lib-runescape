@@ -9,7 +9,9 @@ const NATURE_RUNE_ID: u32 = 561;
 pub fn printer(query: &str) -> Result<Vec<String>, ()> {
     let limit_flag_re = Regex::new(r"-l ?(\d+[kmb])").unwrap();
     let limit_flag = match limit_flag_re.captures(query) {
-        Some(captured) => captured.get(1).map_or(0i64, | limit | eval_query(limit.as_str()).unwrap_or(0f64) as i64),
+        Some(captured) => captured.get(1).map_or(0i64, |limit| {
+            eval_query(limit.as_str()).unwrap_or(0f64) as i64
+        }),
         None => 0i64,
     };
 
@@ -102,7 +104,7 @@ pub fn printer(query: &str) -> Result<Vec<String>, ()> {
     let mut iterator = 0;
     sorted_items.retain(|x| {
         if x.is_empty() {
-            return false
+            return false;
         }
 
         iterator += 1;

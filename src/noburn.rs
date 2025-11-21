@@ -16,7 +16,9 @@ pub fn noburn(query: &str) -> Result<Vec<String>, ()> {
         .collect();
     return Ok(vec![
         format!("{} {}", l("NoBurn"), output.join(&c1(" | "))),
-        p("Fire | Range | Hosidius 5% | Hosidius 10% | (Gauntlets | Gauntlets + Hosidius 5% | Gauntlet + Hosidius 10%)"),
+        p(
+            "Fire | Range | Hosidius 5% | Hosidius 10% | (Gauntlets | Gauntlets + Hosidius 5% | Gauntlet + Hosidius 10%)",
+        ),
     ]);
 }
 
