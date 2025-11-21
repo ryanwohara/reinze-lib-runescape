@@ -68,6 +68,9 @@ pub enum Farming {
     Torstol,
     CelastrusTree,
     RedwoodTree,
+    CamphorTree,
+    IronwoodTree,
+    RosewoodTree,
 }
 
 impl Detail for Farming {
@@ -170,6 +173,9 @@ impl Skill for Farming {
             Self::Torstol,
             Self::CelastrusTree,
             Self::RedwoodTree,
+            Self::CamphorTree,
+            Self::IronwoodTree,
+            Self::RosewoodTree,
         ]
     }
 
@@ -246,6 +252,7 @@ impl Skill for Farming {
             Self::Snapdragon => ("Snapdragon", 62, 87.5),
             Self::Huasca => ("Huasca", 65, 86.5),
             Self::Hespori => ("Hespori", 65, 12662.0),
+            Self::CamphorTree => ("Camphor Tree", 66, 0.0),
             Self::Cadantine => ("Cadantine", 67, 106.5),
             Self::PalmTree => ("Palm Tree", 68, 10260.6),
             Self::CalquatTree => ("Calquat Tree", 72, 12225.5),
@@ -253,11 +260,13 @@ impl Skill for Farming {
             Self::CrystalTree => ("Crystal Tree", 74, 13366.0),
             Self::MagicTree => ("Magic Tree", 75, 13913.8),
             Self::DwarfWeed => ("Dwarf Weed", 79, 170.5),
+            Self::IronwoodTree => ("Ironwood Tree", 80, 0.0),
             Self::DragonfruitTree => ("Dragonfruit Tree", 81, 17895.0),
             Self::SpiritTree => ("Spirit Tree", 83, 19501.3),
             Self::Torstol => ("Torstol", 85, 199.5),
             Self::CelastrusTree => ("Celastrus Tree", 85, 14334.0),
             Self::RedwoodTree => ("Redwood Tree", 90, 22680.0),
+            Self::RosewoodTree => ("Rosewood Tree", 92, 0.0),
         };
 
         Details::Farming(FarmingDetails {
