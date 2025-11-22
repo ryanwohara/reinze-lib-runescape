@@ -14,6 +14,7 @@ mod prayer;
 mod runecraft;
 mod skill;
 mod smithing;
+mod sailing;
 mod thieving;
 mod woodcutting;
 
