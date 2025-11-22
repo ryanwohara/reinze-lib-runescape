@@ -14,7 +14,7 @@ pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
         .collect();
 
     let output1 = vec![prefix.clone(), salvage.details().to_string()].join(" ");
-    let output2 = vec![prefix, not_found(locations)].join(" ");
+    let output2 = vec![prefix, p("Locations"), not_found(locations)].join(" ");
 
     Ok(vec![output1, output2])
 }
