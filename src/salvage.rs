@@ -13,18 +13,10 @@ pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
         .map(|location| c2(&location))
         .collect();
 
-    let output1 = vec![prefix.clone(), format_salvage(&salvage.to_string())].join(" ");
+    let output1 = vec![prefix.clone(), salvage.details().to_string()].join(" ");
     let output2 = vec![prefix, not_found(locations)].join(" ");
 
     Ok(vec![output1, output2])
-}
-
-fn format_salvage(salvage: &str) -> String {
-    if !salvage.is_empty() {
-        format!("{} ", p(&salvage))
-    } else {
-        "".to_string()
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -214,5 +206,11 @@ impl SalvageDetails {
             c2(&self.respawn_time.to_string()),
         ]
         .join(" ")
+    }
+}
+
+impl fmt::Display for SalvageDetails {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.to_string())
     }
 }
