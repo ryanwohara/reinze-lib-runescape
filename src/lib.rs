@@ -31,6 +31,7 @@ mod soulwars;
 mod stats;
 mod wiki;
 mod xp;
+mod salvage;
 
 use regex::Regex;
 use std::ffi::{CStr, CString};
@@ -121,6 +122,7 @@ pub extern "C" fn exported(
         "pvparena" | "pvp" | "arena" => pvparena::lookup(query, author, rsn_n),
         "rift" | "rifts" => rifts::lookup(query, author, rsn_n),
         "rsn" => rsn::process(query, author, rsn_n),
+        "salvage" | "salvages" => salvage::lookup(query),
         "sw" | "swar" | "soulw" | "soulwar" | "soulwars" | "zeal" => {
             soulwars::lookup(query, author, rsn_n)
         }
@@ -150,8 +152,9 @@ price
 pvparena[N]
 rifts[N]
 rsn[N]
-sw[N]
+salvage
 stats[N]
+sw[N]
 wiki
 xp"
         .split("\n")
@@ -188,6 +191,7 @@ rsn\d*
 s(oul)?w(ar)?s?\d*
 zeal\d*
 e?xp(erience)?
+salvages?
 stats
 overall
 total

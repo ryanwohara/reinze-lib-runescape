@@ -178,7 +178,7 @@ impl FromStr for Patch {
     type Err = ();
 
     fn from_str(query: &str) -> Result<Self, Self::Err> {
-        Patch::all()
+        Self::all()
             .into_iter()
             .find(|patch| {
                 patch
@@ -193,28 +193,28 @@ impl FromStr for Patch {
 impl fmt::Display for Patch {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
-            Patch::Allotment => "Allotment",
-            Patch::Flower => "Flower",
-            Patch::Herb => "Herb",
-            Patch::Bush => "Bush",
-            Patch::Tree => "Tree",
-            Patch::Fruit => "Fruit",
-            Patch::Hops => "Hops",
-            Patch::Spirit => "Spirit",
-            Patch::Belladonna => "Belladonna",
-            Patch::Calquat => "Calquat",
-            Patch::Mushroom => "Mushroom",
-            Patch::Celastrus => "Celastrus",
-            Patch::Redwood => "Redwood",
-            Patch::Crystal => "Crystal",
-            Patch::Seaweed => "Seaweed",
-            Patch::Grape => "Grape",
-            Patch::Hespori => "Hespori",
-            Patch::Anima => "Anima",
-            Patch::Cactus => "Cactus",
-            Patch::Hardwood => "Hardwood",
-            Patch::Coral => "Coral",
-            Patch::None => "",
+            Self::Allotment => "Allotment",
+            Self::Flower => "Flower",
+            Self::Herb => "Herb",
+            Self::Bush => "Bush",
+            Self::Tree => "Tree",
+            Self::Fruit => "Fruit",
+            Self::Hops => "Hops",
+            Self::Spirit => "Spirit",
+            Self::Belladonna => "Belladonna",
+            Self::Calquat => "Calquat",
+            Self::Mushroom => "Mushroom",
+            Self::Celastrus => "Celastrus",
+            Self::Redwood => "Redwood",
+            Self::Crystal => "Crystal",
+            Self::Seaweed => "Seaweed",
+            Self::Grape => "Grape",
+            Self::Hespori => "Hespori",
+            Self::Anima => "Anima",
+            Self::Cactus => "Cactus",
+            Self::Hardwood => "Hardwood",
+            Self::Coral => "Coral",
+            Self::None => "",
         };
         write!(f, "{}", s)
     }
