@@ -88,6 +88,7 @@ fn get_modifiers(skill: &str) -> Vec<(String, String)> {
             ("Fish pie", "+3"),
             ("Admiral pie", "+5"),
             ("Brown spicy stew", "-5/+5"),
+            ("Super fishing potion", "+6"),
             ("Fishing guild", "+7"),
         ],
         "Fletching" => vec![("Dragonfruit pie", "+4"), ("Orange spicy stew", "-5/+5")],
@@ -111,6 +112,7 @@ fn get_modifiers(skill: &str) -> Vec<(String, String)> {
             ("Trapper's tipple", "+2"),
             ("Hunter potion/mix", "+3"),
             ("Yellow spicy stew", "-5/+5"),
+            ("Super hunter potion", "+6"),
         ],
         "Magic" => vec![
             ("Steamforge brew", "+1"),
