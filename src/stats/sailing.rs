@@ -20,6 +20,18 @@ pub enum Sailing {
     FremennikShipwreckCrewmate,
     MerchantShipwreck,
     MerchantShipwreckCrewmate,
+    TemporUnranked,
+    TemporSwordfish,
+    TemporShark,
+    TemporMerlin,
+    JubblyUnranked,
+    JubblySwordfish,
+    JubblyShark,
+    JubblyMerlin,
+    GwenithUnranked,
+    GwenithSwordfish,
+    GwenithShark,
+    GwenithMerlin,
 }
 
 impl Skill for Sailing {
@@ -44,12 +56,23 @@ impl Skill for Sailing {
             Self::FremennikShipwreckCrewmate,
             Self::MerchantShipwreck,
             Self::MerchantShipwreckCrewmate,
+            Self::TemporUnranked,
+            Self::TemporSwordfish,
+            Self::TemporShark,
+            Self::TemporMerlin,
+            Self::JubblyUnranked,
+            Self::JubblySwordfish,
+            Self::JubblyShark,
+            Self::JubblyMerlin,
+            Self::GwenithUnranked,
+            Self::GwenithSwordfish,
+            Self::GwenithShark,
+            Self::GwenithMerlin,
         ]
     }
 
     fn defaults() -> Vec<Details> {
         vec![
-            Self::SmallShipwreck,
             Self::FishermansShipwreck,
             Self::BarracudaShipwreck,
             Self::LargeShipwreck,
@@ -57,6 +80,9 @@ impl Skill for Sailing {
             Self::MercenaryShipwreck,
             Self::FremennikShipwreck,
             Self::MerchantShipwreck,
+            Self::TemporMerlin,
+            Self::JubblyMerlin,
+            Self::GwenithMerlin,
         ]
             .iter()
             .map(|x| x.details())
@@ -81,6 +107,18 @@ impl Skill for Sailing {
             Self::FremennikShipwreckCrewmate => ("Fremennik Shipwreck (Crewmate)", 80, 180.0),
             Self::MerchantShipwreck => ("Merchant Shipwreck", 87, 275.0),
             Self::MerchantShipwreckCrewmate => ("Merchant Shipwreck (Crewmate)", 87, 85.0),
+            Self::TemporUnranked => ("Tempor Unranked", 30, 150.0),
+            Self::TemporSwordfish => ("Tempor Swordfish", 30, 385.0),
+            Self::TemporShark => ("Tempor Shark", 30, 650.0),
+            Self::TemporMerlin => ("Tempor Merlin", 30, 1250.0),
+            Self::JubblyUnranked => ("Jubbly Unranked", 55, 1000.0),
+            Self::JubblySwordfish => ("Jubbly Swordfish", 55, 1700.0),
+            Self::JubblyShark => ("Jubbly Shark", 55, 3000.0),
+            Self::JubblyMerlin => ("Jubbly Merlin", 55, 6200.0),
+            Self::GwenithUnranked => ("Gwenith Unranked", 72, 2050.0),
+            Self::GwenithSwordfish => ("Gwenith Swordfish", 72, 3050.0),
+            Self::GwenithShark => ("Gwenith Shark", 72, 7250.0),
+            Self::GwenithMerlin => ("Gwenith Merlin", 72, 14800.0),
         };
 
         Details::Sailing(SailingDetails {
