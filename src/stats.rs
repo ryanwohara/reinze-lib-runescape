@@ -816,7 +816,7 @@ pub fn process_stats_subsection(
     let mut vec: Vec<String> = Vec::new();
     let mut index = 0 - 1 as isize;
 
-    let mut leagues = "".to_string();
+    let mut additional = "".to_string();
     for line in stats {
         index += 1;
 
@@ -851,13 +851,13 @@ pub fn process_stats_subsection(
                         _ => "Dragon",
                     };
 
-                    leagues = format!(" {} {}", &c1("Tier:"), &c2(tier));
+                    additional = format!(" {} {}", &c1("Tier:"), &c2(tier));
                 }
             }
         }
     }
 
-    let output = format!("{} {}{}", prefix, unranked(vec), leagues);
+    let output = format!("{} {}{}", prefix, unranked(vec), additional);
 
     Ok(vec![output])
 }
