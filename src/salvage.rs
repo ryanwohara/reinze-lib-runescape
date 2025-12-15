@@ -82,30 +82,30 @@ impl Salvage {
     fn details(&self) -> SalvageDetails {
         match self {
             Self::SmallShipwreck => {
-                SalvageDetails::from("Small Shipwreck", 15, 10.0, 6.0, 4.5, 60, 90)
+                SalvageDetails::from("Small Shipwreck", 15, 10.0, 4.5, 60,)
             }
             Self::FishermansShipwreck => {
-                SalvageDetails::from("Fishermans Shipwreck", 26, 17.0, 10.5, 9.0, 180, 120)
+                SalvageDetails::from("Fishermans Shipwreck", 26, 17.0, 9.0, 180, )
             }
             Self::BarracudaShipwreck => {
-                SalvageDetails::from("Barracuda Shipwreck", 35, 31.0, 18.5, 15.5, 180, 180)
+                SalvageDetails::from("Barracuda Shipwreck", 35, 31.0, 15.5, 180, )
             }
             Self::LargeShipwreck => {
-                SalvageDetails::from("Large Shipwreck", 53, 48.0, 28.5, 24.0, 180, 0)
+                SalvageDetails::from("Large Shipwreck", 53, 48.0, 24.0, 180)
             }
             Self::PirateShipwreck => {
-                SalvageDetails::from("Pirate Shipwreck", 64, 63.0, 38.0, 31.5, 0, 0)
+                SalvageDetails::from("Pirate Shipwreck", 64, 63.0, 31.5, 180)
             }
             Self::MercenaryShipwreck => {
-                SalvageDetails::from("Mercenary Shipwreck", 73, 127.0, 89.0, 63.5, 0, 0)
+                SalvageDetails::from("Mercenary Shipwreck", 73, 127.0, 63.5, 195)
             }
             Self::FremennikShipwreck => {
-                SalvageDetails::from("Fremennik Shipwreck", 80, 150.0, 105.0, 75.0, 0, 0)
+                SalvageDetails::from("Fremennik Shipwreck", 80, 150.0, 75.0, 220)
             }
             Self::MerchantShipwreck => {
-                SalvageDetails::from("Merchant Shipwreck", 87, 190.0, 0.0, 85.0, 0, 5)
+                SalvageDetails::from("Merchant Shipwreck", 87, 190.0, 85.0, 240)
             }
-            Self::None => SalvageDetails::from("", 0, 0.0, 0.0, 0.0, 0, 0),
+            Self::None => SalvageDetails::from("", 0, 0.0, 0.0, 0),
         }
     }
 }
@@ -148,10 +148,8 @@ struct SalvageDetails {
     name: String,
     level: u32,
     salvaging_xp: f64,
-    crewmate_xp: f64,
     sorting_xp: f64,
     avg_lifespan: u32,
-    respawn_time: u32,
 }
 
 impl SalvageDetails {
@@ -159,10 +157,8 @@ impl SalvageDetails {
         name: T,
         level: u32,
         salvaging_xp: f64,
-        crewmate_xp: f64,
         sorting_xp: f64,
         avg_lifespan: u32,
-        respawn_time: u32,
     ) -> Self
     where
         T: ToString,
@@ -171,10 +167,8 @@ impl SalvageDetails {
             name: name.to_string(),
             level,
             salvaging_xp,
-            crewmate_xp,
             sorting_xp,
             avg_lifespan,
-            respawn_time,
         }
     }
 
@@ -193,17 +187,8 @@ impl SalvageDetails {
             c2(&self.sorting_xp.to_string()),
             c1("Total XP:"),
             c2(&(self.salvaging_xp + self.sorting_xp).to_string()),
-            p(&vec![
-                c1("Crewmate XP:"),
-                c2(&self.crewmate_xp.to_string()),
-                c1("Total XP:"),
-                c2(&(self.crewmate_xp + self.sorting_xp).to_string()),
-            ]
-            .join(" ")),
             c1("Average Lifespan:"),
             c2(&self.avg_lifespan.to_string()),
-            c1("Respawn Time:"),
-            c2(&self.respawn_time.to_string()),
         ]
         .join(" ")
     }
