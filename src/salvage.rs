@@ -187,7 +187,7 @@ impl SalvageDetails {
             c2(&self.sorting_xp.to_string()),
             c1("Total XP:"),
             c2(&(self.salvaging_xp + self.sorting_xp).to_string()),
-            c1("Average Lifespan:"),
+            c1("Average Lifespan (sec):"),
             c2(&self.avg_lifespan.to_string()),
         ]
         .join(" ")
