@@ -531,7 +531,7 @@ impl Skill for Construction {
             Self::TeakShelves2 => ("Teak Shelves 2", 67, 930),
             Self::CelestialGlobe => ("Celestial Globe", 68, 570),
             Self::DungeonEntrance => ("Dungeon Entrance", 70, 500),
-            Self::MahoganyHomesExpert => ("Mahogany Homes Expert", 1, 2750),
+            Self::MahoganyHomesExpert => ("Mahogany Homes Expert", 70, 2750),
             Self::RangingPedestals => ("Ranging Pedestals", 71, 720),
             Self::OpulentTable => ("Opulent Table", 72, 3100),
             Self::GildedDresser => ("Gilded Dresser", 74, 582),
