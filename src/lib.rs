@@ -88,7 +88,7 @@ pub extern "C" fn exported(
         "boost" | "boosts" => boost::boost(query),
         "boss" | "bosses" | "kc" => bosses::lookup(query, author, rsn_n),
         "clue" | "clues" => clues::lookup(query, author, rsn_n),
-        "colo" | "colosseum" => colosseum::lookup(query, author, rsn_n),
+        command if command.starts_with("colo") => colosseum::lookup(query, author, rsn_n),
         "coll" | "collection" | "collectionlog" => collectionlog::lookup(query, author, rsn_n),
         "congratulations" | "congratulation" | "congrats" | "congratz" | "grats" | "gratz"
         | "gz" => grats::get(query, author),
