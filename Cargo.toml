@@ -12,7 +12,7 @@ format_num = "0.1.0"
 meval = { git = "https://github.com/ryanwohara/meval-rs.git", branch = "main" }
 mysql = "26.0.1"
 regex = "1.11.3"
-reqwest = { version = "0.12.23", features = ["json", "blocking"] }
+reqwest = { version = "0.13.1", features = ["json", "blocking"] }
 rust-ini = "0.21.3"
 select = "0.6.1"
 serde = { version = "1.0.228", features = ["derive"] }
