@@ -12,9 +12,9 @@ mod magic;
 mod mining;
 mod prayer;
 mod runecraft;
+mod sailing;
 mod skill;
 mod smithing;
-mod sailing;
 mod thieving;
 mod woodcutting;
 
@@ -453,7 +453,12 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
                         c1("XP:"),
                         c2(&commas_from_string(split[2], "d")),
                         c1("Rank:"),
-                        c2(&commas_from_string(split[0], "d")),
+                        c2(if split[0] == "-1" {
+                            "N/A".to_string()
+                        } else {
+                            commas_from_string(split[0], "d")
+                        }
+                        .as_str()),
                     ));
                 }
             }
@@ -834,7 +839,12 @@ pub fn process_stats_subsection(
                     "{}: {} {}",
                     c1(name),
                     c2(&commas_from_string(points, "d")),
-                    p(&commas_from_string(rank, "d"))
+                    p(if rank == "-1" {
+                        "N/A".to_string()
+                    } else {
+                        commas_from_string(rank, "d")
+                    }
+                        .as_str())
                 ));
 
                 if offset == 26 {
