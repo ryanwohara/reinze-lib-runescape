@@ -459,7 +459,7 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
             }
         } else if skill_id == 0 && index < hiscores_len as isize {
             // all skills
-            if split[0] != "-1" && !split[0].contains("404 - Page not found") {
+            if split[2] != "-1" && !split[0].contains("404 - Page not found") {
                 let rank = split[0];
                 let str_level = split[1];
                 let level = str_level.parse::<u32>().unwrap_or_else(|_| 0);
