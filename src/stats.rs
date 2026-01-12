@@ -844,7 +844,7 @@ pub fn process_stats_subsection(
                     } else {
                         commas_from_string(rank, "d")
                     }
-                        .as_str())
+                    .as_str())
                 ));
 
                 if offset == 26 {
