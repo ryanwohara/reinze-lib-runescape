@@ -444,7 +444,7 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
             return Ok(vec![message, calc]);
         } else if skill_id == 0 && index == 0 {
             // overall
-            if split[0] != "-1" && !split[0].contains("404 - Page not found") {
+            if split[2] != "-1" && !split[0].contains("404 - Page not found") {
                 if !combat_command {
                     skill_data.push(format!(
                         "{}{} {}{} {}{}",
