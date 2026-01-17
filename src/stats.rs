@@ -100,7 +100,7 @@ pub enum AccountType {
     Hardcore,
     Deadman,
     Leagues,
-    Tourmament,
+    Tournament,
     OneDefence,
     Skiller,
     FreshStart,
@@ -115,7 +115,7 @@ impl AccountType {
             Self::Hardcore => "https://secure.runescape.com/m=hiscore_oldschool_hardcore_ironman/index_lite.ws?player=",
             Self::Deadman => "https://secure.runescape.com/m=hiscore_oldschool_deadman/index_lite.ws?player=",
             Self::Leagues => "https://secure.runescape.com/m=hiscore_oldschool_seasonal/index_lite.ws?player=",
-            Self::Tourmament => "https://secure.runescape.com/m=hiscore_oldschool_tournament/index_lite.ws?player=",
+            Self::Tournament => "https://secure.runescape.com/m=hiscore_oldschool_tournament/index_lite.ws?player=",
             Self::OneDefence => "https://secure.runescape.com/m=hiscore_oldschool_skiller_defence/index_lite.ws?player=",
             Self::Skiller => "https://secure.runescape.com/m=hiscore_oldschool_skiller/index_lite.ws?player=",
             Self::FreshStart => "https://secure.runescape.com/m=hiscore_oldschool_fresh_start/index_lite.ws?player=",
@@ -131,7 +131,7 @@ impl AccountType {
             Self::Hardcore => Some("Hardcore"),
             Self::Deadman => Some("Deadman"),
             Self::Leagues => Some("Leagues"),
-            Self::Tourmament => Some("Tourmament"),
+            Self::Tournament => Some("Tournament"),
             Self::OneDefence => Some("1 Def"),
             Self::Skiller => Some("Skiller"),
             Self::FreshStart => Some("Fresh Start"),
@@ -191,7 +191,7 @@ pub fn stats_parameters(query: &str) -> StatsFlags {
             "-h" => stats.account_type = AccountType::Hardcore,
             "-d" => stats.account_type = AccountType::Deadman,
             "-l" => stats.account_type = AccountType::Leagues,
-            "-t" => stats.account_type = AccountType::Tourmament,
+            "-t" => stats.account_type = AccountType::Tournament,
             "-1" => stats.account_type = AccountType::OneDefence,
             "-sk" => stats.account_type = AccountType::Skiller,
             "-fs" => stats.account_type = AccountType::FreshStart,
@@ -444,7 +444,7 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
             return Ok(vec![message, calc]);
         } else if skill_id == 0 && index == 0 {
             // overall
-            if split[2] != "-1" && !split[0].contains("404 - Page not found") {
+            if split[2] != "0" && !split[0].contains("404 - Page not found") {
                 if !combat_command {
                     skill_data.push(format!(
                         "{}{} {}{} {}{}",
@@ -579,25 +579,8 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
             skill_lookup_data.get(&"Magic".to_string()).unwrap_or(&1),
         );
 
-        let total_level = skill_lookup_data.get(&"Attack".to_string()).unwrap_or(&0) +
-            skill_lookup_data.get(&"Strength".to_string()).unwrap_or(&0) +
-            skill_lookup_data.get(&"Defence".to_string()).unwrap_or(&0) +
-            skill_lookup_data
-                .get(&"Hitpoints".to_string())
-                .unwrap_or(&1151) + // HP is level 10
-            skill_lookup_data.get(&"Ranged".to_string()).unwrap_or(&0) +
-            skill_lookup_data.get(&"Prayer".to_string()).unwrap_or(&0) +
-            skill_lookup_data.get(&"Magic".to_string()).unwrap_or(&0);
-
-        let total_xp = skill_xp_lookup_data.get(&"Attack".to_string()).unwrap_or(&0) +
-            skill_xp_lookup_data.get(&"Strength".to_string()).unwrap_or(&0) +
-            skill_xp_lookup_data.get(&"Defence".to_string()).unwrap_or(&0) +
-            skill_xp_lookup_data
-                .get(&"Hitpoints".to_string())
-                .unwrap_or(&1151) + // HP is level 10
-            skill_xp_lookup_data.get(&"Ranged".to_string()).unwrap_or(&0) +
-            skill_xp_lookup_data.get(&"Prayer".to_string()).unwrap_or(&0) +
-            skill_xp_lookup_data.get(&"Magic".to_string()).unwrap_or(&0);
+        let total_level = total(skill_lookup_data.clone());
+        let total_xp = total(skill_xp_lookup_data);
 
         if combat_command {
             skill_data.insert(
@@ -666,6 +649,18 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
     }
 
     Ok(not_found)
+}
+
+fn total(input: HashMap<&String, u32>) -> u32 {
+    input.get(&"Attack".to_string()).unwrap_or(&0) +
+        input.get(&"Strength".to_string()).unwrap_or(&0) +
+        input.get(&"Defence".to_string()).unwrap_or(&0) +
+        input
+            .get(&"Hitpoints".to_string())
+            .unwrap_or(&1151) + // HP is level 10
+        input.get(&"Ranged".to_string()).unwrap_or(&0) +
+        input.get(&"Prayer".to_string()).unwrap_or(&0) +
+        input.get(&"Magic".to_string()).unwrap_or(&0)
 }
 
 fn calculate_next_cmb_level_req(
@@ -819,7 +814,7 @@ pub fn process_stats_subsection(
     let prefix = prefix_vec.join(" ");
 
     let mut vec: Vec<String> = Vec::new();
-    let mut index = 0 - 1 as isize;
+    let mut index = 0 - 1isize;
 
     let mut additional = "".to_string();
     for line in stats {
