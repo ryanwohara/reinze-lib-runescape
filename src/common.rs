@@ -1,9 +1,11 @@
 use crate::items::Mapping;
+use crate::stats::Entry;
 use common::{database, *};
 use itertools::Itertools;
 use meval::eval_str;
 use mysql::{prelude::*, *};
 use regex::Regex;
+use std::collections::HashMap;
 use std::fs::read_to_string;
 
 // Catches shorthand skill names and returns the full name
@@ -131,37 +133,69 @@ pub struct Combat {
 }
 
 impl Combat {
-    pub fn new(level: f64, style: String) -> Combat {
-        Combat { level, style }
+    pub fn new(level: f64, style: &str) -> Combat {
+        Combat {
+            level,
+            style: style.to_string(),
+        }
+    }
+
+    pub fn calc(skills: &Skills) -> Self {
+        let att = parse_entry_detail(&skills, "Attack", "level");
+        let str = parse_entry_detail(&skills, "Strength", "level");
+        let def = parse_entry_detail(&skills, "Defence", "level");
+        let hp = parse_entry_detail(&skills, "Hitpoints", "level");
+        let pray = parse_entry_detail(&skills, "Prayer", "level");
+        let mage = parse_entry_detail(&skills, "Magic", "level");
+        let range = parse_entry_detail(&skills, "Range", "level");
+
+        get_cmb(att, str, def, hp, range, pray, mage)
     }
 }
 
-pub fn get_cmb(
-    att: &u32,
-    str: &u32,
-    def: &u32,
-    hp: &u32,
-    range: &u32,
-    pray: &u32,
-    mage: &u32,
-) -> Combat {
+pub type Skills<'a> = HashMap<&'a String, Entry>;
+
+pub fn parse_entry_detail<T>(skills: &Skills, skill: T, attribute: T) -> u32
+where
+    T: ToString,
+{
+    match skills.get(&skill.to_string()) {
+        Some(entry) => match attribute.to_string().as_str() {
+            "level" => entry.level,
+            _ => entry.xp,
+        },
+        None => 1,
+    }
+}
+
+pub fn get_cmb(att: u32, str: u32, def: u32, hp: u32, range: u32, pray: u32, mage: u32) -> Combat {
     let base = ((def + hp) + (pray / 2)) as f64 * 0.25;
 
     let melee = 0.325 * (att + str) as f64;
-    let ranged = 0.325 * ((range.to_owned() / 2) as f64 + range.to_owned() as f64);
-    let magic = 0.325 * ((mage.to_owned() / 2) as f64 + mage.to_owned() as f64);
+    let ranged = 0.325 * ((range / 2) as f64 + range as f64);
+    let magic = 0.325 * ((mage / 2) as f64 + mage as f64);
 
     let max_contribution = f64::max(melee, f64::max(ranged, magic));
     let level = f64::round((base + max_contribution) * 1000.0) / 1000.0;
 
     if melee > ranged && melee > magic {
-        Combat::new(level, "Melee".to_string())
+        Combat::new(level, "Melee")
     } else if ranged > melee && ranged > magic {
-        Combat::new(level, "Ranged".to_string())
+        Combat::new(level, "Ranged")
     } else {
         // if magic > melee && magic > ranged
-        Combat::new(level, "Magic".to_string())
+        Combat::new(level, "Magic")
     }
+}
+
+pub fn get_total(skills: &Skills, attribute: &str) -> u32 {
+    skills
+        .iter()
+        .map(|(_skill, entry)| match attribute {
+            "level" => entry.level,
+            _ => entry.xp,
+        })
+        .sum()
 }
 
 pub fn get_rsn(author: &str, rsn_n: &str) -> core::result::Result<Vec<Row>, Error> {
