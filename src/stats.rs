@@ -290,7 +290,7 @@ impl Entry {
     }
 
     pub fn empty(&self) -> bool {
-        self.xp > 0 && self.rank != "404 - Page not found"
+        !(self.xp > 0 && self.rank != "404 - Page not found")
     }
 }
 
