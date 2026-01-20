@@ -29,7 +29,6 @@ use regex::Regex;
 use reqwest::header::USER_AGENT;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use std::num::ParseIntError;
 use std::time::Duration;
 
 pub struct StatsFlags {
@@ -455,7 +454,7 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
     for split in hiscores_collected {
         index += 1;
 
-        let entry = StrEntry::new(&skill_name, split).convert();
+        let entry = StrEntry::new(&skills()[index as usize], split).convert();
         skill_lookup_data.insert(entry.name.clone(), entry.clone());
 
         if skill_id != 0 && index as usize == skill_id {
@@ -546,13 +545,8 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
             }
 
             return Ok(vec![message, calc]);
-        } else if skill_id == 0 && index == 0 {
-            // overall
-            if !entry.empty() {
-                if !combat_command {
-                    skill_data.push(entry.to_string());
-                }
-            }
+        } else if skill_id == 0 && index == 0 && !entry.empty() && !combat_command {
+            skill_data.push(entry.to_string());
         } else if skill_id == 0
             && index < hiscores_len as isize
             && !entry.empty()
@@ -588,17 +582,15 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
                     ]
                     .join(""),
                 );
-            } else if combat_command {
-                if index > 0 && index < 8 {
-                    // if combat skill
-                    skill_data.push(
-                        vec![
-                            c1(&format!("{}:", entry.name)),
-                            c2(&commas_from_string(&entry.level(), "d")),
-                        ]
-                        .join(""),
-                    );
-                }
+            } else if combat_command && index > 0 && index < 8 {
+                // if combat skill
+                skill_data.push(
+                    vec![
+                        c1(&format!("{}:", entry.name)),
+                        c2(&commas_from_string(&entry.level(), "d")),
+                    ]
+                    .join(""),
+                );
             } else {
                 // otherwise...
                 skill_data.push(
