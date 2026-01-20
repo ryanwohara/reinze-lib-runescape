@@ -555,6 +555,7 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
             && index < hiscores_len as isize
             && !entry.empty()
             && flags.filter(&entry.level)
+            && !combat_command
         {
             // all skills
             let actual_level = xp_to_level(entry.xp);
@@ -605,6 +606,27 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
                     .join(""),
                 );
             }
+        } else if combat_command
+            && [
+                "Attack",
+                "Strength",
+                "Defence",
+                "Hitpoints",
+                "Prayer",
+                "Magic",
+                "Ranged",
+            ]
+            .contains(&entry.name.as_str())
+        {
+            let actual_level = xp_to_level(entry.xp);
+
+            skill_data.push(
+                vec![
+                    c1(&format!("{}:", entry.name)),
+                    c2(&actual_level.to_string()),
+                ]
+                .join(""),
+            );
         }
     }
 
@@ -658,7 +680,7 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
                     p(&cmb.style),
                     c1("Total Cmb Levels:"),
                     c2(&total_level.to_string()),
-                    c1("Total XP:"),
+                    c1("Total Cmb XP:"),
                     c2(&commas(total_xp as f64, "d")),
                 ),
             );
