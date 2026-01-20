@@ -436,11 +436,11 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
             hiscores_len = 25;
         }
 
-        hiscores_collected = hiscores_split[0..=hiscores_len]
+        hiscores_collected = hiscores_split[0..hiscores_len]
             .iter()
             .map(|x| {
                 x.split(',')
-                    .map(|y| y.parse::<u32>().unwrap_or_else(|_| 0))
+                    .map(|y| y.parse::<u32>().unwrap_or(0))
                     .collect::<Vec<u32>>()
             })
             .collect::<Vec<Vec<u32>>>();
@@ -453,6 +453,10 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
 
     for split in hiscores_collected {
         index += 1;
+
+        if index + 1 > skills().len() as isize {
+            continue;
+        }
 
         let entry = StrEntry::new(&skills()[index as usize], split).convert();
         skill_lookup_data.insert(entry.name.clone(), entry.clone());
