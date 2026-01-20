@@ -153,7 +153,7 @@ impl Combat {
     }
 }
 
-pub type Skills<'a> = HashMap<&'a String, Entry>;
+pub type Skills = HashMap<String, Entry>;
 
 pub fn parse_entry_detail<T>(skills: &Skills, skill: T, attribute: T) -> u32
 where
