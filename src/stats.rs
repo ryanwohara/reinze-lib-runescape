@@ -19,7 +19,7 @@ mod thieving;
 mod woodcutting;
 
 use super::common::{
-    Combat, Skills, eval_query, get_rsn, get_stats, get_total, level_to_xp,
+    Combat, Skills, eval_query, get_rsn, get_stats, get_total, get_total_cmb, level_to_xp,
     process_account_type_flags, skill, skills, xp_to_level,
 };
 use crate::stats::skill::details_by_skill_id;
@@ -644,10 +644,11 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
     } else if skill_id == 0 && !skill_data.is_empty() {
         // we need to include combat level in the overall summary
         let cmb = Combat::calc(&skill_lookup_data);
-        let total_level = get_total(&skill_lookup_data, "level");
-        let total_xp = get_total(&skill_lookup_data, "xp");
 
         if combat_command {
+            let total_level = get_total_cmb(&skill_lookup_data, "level");
+            let total_xp = get_total_cmb(&skill_lookup_data, "xp");
+
             skill_data.insert(
                 0,
                 format!(

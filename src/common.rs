@@ -198,6 +198,21 @@ pub fn get_total(skills: &Skills, attribute: &str) -> u32 {
         .sum()
 }
 
+pub fn get_total_cmb(skills: &Skills, attribute: &str) -> u32 {
+    skills
+        .iter()
+        .map(|(skill, entry)| match skill.as_str() {
+            "Attack" | "Strength" | "Defence" | "Hitpoints" | "Prayer" | "Magic" | "Ranged" => {
+                match attribute {
+                    "level" => entry.level,
+                    _ => entry.xp,
+                }
+            }
+            _ => 0,
+        })
+        .sum()
+}
+
 pub fn get_rsn(author: &str, rsn_n: &str) -> core::result::Result<Vec<Row>, Error> {
     let mut conn = match database::connect() {
         Ok(conn) => conn,
