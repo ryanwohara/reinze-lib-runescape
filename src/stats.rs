@@ -296,7 +296,7 @@ impl Entry {
     }
 
     pub fn empty(&self) -> bool {
-        !(self.xp > 0 && self.rank > 0)
+        self.xp == 0
     }
 }
 
