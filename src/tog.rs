@@ -29,7 +29,7 @@ pub fn world() -> Result<Vec<String>, ()> {
 
     let sorted = matching
         .iter()
-        .map(|m| vec![c1(&m.to_string()), c2(",")].join(""))
+        .map(|m| vec![c2(&m.to_string()), c1(",")].join(""))
         .collect::<Vec<String>>()
         .join(" ");
 
