@@ -33,7 +33,13 @@ pub fn world() -> Result<Vec<String>, ()> {
         .collect::<Vec<String>>()
         .join(vec![&c1(","), " "].join("").as_str());
 
-    let output = vec![l("ToG Worlds"), sorted].join(" ");
+    let output = vec![
+        l("ToG Worlds"),
+        sorted,
+        c1("||"),
+        c1("https://togcrowdsourcing.com"),
+    ]
+    .join(" ");
 
     Ok(vec![output])
 }
