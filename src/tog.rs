@@ -31,9 +31,9 @@ pub fn world() -> Result<Vec<String>, ()> {
         .iter()
         .map(|m| c2(&m.to_string()))
         .collect::<Vec<String>>()
-        .join(" ");
+        .join(vec![&c1(","), " "].join("").as_str());
 
-    let output = vec![l("ToG Worlds"), sorted].join(vec![&c1(","), " "].join("").as_str());
+    let output = vec![l("ToG Worlds"), sorted].join(" ");
 
     Ok(vec![output])
 }
