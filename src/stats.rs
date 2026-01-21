@@ -306,9 +306,9 @@ impl Display for Entry {
             f,
             "{}{} {}{} {}{}",
             c1("Lvl:"),
-            c2(&commas_from_string(&self.level(), "d")),
+            c2(&commas(self.level as f64, "d")),
             c1("XP:"),
-            c2(&commas_from_string(&self.xp(), "d")),
+            c2(&commas(self.xp as f64, "d")),
             c1("Rank:"),
             c2(if self.rank == 0 {
                 "N/A".to_string()
@@ -386,7 +386,6 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
     let start_level = xp_to_level(start_xp);
 
     let mut hiscores_collected: Vec<Vec<u32>> = (0..hiscores_len)
-        .into_iter()
         .map(|_| vec![0, start_level, start_xp])
         .collect::<Vec<Vec<u32>>>();
 

@@ -27,11 +27,12 @@ mod prices;
 mod pvparena;
 mod rifts;
 mod rsn;
+mod salvage;
 mod soulwars;
 mod stats;
+mod tog;
 mod wiki;
 mod xp;
-mod salvage;
 
 use regex::Regex;
 use std::ffi::{CStr, CString};
@@ -126,6 +127,7 @@ pub extern "C" fn exported(
         "sw" | "swar" | "soulw" | "soulwar" | "soulwars" | "zeal" => {
             soulwars::lookup(query, author, rsn_n)
         }
+        "togw" => tog::world(),
         "wiki" => wiki::wiki(query),
         "help" => Ok(r"alchemy
 bolts
@@ -155,6 +157,7 @@ rsn[N]
 salvage
 stats[N]
 sw[N]
+togw
 wiki
 xp"
         .split("\n")
@@ -219,6 +222,7 @@ r(une)?c(raft)?
 hunt(er)?
 con(struction)?\d*$
 sail(ing)?\d*
+togw
 wiki"
             .split("\n")
             .map(|s| s.to_string())
