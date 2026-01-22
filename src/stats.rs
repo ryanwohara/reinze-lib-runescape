@@ -19,7 +19,7 @@ mod thieving;
 mod woodcutting;
 
 use super::common::{
-    Combat, Skills, eval_query, get_rsn, get_stats, get_total, get_total_cmb, level_to_xp,
+    Combat, Skills, eval_query, get_rsn, get_stats, get_total_cmb, level_to_xp,
     process_account_type_flags, skill, skills, xp_to_level,
 };
 use crate::stats::skill::details_by_skill_id;
@@ -283,6 +283,7 @@ pub struct Entry {
 }
 
 impl Entry {
+    #[allow(dead_code)]
     pub fn rank(&self) -> String {
         self.rank.to_string()
     }
@@ -291,6 +292,7 @@ impl Entry {
         self.level.to_string()
     }
 
+    #[allow(dead_code)]
     pub fn xp(&self) -> String {
         self.xp.to_string()
     }
@@ -847,7 +849,7 @@ pub fn process_stats_subsection(
 ) -> Result<Vec<String>, ()> {
     let split: Vec<String> = convert_split_to_string(query.split_whitespace().collect());
 
-    let (mut split, flag_prefix, base_url) = process_account_type_flags(query, split);
+    let (split, flag_prefix, base_url) = process_account_type_flags(query, split);
 
     let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
 

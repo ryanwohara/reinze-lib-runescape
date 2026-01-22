@@ -4,6 +4,7 @@ use serde::Deserialize;
 #[derive(Debug, Deserialize)]
 struct WorldInfo {
     world_number: u32,
+    #[allow(dead_code)]
     hits: u32,
     stream_order: String,
 }

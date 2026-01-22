@@ -195,7 +195,7 @@ fn list(author: &str) -> Result<Vec<String>, ()> {
             let mapped = rows
                 .into_iter()
                 .map(from_row::<(u32, String)>)
-                .map(|(id, rsn)| (id.to_string(), rsn));
+                .map(|(id, rsn): (u32, String)| (id.to_string(), rsn));
 
             Ok(vec![format!(
                 "{} {}",

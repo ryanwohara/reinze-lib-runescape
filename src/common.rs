@@ -188,16 +188,6 @@ pub fn get_cmb(att: u32, str: u32, def: u32, hp: u32, range: u32, pray: u32, mag
     }
 }
 
-pub fn get_total(skills: &Skills, attribute: &str) -> u32 {
-    skills
-        .iter()
-        .map(|(_skill, entry)| match attribute {
-            "level" => entry.level,
-            _ => entry.xp,
-        })
-        .sum()
-}
-
 pub fn get_total_cmb(skills: &Skills, attribute: &str) -> u32 {
     skills
         .iter()
