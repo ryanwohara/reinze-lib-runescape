@@ -36,8 +36,7 @@ pub fn world() -> Result<Vec<String>, ()> {
     let output = vec![
         l("ToG Worlds"),
         sorted,
-        c1("||"),
-        c1("https://togcrowdsourcing.com"),
+        c1("|| https://togcrowdsourcing.com"),
     ]
     .join(" ");
 
