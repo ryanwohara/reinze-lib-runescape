@@ -918,18 +918,7 @@ pub fn process_stats_subsection(
                 if offset == 26 {
                     let points = points.parse::<u32>().unwrap_or(0);
 
-                    let tier = match points {
-                        0..=2499 => "Unranked",
-                        2500..=4999 => "Bronze",
-                        5000..=9999 => "Iron",
-                        10000..=17999 => "Steel",
-                        18000..=27999 => "Mithril",
-                        28000..=41999 => "Adamant",
-                        42000..=55999 => "Rune",
-                        _ => "Dragon",
-                    };
-
-                    additional = format!(" {} {}", &c1("Tier:"), &c2(tier));
+                    additional = format!(" {} {}", &c1("Tier:"), &c2(&tier(points)));
                 }
             }
         }
@@ -938,4 +927,18 @@ pub fn process_stats_subsection(
     let output = format!("{} {}{}", prefix, unranked(vec), additional);
 
     Ok(vec![output])
+}
+
+fn tier(points: u32) -> String {
+    match points {
+        0..=2499 => "Unranked",
+        2500..=4999 => "Bronze",
+        5000..=9999 => "Iron",
+        10000..=17999 => "Steel",
+        18000..=27999 => "Mithril",
+        28000..=41999 => "Adamant",
+        42000..=55999 => "Rune",
+        _ => "Dragon",
+    }
+    .to_string()
 }
