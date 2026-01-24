@@ -340,24 +340,19 @@ where
     .join(" ")
 }
 
-pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
+fn prepare(command: &str) -> (usize, String, Vec<String>) {
     let skill_name = skill(command);
     let skill_names = skills();
-    // Get the skill ID from the skill name
     let skill_id = skill_names
         .iter()
         .position(|r| r.to_string() == skill_name)
         .unwrap_or(0);
 
-    let flags = stats_parameters(input);
-    let query = strip_stats_parameters(input);
-    let split: Vec<String> = convert_split_to_string(query.split_whitespace().collect());
+    (skill_id, skill_name, skill_names)
+}
 
-    let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
-
-    let combat_command = command == "combat" || command == "cmb";
-
-    let prefix = vec![
+fn prefix(skill_name: String, combat_command: bool, flags: &StatsFlags) -> String {
+    vec![
         if combat_command {
             l("Combat")
         } else {
@@ -370,14 +365,27 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
         flags.prefix.to_string(),
     ]
     .join(" ")
-    .split_whitespace()
-    .collect::<Vec<&str>>()
-    .join(" ");
+}
+
+pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
+    let (skill_id, skill_name, skill_names) = prepare(command);
+
+    let flags = stats_parameters(input);
+    let joined: String = strip_stats_parameters(input)
+        .split_whitespace()
+        .collect::<Vec<&str>>()
+        .join(" ");
+
+    let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
+
+    let combat_command = command == "combat" || command == "cmb";
+
+    let prefix = prefix(skill_name, combat_command, &flags);
 
     let not_found = vec![invalid(prefix.clone())];
 
     let mut hiscores_len = 25;
-    let string;
+    let hiscores_str;
 
     let start_xp = if flags.start > 126 {
         flags.start
@@ -392,13 +400,13 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
         .collect::<Vec<Vec<u32>>>();
 
     if flags.start == 0 {
-        let rsn_with_spaces = if split.is_empty() {
+        let rsn_with_spaces = if joined.is_empty() {
             get_rsn(author, rsn_n)
                 .ok()
                 .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
                 .unwrap_or(nick)
         } else {
-            split.join(" ")
+            joined
         };
 
         let rsn = rsn_with_spaces
@@ -412,7 +420,7 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
             .build()
             .unwrap();
 
-        string = match client
+        hiscores_str = match client
             .get(&vec![flags.account_type.link(), rsn].join(""))
             .header(USER_AGENT, "Reinze.com")
             .send()
@@ -430,7 +438,7 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
             }
         };
 
-        let hiscores_split = string.split('\n').collect::<Vec<&str>>();
+        let hiscores_split = hiscores_str.split('\n').collect::<Vec<&str>>();
         hiscores_len = hiscores_split.len() - 1;
         if hiscores_len > 25 {
             // 24 skills
@@ -537,7 +545,7 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
                 return Ok(vec![message]);
             }
 
-            let details = details_by_skill_id(skill_id as u32, flags.search.as_str());
+            let details = details_by_skill_id(skill_id as u32, &flags.search.as_str());
 
             let calc = details
                 .iter()
@@ -865,13 +873,13 @@ pub fn process_stats_subsection(
     }
     .to_string();
 
-    let rsn_with_spaces = if split.is_empty() || split[0].is_empty() {
+    let rsn_with_spaces = if joined.is_empty() {
         get_rsn(author, rsn_n)
             .ok()
             .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
             .unwrap_or_else(|| nick.to_owned())
     } else {
-        split.join(" ")
+        joined
     };
 
     let re = Regex::new(r"\s").unwrap();
