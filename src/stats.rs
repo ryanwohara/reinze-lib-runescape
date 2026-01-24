@@ -19,7 +19,7 @@ mod thieving;
 mod woodcutting;
 
 use super::common::{
-    Combat, Skills, eval_query, get_rsn, get_stats, get_total_cmb, level_to_xp,
+    Combat, Entry, Skills, eval_query, get_rsn, get_stats, get_total_cmb, level_to_xp,
     process_account_type_flags, skill, skills, xp_to_level,
 };
 use crate::stats::skill::details_by_skill_id;
@@ -28,7 +28,6 @@ use mysql::from_row;
 use regex::Regex;
 use reqwest::header::USER_AGENT;
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
 use std::time::Duration;
 
 pub struct StatsFlags {
@@ -274,54 +273,6 @@ impl<'a> StrEntry<'a> {
     }
 }
 
-#[derive(Clone)]
-pub struct Entry {
-    pub name: String,
-    pub rank: u32,
-    pub level: u32,
-    pub xp: u32,
-}
-
-impl Entry {
-    #[allow(dead_code)]
-    pub fn rank(&self) -> String {
-        self.rank.to_string()
-    }
-
-    pub fn level(&self) -> String {
-        self.level.to_string()
-    }
-
-    #[allow(dead_code)]
-    pub fn xp(&self) -> String {
-        self.xp.to_string()
-    }
-
-    pub fn empty(&self) -> bool {
-        self.xp == 0
-    }
-}
-
-impl Display for Entry {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}{} {}{} {}{}",
-            c1("Lvl:"),
-            c2(&commas(self.level as f64, "d")),
-            c1("XP:"),
-            c2(&commas(self.xp as f64, "d")),
-            c1("Rank:"),
-            c2(if self.rank == 0 {
-                "N/A".to_string()
-            } else {
-                commas(self.rank as f64, "d")
-            }
-            .as_str())
-        )
-    }
-}
-
 fn invalid<T>(prefix: T) -> String
 where
     T: ToString,
@@ -378,7 +329,7 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
 
     let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
 
-    let combat_command = command == "combat" || command == "cmb";
+    let combat_command = vec!["combat", "cmb"].contains(&command);
 
     let prefix = prefix(skill_name, combat_command, &flags);
 
@@ -400,22 +351,19 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
         .collect::<Vec<Vec<u32>>>();
 
     if flags.start == 0 {
-        let rsn_with_spaces = if joined.is_empty() {
+        let rsn = if joined.is_empty() {
             get_rsn(author, rsn_n)
                 .ok()
                 .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
                 .unwrap_or(nick)
         } else {
             joined
-        };
+        }
+        .split_whitespace()
+        .collect::<Vec<&str>>()
+        .join("_");
 
-        let rsn = rsn_with_spaces
-            .split_whitespace()
-            .collect::<Vec<&str>>()
-            .join("_");
-
-        let client_builder = reqwest::blocking::Client::builder();
-        let client = client_builder
+        let client = reqwest::blocking::Client::builder()
             .connect_timeout(Duration::new(5, 0))
             .build()
             .unwrap();
@@ -439,11 +387,7 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
         };
 
         let hiscores_split = hiscores_str.split('\n').collect::<Vec<&str>>();
-        hiscores_len = hiscores_split.len() - 1;
-        if hiscores_len > 25 {
-            // 24 skills
-            hiscores_len = 25;
-        }
+        hiscores_len = hiscores_split.len().min(25);
 
         hiscores_collected = hiscores_split[0..hiscores_len]
             .iter()

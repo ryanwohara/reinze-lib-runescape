@@ -1,11 +1,11 @@
 use crate::items::Mapping;
-use crate::stats::Entry;
 use common::{database, *};
 use itertools::Itertools;
 use meval::eval_str;
 use mysql::{prelude::*, *};
 use regex::Regex;
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 use std::fs::read_to_string;
 
 // Catches shorthand skill names and returns the full name
@@ -201,6 +201,84 @@ pub fn get_total_cmb(skills: &Skills, attribute: &str) -> u32 {
             _ => 0,
         })
         .sum()
+}
+
+pub struct Hiscores {
+    pub overall: Entry,
+    pub attack: Entry,
+    pub defence: Entry,
+    pub strength: Entry,
+    pub hitpoints: Entry,
+    pub ranged: Entry,
+    pub prayer: Entry,
+    pub magic: Entry,
+    pub cooking: Entry,
+    pub woodcutting: Entry,
+    pub fletching: Entry,
+    pub fishing: Entry,
+    pub firemaking: Entry,
+    pub crafting: Entry,
+    pub smithing: Entry,
+    pub mining: Entry,
+    pub herblore: Entry,
+    pub agility: Entry,
+    pub thieving: Entry,
+    pub slayer: Entry,
+    pub farming: Entry,
+    pub runecraft: Entry,
+    pub hunter: Entry,
+    pub construction: Entry,
+    pub sailing: Entry,
+}
+
+pub type Entries = Vec<Entry>;
+
+#[derive(Clone)]
+pub struct Entry {
+    pub name: String,
+    pub rank: u32,
+    pub level: u32,
+    pub xp: u32,
+}
+
+impl Entry {
+    #[allow(dead_code)]
+    pub fn rank(&self) -> String {
+        self.rank.to_string()
+    }
+
+    pub fn level(&self) -> String {
+        self.level.to_string()
+    }
+
+    #[allow(dead_code)]
+    pub fn xp(&self) -> String {
+        self.xp.to_string()
+    }
+
+    pub fn empty(&self) -> bool {
+        self.xp == 0
+    }
+}
+
+impl Display for Entry {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}{} {}{} {}{}",
+            c1("Lvl:"),
+            c2(&commas(self.level as f64, "d")),
+            c1("XP:"),
+            c2(&commas(self.xp as f64, "d")),
+            c1("Rank:"),
+            c2(if self.rank == 0 {
+                "N/A".to_string()
+            } else {
+                commas(self.rank as f64, "d")
+            }
+            .as_str())
+        )
+    }
 }
 
 pub fn get_rsn(author: &str, rsn_n: &str) -> core::result::Result<Vec<Row>, Error> {
@@ -702,12 +780,13 @@ mod tests {
         assert_eq!(skill("hunt"), "Hunter");
         assert_eq!(skill("construction"), "Construction");
         assert_eq!(skill("con"), "Construction");
+        assert_eq!(skill("sail"), "Sailing");
         assert_eq!(skill("invalid"), "");
     }
 
     #[test]
     fn test_skills() {
-        assert_eq!(skills().len(), 24,);
+        assert_eq!(skills().len(), 25,);
         assert_eq!(
             skills(),
             vec![
@@ -735,6 +814,7 @@ mod tests {
                 "Runecraft",
                 "Hunter",
                 "Construction",
+                "Sailing",
             ]
             .iter()
             .map(|x| x.to_string())
