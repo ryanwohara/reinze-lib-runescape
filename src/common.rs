@@ -1,13 +1,16 @@
 use crate::items::Mapping;
+use crate::stats::StatsFlags;
 use common::{database, *};
 use itertools::Itertools;
 use meval::eval_str;
 use mysql::{prelude::*, *};
 use regex::Regex;
+use reqwest::header::USER_AGENT;
 use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::fs::read_to_string;
+use std::time::Duration;
 
 // Catches shorthand skill names and returns the full name
 pub fn skill(s: &str) -> String {
@@ -577,6 +580,66 @@ impl Display for Hiscore {
         f.write_fmt(format_args!("{}", name))
     }
 }
+
+pub fn collect_hiscores(
+    input: &str,
+    author: &str,
+    rsn_n: &str,
+    flags: &StatsFlags,
+) -> Result<Vec<Vec<u32>>, ()> {
+    let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
+
+    let rsn = if input.is_empty() {
+        get_rsn(author, rsn_n)
+            .ok()
+            .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
+            .unwrap_or(nick)
+    } else {
+        input.to_string()
+    }
+    .split_whitespace()
+    .collect::<Vec<&str>>()
+    .join("_");
+
+    let client = reqwest::blocking::Client::builder()
+        .connect_timeout(Duration::new(5, 0))
+        .build()
+        .unwrap();
+
+    let hiscores_str = match client
+        .get(&vec![flags.account_type.link(), rsn].join(""))
+        .header(USER_AGENT, "Reinze.com")
+        .send()
+    {
+        Ok(resp) => match resp.text() {
+            Ok(string) => string,
+            Err(e) => {
+                println!("Error getting text: {}", e);
+                return Err(());
+            }
+        },
+        Err(e) => {
+            println!("Error making HTTP request: {}", e);
+            return Err(());
+        }
+    };
+
+    let hiscores_split = hiscores_str.split('\n').collect::<Vec<&str>>();
+    let hiscores_len = hiscores_split.len().min(25);
+
+    let result = hiscores_split[0..hiscores_len]
+        .iter()
+        .map(|x| {
+            x.split(',')
+                .map(|y| y.parse::<u32>().unwrap_or(0))
+                .collect::<Vec<u32>>()
+        })
+        .collect::<Vec<Vec<u32>>>();
+
+    Ok(result)
+}
+
+type Listings = Vec<Listing>;
 
 pub enum Listing {
     Entry(Entry),

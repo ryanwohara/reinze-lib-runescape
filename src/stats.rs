@@ -19,8 +19,8 @@ mod thieving;
 mod woodcutting;
 
 use super::common::{
-    Combat, Entry, Skills, eval_query, get_rsn, get_stats, get_total_cmb, level_to_xp,
-    process_account_type_flags, skill, skills, xp_to_level,
+    Combat, Entry, Skills, collect_hiscores, eval_query, get_rsn, get_stats, get_total_cmb,
+    level_to_xp, process_account_type_flags, skill, skills, xp_to_level,
 };
 use crate::stats::skill::details_by_skill_id;
 use common::{c1, c2, commas, commas_from_string, convert_split_to_string, l, p, unranked};
@@ -238,7 +238,7 @@ pub struct StrEntry<'a> {
 }
 
 impl<'a> StrEntry<'a> {
-    pub fn new(name: &'a str, split: Vec<u32>) -> Self {
+    pub fn new(name: &'a str, split: &Vec<u32>) -> Self {
         if split.len() == 2 {
             Self {
                 name,
@@ -327,16 +327,14 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
         .collect::<Vec<&str>>()
         .join(" ");
 
-    let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
-
     let combat_command = vec!["combat", "cmb"].contains(&command);
 
     let prefix = prefix(skill_name, combat_command, &flags);
 
     let not_found = vec![invalid(prefix.clone())];
 
+    // todo: this needs to be dynamically adjusted
     let mut hiscores_len = 25;
-    let hiscores_str;
 
     let start_xp = if flags.start > 126 {
         flags.start
@@ -351,52 +349,8 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
         .collect::<Vec<Vec<u32>>>();
 
     if flags.start == 0 {
-        let rsn = if joined.is_empty() {
-            get_rsn(author, rsn_n)
-                .ok()
-                .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
-                .unwrap_or(nick)
-        } else {
-            joined
-        }
-        .split_whitespace()
-        .collect::<Vec<&str>>()
-        .join("_");
-
-        let client = reqwest::blocking::Client::builder()
-            .connect_timeout(Duration::new(5, 0))
-            .build()
-            .unwrap();
-
-        hiscores_str = match client
-            .get(&vec![flags.account_type.link(), rsn].join(""))
-            .header(USER_AGENT, "Reinze.com")
-            .send()
-        {
-            Ok(resp) => match resp.text() {
-                Ok(string) => string,
-                Err(e) => {
-                    println!("Error getting text: {}", e);
-                    return Err(());
-                }
-            },
-            Err(e) => {
-                println!("Error making HTTP request: {}", e);
-                return Err(());
-            }
-        };
-
-        let hiscores_split = hiscores_str.split('\n').collect::<Vec<&str>>();
-        hiscores_len = hiscores_split.len().min(25);
-
-        hiscores_collected = hiscores_split[0..hiscores_len]
-            .iter()
-            .map(|x| {
-                x.split(',')
-                    .map(|y| y.parse::<u32>().unwrap_or(0))
-                    .collect::<Vec<u32>>()
-            })
-            .collect::<Vec<Vec<u32>>>();
+        hiscores_collected =
+            collect_hiscores(&joined, author, rsn_n, &flags).unwrap_or(hiscores_collected);
     }
 
     let mut index = -1isize;
@@ -404,7 +358,7 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
     let mut sortable_data = Vec::new();
     let mut skill_lookup_data: Skills = HashMap::new();
 
-    for split in hiscores_collected {
+    for split in &hiscores_collected {
         index += 1;
 
         if index + 1 > skills().len() as isize {
@@ -506,6 +460,7 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
             skill_data.push(entry.to_string());
         } else if skill_id == 0
             && index < hiscores_len as isize
+            && index < hiscores_collected.len() as isize
             && !entry.empty()
             && flags.filter(&entry.level)
             && !combat_command
