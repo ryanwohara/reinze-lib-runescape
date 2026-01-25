@@ -245,9 +245,9 @@ impl Author {
                 .1
                 .to_string();
         }
-        let split = host.split("@").collect::<Vec<&str>>();
-        let ident = split[0].to_string();
-        let address = split[1].to_string();
+        let split = host.split_once("@").unwrap_or(("", &host));
+        let ident = split.0.to_string();
+        let address = split.1.to_string();
 
         Self {
             nick,
