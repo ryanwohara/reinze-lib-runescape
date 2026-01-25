@@ -235,13 +235,15 @@ pub struct Author {
 
 impl Author {
     pub fn create(author: &str) -> Self {
-        let split = author.split("!").collect::<Vec<&str>>();
-        let nick = split[0].to_string();
-        let mut host = split[1].to_string();
+        let split = author.split_once("!").unwrap_or(("", author));
+        let nick = split.0.to_string();
+        let mut host = split.1.to_string();
         if host.starts_with("~") {
-            host = host.split("~").collect::<Vec<&str>>()[1]
-                .parse()
-                .unwrap_or(host);
+            host = host
+                .split_once("~")
+                .unwrap_or(("", host.as_str()))
+                .1
+                .to_string();
         }
         let split = host.split("@").collect::<Vec<&str>>();
         let ident = split[0].to_string();
