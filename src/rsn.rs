@@ -1,23 +1,22 @@
-use std::vec;
-
+use crate::common::Source;
 use common::{c1, c2, database, l, not_found};
 use mysql::{prelude::Queryable, *};
+use std::vec;
 
-pub fn process(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
-    let mut split = query.split_whitespace();
-    let command = split.next().unwrap_or("");
-    let query = split.collect::<Vec<&str>>().join(" ");
+pub fn process(source: Source) -> Result<Vec<String>, ()> {
+    let command = source.command.as_str();
+    let query = source.query.as_str();
 
     match command {
-        "set" => set(&query, author, rsn_n),
-        "del" | "delete" => delete(author, rsn_n),
-        "show" => show(author, rsn_n),
-        "list" => list(author),
+        "set" => set(source),
+        "del" | "delete" => delete(source),
+        "show" => show(source),
+        "list" => list(source),
         _ => help(),
     }
 }
 
-fn set(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
+fn set(source: Source) -> Result<Vec<String>, ()> {
     let null = vec!["".to_string()];
 
     let mut conn = match database::connect() {
@@ -28,10 +27,10 @@ fn set(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
         }
     };
 
-    let mut host = author.split("!").collect::<Vec<&str>>()[1];
-    if host.starts_with("~") {
-        host = host.split("~").collect::<Vec<&str>>()[1];
-    }
+    let host = &source.author.host;
+    let rsn_n = &source.rsn_n;
+    let author = source.author.full;
+    let query = &source.query;
 
     match conn.exec_first::<String, &str, Params>(
         "SELECT rsn FROM rsn WHERE host = :host AND rsn_ident = :rsn_n",
@@ -101,7 +100,7 @@ fn set(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
     }
 }
 
-fn delete(author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
+fn delete(source: Source) -> Result<Vec<String>, ()> {
     let mut conn = match database::connect() {
         Ok(conn) => conn,
         Err(e) => {
@@ -110,10 +109,9 @@ fn delete(author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
         }
     };
 
-    let mut host = author.split("!").collect::<Vec<&str>>()[1];
-    if host.starts_with("~") {
-        host = host.split("~").collect::<Vec<&str>>()[1];
-    }
+    let host = source.author.host;
+    let rsn_n = &source.rsn_n;
+    let author = source.author.full;
 
     match conn.exec_first::<String, &str, Params>(
         "DELETE FROM rsn WHERE host = :host AND rsn_ident = :rsn_n",
@@ -134,7 +132,7 @@ fn delete(author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
     }
 }
 
-fn show(author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
+fn show(source: Source) -> Result<Vec<String>, ()> {
     let null = vec!["".to_string()];
 
     let mut conn = match database::connect() {
@@ -145,10 +143,9 @@ fn show(author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
         }
     };
 
-    let mut host = author.split("!").collect::<Vec<&str>>()[1];
-    if host.starts_with("~") {
-        host = host.split("~").collect::<Vec<&str>>()[1];
-    }
+    let mut host = source.author.host;
+    let rsn_n = &source.rsn_n;
+    let author = source.author.full;
 
     match conn.exec_first::<String, &str, Params>(
         "SELECT rsn FROM rsn WHERE host = :host AND rsn_ident = :rsn_n",
@@ -171,7 +168,7 @@ fn show(author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
     }
 }
 
-fn list(author: &str) -> Result<Vec<String>, ()> {
+fn list(source: Source) -> Result<Vec<String>, ()> {
     let null = vec!["".to_string()];
 
     let mut conn = match database::connect() {
@@ -182,10 +179,7 @@ fn list(author: &str) -> Result<Vec<String>, ()> {
         }
     };
 
-    let mut host = author.split("!").collect::<Vec<&str>>()[1];
-    if host.starts_with("~") {
-        host = host.split("~").collect::<Vec<&str>>()[1];
-    }
+    let host = source.author.host;
 
     match conn.exec(
         "SELECT rsn_ident, rsn FROM rsn WHERE host = :host",

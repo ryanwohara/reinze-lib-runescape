@@ -19,7 +19,7 @@ mod thieving;
 mod woodcutting;
 
 use super::common::{
-    Combat, Entry, Skills, collect_hiscores, eval_query, get_rsn, get_stats, get_total_cmb,
+    Combat, Entry, Skills, Source, collect_hiscores, eval_query, get_rsn, get_stats, get_total_cmb,
     level_to_xp, process_account_type_flags, skill, skills, xp_to_level,
 };
 use crate::stats::skill::details_by_skill_id;
@@ -318,16 +318,17 @@ fn prefix(skill_name: String, combat_command: bool, flags: &StatsFlags) -> Strin
     .join(" ")
 }
 
-pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
-    let (skill_id, skill_name, skill_names) = prepare(command);
+pub fn stats(source: Source) -> Result<Vec<String>, ()> {
+    // command: &str, input: &str, author: &str, rsn_n: &str
+    let (skill_id, skill_name, skill_names) = prepare(&source.command);
 
-    let flags = stats_parameters(input);
-    let joined: String = strip_stats_parameters(input)
+    let flags = stats_parameters(&source.query);
+    let joined: String = strip_stats_parameters(&source.query)
         .split_whitespace()
         .collect::<Vec<&str>>()
         .join(" ");
 
-    let combat_command = vec!["combat", "cmb"].contains(&command);
+    let combat_command = vec!["combat", "cmb"].contains(&source.command.as_str());
 
     let prefix = prefix(skill_name, combat_command, &flags);
 
@@ -350,7 +351,7 @@ pub fn stats(command: &str, input: &str, author: &str, rsn_n: &str) -> Result<Ve
 
     if flags.start == 0 {
         hiscores_collected =
-            collect_hiscores(&joined, author, rsn_n, &flags).unwrap_or(hiscores_collected);
+            collect_hiscores(&joined, source, &flags).unwrap_or(hiscores_collected);
     }
 
     let mut index = -1isize;
@@ -747,18 +748,17 @@ fn parse_skill_data_for_cmb(skill: &str, skill_lookup_data: &Skills, level_diffe
 }
 
 pub fn process_stats_subsection(
-    query: &str,
-    author: &str,
-    rsn_n: &str,
+    source: Source,
     cmd_prefix: &str,
     categories: Vec<&str>,
     offset: isize,
 ) -> Result<Vec<String>, ()> {
+    let query = &source.query;
     let split: Vec<String> = convert_split_to_string(query.split_whitespace().collect());
 
     let (split, flag_prefix, base_url) = process_account_type_flags(query, split);
 
-    let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
+    let nick = source.author.nick.to_string();
 
     let joined = split.join(" ");
 
@@ -773,7 +773,7 @@ pub fn process_stats_subsection(
     .to_string();
 
     let rsn_with_spaces = if joined.is_empty() {
-        get_rsn(author, rsn_n)
+        get_rsn(source)
             .ok()
             .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
             .unwrap_or_else(|| nick.to_owned())

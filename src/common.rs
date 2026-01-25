@@ -207,6 +207,64 @@ pub fn get_total_cmb(skills: &Skills, attribute: &str) -> u32 {
         .sum()
 }
 
+pub struct Source {
+    pub rsn_n: String,
+    pub author: Author,
+    pub command: String,
+    pub query: String,
+}
+
+impl Source {
+    pub fn create(rsn_n: &str, author: Author, command: &str, query: &str) -> Self {
+        Self {
+            rsn_n: rsn_n.to_string(),
+            author,
+            command: command.to_string(),
+            query: query.to_string(),
+        }
+    }
+}
+
+pub struct Author {
+    pub nick: String,
+    pub host: String,
+    pub ident: String,
+    pub address: String,
+    pub full: String,
+}
+
+impl Author {
+    pub fn create(author: &str) -> Self {
+        let split = author.split("!").collect::<Vec<&str>>();
+        let nick = split[0].to_string();
+        let mut host = split[1].to_string();
+        if host.starts_with("~") {
+            host = host.split("~").collect::<Vec<&str>>()[1]
+                .parse()
+                .unwrap_or(host);
+        }
+        let split = host.split("@").collect::<Vec<&str>>();
+        let ident = split[0].to_string();
+        let address = split[1].to_string();
+
+        Self {
+            nick,
+            host,
+            ident,
+            address,
+            full: author.to_string(),
+        }
+    }
+}
+
+pub struct Stats {
+    pub hiscores: Hiscores,
+    pub flags: StatsFlags,
+    pub source: Source,
+}
+
+pub type Hiscores = Vec<Hiscore>;
+
 #[derive(PartialEq, Copy, Clone)]
 pub enum Hiscore {
     Overall,
@@ -583,14 +641,13 @@ impl Display for Hiscore {
 
 pub fn collect_hiscores(
     input: &str,
-    author: &str,
-    rsn_n: &str,
+    source: Source,
     flags: &StatsFlags,
 ) -> Result<Vec<Vec<u32>>, ()> {
-    let nick = author.split("!").collect::<Vec<&str>>()[0].to_string();
+    let nick = source.author.nick.to_string();
 
     let rsn = if input.is_empty() {
-        get_rsn(author, rsn_n)
+        get_rsn(source)
             .ok()
             .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
             .unwrap_or(nick)
@@ -705,7 +762,7 @@ impl Display for Entry {
     }
 }
 
-pub fn get_rsn(author: &str, rsn_n: &str) -> core::result::Result<Vec<Row>, Error> {
+pub fn get_rsn(source: Source) -> core::result::Result<Vec<Row>, Error> {
     let mut conn = match database::connect() {
         Ok(conn) => conn,
         Err(e) => {
@@ -714,10 +771,8 @@ pub fn get_rsn(author: &str, rsn_n: &str) -> core::result::Result<Vec<Row>, Erro
         }
     };
 
-    let mut host = author.split("!").collect::<Vec<&str>>()[1];
-    if host.starts_with("~") {
-        host = host.split("~").collect::<Vec<&str>>()[1];
-    }
+    let host = source.author.host;
+    let rsn_n = source.rsn_n;
 
     match conn.exec_first(
         "SELECT rsn FROM rsn WHERE host = :host AND rsn_ident = :rsn_n",

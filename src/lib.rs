@@ -34,6 +34,7 @@ mod tog;
 mod wiki;
 mod xp;
 
+use crate::common::{Author, Source};
 use regex::Regex;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
@@ -44,10 +45,10 @@ pub extern "C" fn exported(
     raw_query: *const c_char,
     raw_author: *const c_char,
 ) -> *mut c_char {
-    let nil = CString::new("").unwrap().into_raw();
+    let nil = CString::new("").unwrap().into_raw(); // using unwrap() here is safe because we know the string is valid UTF-8
 
     if cmd.is_null() || raw_query.is_null() || raw_author.is_null() {
-        return nil; // using unwrap() here is safe because we know the string is valid UTF-8
+        return nil;
     }
 
     let unsafe_cmd = unsafe { CStr::from_ptr(cmd) };
@@ -82,25 +83,27 @@ pub extern "C" fn exported(
         rsn_n = re_match[0].get(2).unwrap().as_str();
     }
 
+    let source = Source::create(rsn_n, Author::create(author), command, query);
+
     match match command {
         "alch" | "alchemy" => alch::lookup(query),
         "bolt" | "bolts" => bolts::lookup(query),
-        "bh" | "bounty" | "bhunter" | "bountyhunter" => bh::lookup(query, author, rsn_n),
+        "bh" | "bounty" | "bhunter" | "bountyhunter" => bh::lookup(source),
         "boost" | "boosts" => boost::boost(query),
-        "boss" | "bosses" | "kc" => bosses::lookup(query, author, rsn_n),
-        "clue" | "clues" => clues::lookup(query, author, rsn_n),
-        command if command.starts_with("colo") => colosseum::lookup(query, author, rsn_n),
-        "coll" | "collection" | "collectionlog" => collectionlog::lookup(query, author, rsn_n),
+        "boss" | "bosses" | "kc" => bosses::lookup(source),
+        "clue" | "clues" => clues::lookup(source),
+        command if command.starts_with("colo") => colosseum::lookup(source),
+        "coll" | "collection" | "collectionlog" => collectionlog::lookup(source),
         "congratulations" | "congratulation" | "congrats" | "congratz" | "grats" | "gratz"
         | "gz" => grats::get(query, author),
         "experience" | "xperience" | "exp" | "xp" => xp::xp(query),
         "fairy" => fairy::lookup(query),
         "ge" => ge::ge(query),
-        "grid" => gridmaster::lookup(query, author, rsn_n),
+        "grid" => gridmaster::lookup(source),
         "level" | "lvl" => level::level(query),
-        "league" | "leagues" => leagues::lookup(query, author, rsn_n),
+        "league" | "leagues" => leagues::lookup(source),
         "lms" | "lmstanding" | "lmanstanding" | "lastmstanding" | "lastmanstanding" => {
-            lms::lookup(query, author, rsn_n)
+            lms::lookup(source)
         }
         "mp" | "money" | "moneyprinter" | "profit" | "printer" | "profitprinter" => {
             money::printer(query)
@@ -116,17 +119,13 @@ pub extern "C" fn exported(
         | "fishing" | "fish" | "firemaking" | "fm" | "crafting" | "craft" | "smithing"
         | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
         | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
-        | "hunt" | "construction" | "con" | "sail" | "sailing" => {
-            stats::stats(command, query, author, rsn_n)
-        }
+        | "hunt" | "construction" | "con" | "sail" | "sailing" => stats::stats(source),
         "payment" | "plant" | "plants" => plant::lookup(query),
-        "pvparena" | "pvp" | "arena" => pvparena::lookup(query, author, rsn_n),
-        "rift" | "rifts" => rifts::lookup(query, author, rsn_n),
-        "rsn" => rsn::process(query, author, rsn_n),
+        "pvparena" | "pvp" | "arena" => pvparena::lookup(source),
+        "rift" | "rifts" => rifts::lookup(source),
+        "rsn" => rsn::process(source),
         "salvage" | "salvages" => salvage::lookup(query),
-        "sw" | "swar" | "soulw" | "soulwar" | "soulwars" | "zeal" => {
-            soulwars::lookup(query, author, rsn_n)
-        }
+        "sw" | "swar" | "soulw" | "soulwar" | "soulwars" | "zeal" => soulwars::lookup(source),
         "togw" => tog::world(),
         "wiki" => wiki::wiki(query),
         "help" => Ok(r"alchemy

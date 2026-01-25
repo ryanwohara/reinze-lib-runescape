@@ -1,10 +1,11 @@
 use super::stats::process_stats_subsection;
+use crate::common::Source;
 use common::l;
 
-pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
+pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
     const OFFSET: isize = 40;
 
     let categories: Vec<&str> = vec!["Kills"];
 
-    process_stats_subsection(query, author, rsn_n, &l("PVP Arena"), categories, OFFSET)
+    process_stats_subsection(source, &l("PVP Arena"), categories, OFFSET)
 }

@@ -1,12 +1,13 @@
 use super::stats::process_stats_subsection;
+use crate::common::Source;
 use common::l;
 
-pub fn lookup(query: &str, author: &str, rsn_n: &str) -> Result<Vec<String>, ()> {
+pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
     const OFFSET: isize = 25;
 
     let categories: Vec<&str> = vec!["Grid Points"];
 
-    let query = format!("{} -t", query);
+    let query = format!("{} -t", source.query);
 
-    process_stats_subsection(&query, author, rsn_n, &l("Grid Master"), categories, OFFSET)
+    process_stats_subsection(source, &l("Grid Master"), categories, OFFSET)
 }
