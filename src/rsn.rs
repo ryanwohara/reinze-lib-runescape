@@ -6,7 +6,11 @@ use std::vec;
 pub fn process(source: Source) -> Result<Vec<String>, ()> {
     let query = source.query.as_str();
 
-    match query {
+    if query.is_empty() {
+        return help();
+    }
+
+    match query.split_whitespace().collect::<Vec<&str>>()[0] {
         "set" => set(source),
         "del" | "delete" => delete(source),
         "show" => show(source),
