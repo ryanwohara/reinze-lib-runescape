@@ -4,10 +4,9 @@ use mysql::{prelude::Queryable, *};
 use std::vec;
 
 pub fn process(source: Source) -> Result<Vec<String>, ()> {
-    let command = source.command.as_str();
     let query = source.query.as_str();
 
-    match command {
+    match query {
         "set" => set(source),
         "del" | "delete" => delete(source),
         "show" => show(source),
