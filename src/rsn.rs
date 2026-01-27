@@ -33,7 +33,11 @@ fn set(source: Source) -> Result<Vec<String>, ()> {
     let host = &source.author.host;
     let rsn_n = &source.rsn_n;
     let author = source.author.full;
-    let query = &source.query;
+    let query = &source.query.split_once(" ").unwrap().1;
+
+    if query.is_empty() {
+        return Ok(vec!["Please specify an RSN to set.".to_string()]);
+    }
 
     match conn.exec_first::<String, &str, Params>(
         "SELECT rsn FROM rsn WHERE host = :host AND rsn_ident = :rsn_n",
