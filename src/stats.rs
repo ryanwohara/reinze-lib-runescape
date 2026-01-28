@@ -19,12 +19,11 @@ mod thieving;
 mod woodcutting;
 
 use super::common::{
-    Entry, HiscoreName, Listing, Listings, Source, Stats, collect_hiscores, eval_query, get_rsn,
-    get_stats, level_to_xp, process_account_type_flags, skill, skills, xp_to_level,
+    Entry, HiscoreName, Listing, Listings, Source, Stats, collect_hiscores, eval_query,
+    level_to_xp, skill, skills, xp_to_level,
 };
 use crate::stats::skill::details_by_skill_id;
-use common::{c1, c2, commas, commas_from_string, convert_split_to_string, l, p, unranked};
-use mysql::from_row;
+use common::{c1, c2, commas, l, p};
 use regex::Regex;
 
 pub struct StatsFlags {
@@ -39,14 +38,14 @@ pub struct StatsFlags {
 }
 
 impl StatsFlags {
-    pub fn filter(&self, level: &u32) -> bool {
-        (level > &0)
+    pub fn filter(&self, input: &u32) -> bool {
+        (input > &0)
             && ((self.filter_by == FilterBy::None)
-                || (self.filter_by == FilterBy::GreaterThan && level > &self.filter_at)
-                || (self.filter_by == FilterBy::FewerThan && level < &self.filter_at)
-                || (self.filter_by == FilterBy::GreaterThanOrEqualTo && level >= &self.filter_at)
-                || (self.filter_by == FilterBy::FewerThanOrEqualTo && level <= &self.filter_at)
-                || (self.filter_by == FilterBy::EqualTo && level == &self.filter_at))
+                || (self.filter_by == FilterBy::GreaterThan && input > &self.filter_at)
+                || (self.filter_by == FilterBy::FewerThan && input < &self.filter_at)
+                || (self.filter_by == FilterBy::GreaterThanOrEqualTo && input >= &self.filter_at)
+                || (self.filter_by == FilterBy::FewerThanOrEqualTo && input <= &self.filter_at)
+                || (self.filter_by == FilterBy::EqualTo && input == &self.filter_at))
     }
 }
 
@@ -177,7 +176,7 @@ impl From<&str> for MutuallyExclusiveFlag {
 }
 
 pub fn get_stats_regex() -> Regex {
-    Regex::new(r"(?:^|\b|\s)(?:(-([serox]|[iuhdlt1]|sk|fs))|([<>=]=?)\s?(\d+)|([#^])([\d,.]+[kmb]?)|(@)(\S+))(?:\b|$)").unwrap()
+    Regex::new(r"(?:^|\b|\s)(?:(-([serox]|[iuhdlt1]|sk|fs))|([<>=]=?)\s?([\d,.]+[kmb]?)|([#^])([\d,.]+[kmb]?)|(@)(\S+))(?:\b|$)").unwrap()
 }
 
 pub fn stats_parameters(query: &str) -> StatsFlags {
@@ -410,13 +409,13 @@ pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
                     let next_level_xp = level_to_xp(next_level);
                     let xp_difference = next_level_xp - listing.xp();
 
-                    (listing.name(), xp_difference)
+                    (listing.name().to_string(), xp_difference)
                 }
                 MutuallyExclusiveFlag::Order | MutuallyExclusiveFlag::Exp => {
-                    (listing.name(), listing.xp())
+                    (listing.name().to_string(), listing.xp())
                 }
-                MutuallyExclusiveFlag::Rank => (listing.name(), listing.rank()),
-                MutuallyExclusiveFlag::None => (listing.name(), listing.actual_level()),
+                MutuallyExclusiveFlag::Rank => (listing.name().to_string(), listing.rank()),
+                MutuallyExclusiveFlag::None => (listing.name().to_string(), listing.actual_level()),
             })
             .collect::<Vec<(String, u32)>>();
 
@@ -456,95 +455,7 @@ pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
     }
 }
 
-pub fn process_stats_subsection(
-    source: Source,
-    cmd_prefix: &str,
-    categories: Vec<&str>,
-    offset: isize,
-) -> Result<Vec<String>, ()> {
-    let query = &source.query;
-    let split: Vec<String> = convert_split_to_string(query.split_whitespace().collect());
-
-    let (split, flag_prefix, base_url) = process_account_type_flags(query, split);
-
-    let nick = source.author.nick.to_string();
-
-    let joined = split.join(" ");
-
-    let re = Regex::new(r"@(\S+)").unwrap();
-    let filter = match re.captures(&joined) {
-        Some(filter) => match filter.get(1) {
-            Some(content) => content.as_str(),
-            None => "",
-        },
-        None => "",
-    }
-    .to_string();
-
-    let rsn = if joined.is_empty() {
-        get_rsn(&source)
-            .ok()
-            .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
-            .unwrap_or_else(|| nick.to_owned())
-    } else {
-        joined
-    }
-    .split_whitespace()
-    .collect::<Vec<&str>>()
-    .join(" ");
-
-    let stats = match get_stats(&rsn, &base_url) {
-        Ok(stats) => stats,
-        Err(_) => return Err(()),
-    };
-
-    let mut prefix_vec = vec![cmd_prefix, &flag_prefix];
-    prefix_vec.retain(|x| !x.is_empty());
-    let prefix = prefix_vec.join(" ");
-
-    let mut vec: Vec<String> = Vec::new();
-    let mut index = 0 - 1isize;
-
-    let mut additional = "".to_string();
-    for line in stats {
-        index += 1;
-
-        if index - offset >= 0 && index - offset < categories.len() as isize {
-            if line[0] == "-1" {
-                continue;
-            }
-
-            let name: &str = categories[(index - offset) as usize];
-            let rank = &line[0];
-            let points = &line[1];
-
-            if filter.len() == 0 || name.to_lowercase().contains(&filter.to_lowercase()) {
-                vec.push(format!(
-                    "{}: {} {}",
-                    c1(name),
-                    c2(&commas_from_string(points, "d")),
-                    p(if rank == "-1" {
-                        "N/A".to_string()
-                    } else {
-                        commas_from_string(rank, "d")
-                    }
-                    .as_str())
-                ));
-
-                if offset == 26 {
-                    let points = points.parse::<u32>().unwrap_or(0);
-
-                    additional = format!(" {} {}", &c1("Tier:"), &c2(&tier(points)));
-                }
-            }
-        }
-    }
-
-    let output = format!("{} {}{}", prefix, unranked(vec), additional);
-
-    Ok(vec![output])
-}
-
+#[allow(dead_code)]
 fn tier(points: u32) -> String {
     match points {
         0..=2499 => "Unranked",
@@ -599,7 +510,7 @@ pub fn combat(source: Source) -> Result<Vec<String>, ()> {
         .iter()
         .map(|listing| {
             vec![
-                c1(&vec![&listing.name(), ":"].join("")),
+                c1(&vec![&listing.name().to_string(), ":"].join("")),
                 c2(&listing.level().to_string()),
             ]
             .join("")

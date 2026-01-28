@@ -1,5 +1,5 @@
 use crate::items::Mapping;
-use crate::stats::StatsFlags;
+use crate::stats::{StatsFlags, stats_parameters, strip_stats_parameters};
 use common::{database, *};
 use itertools::Itertools;
 use meval::eval_str;
@@ -350,10 +350,13 @@ pub enum HiscoreName {
     Hunter,
     Construction,
     Sailing,
+    Gridmaster,
+    Leagues,
     BountyHunterHunter,
     BountyHunterRogue,
     BountyHunterLegacyHunter,
     BountyHunterLegacyRogue,
+    None,
     ClueScrollAll,
     ClueScrollBeginner,
     ClueScrollEasy,
@@ -435,7 +438,6 @@ pub enum HiscoreName {
     Yama,
     Zalcano,
     Zulrah,
-    None,
 }
 
 impl HiscoreName {
@@ -466,10 +468,13 @@ impl HiscoreName {
             Self::Hunter,
             Self::Construction,
             Self::Sailing,
+            Self::Gridmaster,
+            Self::Leagues,
             Self::BountyHunterHunter,
             Self::BountyHunterRogue,
             Self::BountyHunterLegacyHunter,
             Self::BountyHunterLegacyRogue,
+            Self::None,
             Self::ClueScrollAll,
             Self::ClueScrollBeginner,
             Self::ClueScrollEasy,
@@ -551,7 +556,6 @@ impl HiscoreName {
             Self::Yama,
             Self::Zalcano,
             Self::Zulrah,
-            Self::None,
         ]
     }
 
@@ -654,10 +658,12 @@ impl Display for HiscoreName {
             Self::Hunter => "Hunter",
             Self::Construction => "Construction",
             Self::Sailing => "Sailing",
-            Self::BountyHunterHunter => "BountyHunterHunter",
-            Self::BountyHunterRogue => "BountyHunterRogue",
-            Self::BountyHunterLegacyHunter => "BountyHunterLegacyHunter",
-            Self::BountyHunterLegacyRogue => "BountyHunterLegacyRogue",
+            Self::Gridmaster => "Gridmaster",
+            Self::Leagues => "Leagues",
+            Self::BountyHunterHunter => "Bounty Hunter Hunter",
+            Self::BountyHunterRogue => "Bounty Hunter Rogue",
+            Self::BountyHunterLegacyHunter => "Bounty Hunter Legacy Hunter",
+            Self::BountyHunterLegacyRogue => "Bounty Hunter Legacy Rogue",
             Self::ClueScrollAll => "All Clue Scrolls",
             Self::ClueScrollBeginner => "Beginner Clue Scrolls",
             Self::ClueScrollEasy => "Easy Clue Scrolls",
@@ -668,7 +674,7 @@ impl Display for HiscoreName {
             Self::LMS => "LMS",
             Self::PvpArena => "PVP Arena",
             Self::SoulWarsZeal => "Soul Wars Zeal",
-            Self::GotrRifts => "Gotr Rifts",
+            Self::GotrRifts => "GotR Rifts",
             Self::ColosseumGlory => "Colosseum Glory",
             Self::CollectionsLogged => "Collections Logged",
             Self::AbyssalSire => "Abyssal Sire",
@@ -744,6 +750,57 @@ impl Display for HiscoreName {
 
         f.write_fmt(format_args!("{}", name))
     }
+}
+
+pub fn process_stats_subsection(
+    source: Source,
+    cmd_prefix: &str,
+    mut categories: Vec<HiscoreName>,
+) -> Result<Vec<String>, ()> {
+    let not_found = vec![vec![cmd_prefix, &c1("Stats not found")].join(" ")];
+    let flags = stats_parameters(&source.query);
+    let joined: String = strip_stats_parameters(&source.query)
+        .split_whitespace()
+        .collect::<Vec<&str>>()
+        .join(" ");
+    let mut hiscores = match collect_hiscores(&joined, &source, &flags) {
+        Ok(hiscores) => hiscores,
+        Err(_) => return Ok(not_found),
+    };
+    hiscores.retain_subentries();
+
+    let mut stats: Stats = Stats {
+        flags,
+        hiscores,
+        source,
+    };
+
+    categories.retain(|category| {
+        category
+            .to_string()
+            .to_lowercase()
+            .contains(&stats.flags.search.to_lowercase())
+    });
+    stats.hiscores.retain(categories);
+    stats.filter();
+
+    let results = stats
+        .hiscores
+        .iter()
+        .map(|listing| match listing {
+            Listing::SubEntry(subentry) => vec![
+                c1(&vec![&subentry.name.to_string(), ":"].join("")),
+                c2(&commas(subentry.xp as f64, "d")),
+                p(&commas(subentry.rank as f64, "d")),
+            ]
+            .join(" "),
+            Listing::Entry(_) => "".to_string(),
+        })
+        .collect::<Vec<String>>();
+
+    let output = vec![cmd_prefix, &unranked(results)].join(" ");
+
+    Ok(vec![output])
 }
 
 pub fn collect_hiscores(input: &str, source: &Source, flags: &StatsFlags) -> Result<Listings, ()> {
@@ -830,7 +887,7 @@ impl Listings {
             .0
             .iter()
             .map(|listing| {
-                if listing.name().eq(skill) {
+                if listing.name().to_string().eq(skill) {
                     Some(listing.clone())
                 } else {
                     None
@@ -860,6 +917,13 @@ impl Listings {
         });
     }
 
+    pub fn retain_subentries(&mut self) {
+        self.0.retain(|listing| match listing {
+            Listing::SubEntry(_) => true,
+            Listing::Entry(_) => false,
+        });
+    }
+
     pub fn retain_combat(&mut self) {
         self.0.retain(|listing| match listing {
             Listing::Entry(entry) => vec![
@@ -876,9 +940,19 @@ impl Listings {
         });
     }
 
+    pub fn retain(&mut self, list: Vec<HiscoreName>) {
+        self.0.retain(|listing| match listing {
+            Listing::Entry(entry) => list.contains(&entry.name),
+            Listing::SubEntry(subentry) => list.contains(&subentry.name),
+        })
+    }
+
     pub fn filter(&mut self, flags: &StatsFlags) {
-        self.0
-            .retain(|listing| listing.name().ne("Overall") && flags.filter(&listing.level()))
+        self.0.retain(|listing| {
+            listing.name().ne(&HiscoreName::Overall)
+                && ((listing.level() > 0 && flags.filter(&listing.level()))
+                    || (listing.level() == 0 && flags.filter(&listing.xp())))
+        })
     }
 }
 
@@ -912,10 +986,10 @@ impl Listing {
         }
     }
 
-    pub fn name(&self) -> String {
+    pub fn name(&self) -> HiscoreName {
         match self {
-            Listing::Entry(entry) => entry.name.to_string(),
-            Listing::SubEntry(subentry) => subentry.name.to_string(),
+            Listing::Entry(entry) => entry.name,
+            Listing::SubEntry(subentry) => subentry.name,
         }
     }
 
@@ -934,7 +1008,7 @@ impl Listing {
     }
 
     pub fn empty(&self) -> bool {
-        self.xp() == 0 || self.name() == ""
+        self.xp() == 0 || self.name() == HiscoreName::None
     }
 }
 
@@ -1053,124 +1127,6 @@ pub fn get_rsn(source: &Source) -> core::result::Result<Vec<Row>, Error> {
             Err(e)
         }
     }
-}
-
-fn query_stats(rsn: &str, endpoint: &str) -> core::result::Result<String, ()> {
-    let url = format!("{}{}", endpoint, rsn);
-
-    let resp = match reqwest::blocking::get(&url) {
-        Ok(resp) => resp,
-        Err(e) => {
-            println!("Error getting stats: {}", e);
-            return Err(());
-        }
-    };
-
-    let body = match resp.text() {
-        Ok(body) => body.to_owned(),
-        Err(e) => {
-            println!("Error getting stats: {}", e);
-            return Err(());
-        }
-    };
-
-    Ok(body)
-}
-
-pub fn get_stats(rsn: &str, endpoint: &str) -> core::result::Result<Vec<Vec<String>>, ()> {
-    let mut stats = Vec::new();
-
-    let body = match query_stats(rsn, endpoint) {
-        Ok(body) => body,
-        Err(_) => return Err(()),
-    };
-
-    for line in body.lines() {
-        let split = line
-            .split(",")
-            .map(|s| s.to_owned())
-            .collect::<Vec<String>>();
-
-        stats.push(split);
-    }
-
-    Ok(stats)
-}
-
-pub fn process_account_type_flags(
-    query: &str,
-    split: Vec<String>,
-) -> (Vec<String>, String, String) {
-    let re_ser = Regex::new(r"(?:^|\b|\s)-([iuhdlt1]|sk|fs)(?:\s|\b|$)").unwrap();
-    let nil = (
-        split.to_owned(),
-        "".to_owned(),
-        "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=".to_owned(),
-    );
-
-    let (mut output, flag) = re_ser
-            .captures(query)
-            .map(|capture| {
-                let flag = capture.get(1).map_or("", |flag| flag.as_str());
-                (
-                    match flag {
-                        "i" => (
-                            split,
-                            l("Iron"),
-                            "https://secure.runescape.com/m=hiscore_oldschool_ironman/index_lite.ws?player=".to_owned(),
-                        ),
-                        "u" => (
-                            split,
-                            l("Ultimate"),
-                            "https://secure.runescape.com/m=hiscore_oldschool_ultimate/index_lite.ws?player=".to_owned(),
-                        ),
-                        "h" => (
-                            split,
-                            l("Hardcore"),
-                            "https://secure.runescape.com/m=hiscore_oldschool_hardcore_ironman/index_lite.ws?player=".to_owned(),
-                        ),
-                        "d" => (
-                            split,
-                            l("Deadman"),
-                            "https://secure.runescape.com/m=hiscore_oldschool_deadman/index_lite.ws?player=".to_owned(),
-                        ),
-                        "l" => (
-                            split,
-                            l("Leagues"),
-                            "https://secure.runescape.com/m=hiscore_oldschool_seasonal/index_lite.ws?player=".to_owned(),
-                        ),
-                        "t" => (
-                            split,
-                            l("Tournament"),
-                            "https://secure.runescape.com/m=hiscore_oldschool_tournament/index_lite.ws?player=".to_owned(),
-                        ),
-                        "1" => (
-                            split,
-                            l("1 Def"),
-                            "https://secure.runescape.com/m=hiscore_oldschool_skiller_defence/index_lite.ws?player=".to_owned(),
-                        ),
-                        "sk" => (
-                            split,
-                            l("Skiller"),
-                            "https://secure.runescape.com/m=hiscore_oldschool_skiller/index_lite.ws?player=".to_owned(),
-                        ),
-                        "fs" => (
-                            split,
-                            l("Fresh Start"),
-                            "https://secure.runescape.com/m=hiscore_oldschool_fresh_start/index_lite.ws?player=".to_owned(),
-                        ),
-                        _ => nil.to_owned(),
-                    },
-                    flag,
-                )
-            })
-            .unwrap_or_else(|| (nil, ""));
-
-    if !flag.is_empty() {
-        output.0.retain(|arg| arg != &format!("-{}", flag));
-    }
-
-    output
 }
 
 pub fn get_item_db() -> Result<Vec<Mapping>, ()> {
