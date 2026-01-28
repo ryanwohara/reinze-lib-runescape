@@ -113,13 +113,14 @@ pub extern "C" fn exported(
         "patch" => patch::patch(query),
         "players" => players::players(),
         "price" => prices::prices(query),
-        "overall" | "stats" | "total" | "combat" | "cmb" | "attack" | "att" | "defence" | "def"
-        | "strength" | "str" | "hitpoints" | "hp" | "ranged" | "range" | "prayer" | "pray"
-        | "magic" | "mage" | "cooking" | "cook" | "woodcutting" | "wc" | "fletching" | "fletch"
+        "overall" | "stats" | "total" | "attack" | "att" | "defence" | "def" | "strength"
+        | "str" | "hitpoints" | "hp" | "ranged" | "range" | "prayer" | "pray" | "magic"
+        | "mage" | "cooking" | "cook" | "woodcutting" | "wc" | "fletching" | "fletch"
         | "fishing" | "fish" | "firemaking" | "fm" | "crafting" | "craft" | "smithing"
         | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
         | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
-        | "hunt" | "construction" | "con" | "sail" | "sailing" => stats::stats(source),
+        | "hunt" | "construction" | "con" | "sail" | "sailing" => stats::lookup(source),
+        "combat" | "cmb" => stats::combat(source),
         "payment" | "plant" | "plants" => plant::lookup(query),
         "pvparena" | "pvp" | "arena" => pvparena::lookup(source),
         "rift" | "rifts" => rifts::lookup(source),

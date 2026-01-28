@@ -20,7 +20,7 @@ pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
         }
     }
 
-    Ok(vec![format!("{}: {}", prefix, c1("No results found"))])
+    Ok(vec![format!("{} {}", prefix, c1("No results found"))])
 }
 
 enum Plant {
@@ -569,7 +569,7 @@ impl Plant {
             }
             Self::Flax => PlantDetails::from("Flax", 18, 60.0, 16.0, 0.0, 17.5, "6 Grain"),
             Self::Hemp => PlantDetails::from("Hemp", 37, 80.0, 33.0, 0.0, 37.0, "6 Flax"),
-            Self::Cotton => PlantDetails::from("Cotton", 71, 100.0, 72.0, 0.0, 0.0, "6 Hemp")
+            Self::Cotton => PlantDetails::from("Cotton", 71, 100.0, 72.0, 0.0, 0.0, "6 Hemp"),
         }
     }
 }

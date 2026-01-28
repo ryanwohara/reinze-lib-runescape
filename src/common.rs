@@ -7,9 +7,9 @@ use mysql::{prelude::*, *};
 use regex::Regex;
 use reqwest::header::USER_AGENT;
 use std::cmp::PartialEq;
-use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::fs::read_to_string;
+use std::slice::Iter;
 use std::time::Duration;
 
 // Catches shorthand skill names and returns the full name
@@ -137,38 +137,57 @@ pub struct Combat {
 }
 
 impl Combat {
+    pub fn calc(&self, stats: &Stats) -> Vec<(String, u32)> {
+        let level_difference = self.level - self.level.floor();
+
+        vec![
+            "Attack",
+            "Strength",
+            "Defence",
+            "Hitpoints",
+            "Prayer",
+            "Magic",
+            "Ranged",
+        ]
+        .iter()
+        .map(|skill| {
+            (
+                skill.to_string(),
+                match stats.hiscores.skill(skill) {
+                    Some(entry) => match entry.level() {
+                        99..=126 => 0.0,
+                        _ => match skill.to_string().as_str() {
+                            "Attack" | "Strength" => level_difference / 0.325,
+                            "Defence" | "Hitpoints" => level_difference / 0.25,
+                            "Prayer" => level_difference / 0.125,
+                            _ => level_difference / 0.4875,
+                        },
+                    },
+                    None => 0.0,
+                }
+                .ceil() as u32,
+            )
+        })
+        .collect::<Vec<(String, u32)>>()
+    }
+
     pub fn new(level: f64, style: &str) -> Combat {
         Combat {
             level,
             style: style.to_string(),
         }
     }
-
-    pub fn calc(skills: &Skills) -> Self {
-        let att = parse_entry_detail(&skills, "Attack", "level");
-        let str = parse_entry_detail(&skills, "Strength", "level");
-        let def = parse_entry_detail(&skills, "Defence", "level");
-        let hp = parse_entry_detail(&skills, "Hitpoints", "level");
-        let pray = parse_entry_detail(&skills, "Prayer", "level");
-        let mage = parse_entry_detail(&skills, "Magic", "level");
-        let range = parse_entry_detail(&skills, "Range", "level");
-
-        get_cmb(att, str, def, hp, range, pray, mage)
-    }
 }
 
-pub type Skills = HashMap<String, Entry>;
-
-pub fn parse_entry_detail<T>(skills: &Skills, skill: T, attribute: T) -> u32
-where
-    T: ToString,
-{
-    match skills.get(&skill.to_string()) {
-        Some(entry) => match attribute.to_string().as_str() {
-            "level" => entry.level,
-            _ => entry.xp,
-        },
-        None => 1,
+impl Display for Combat {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}{}{}",
+            c1("Combat:"),
+            c2(&self.level.to_string()),
+            p(&self.style)
+        )
     }
 }
 
@@ -192,21 +211,6 @@ pub fn get_cmb(att: u32, str: u32, def: u32, hp: u32, range: u32, pray: u32, mag
     }
 }
 
-pub fn get_total_cmb(skills: &Skills, attribute: &str) -> u32 {
-    skills
-        .iter()
-        .map(|(skill, entry)| match skill.as_str() {
-            "Attack" | "Strength" | "Defence" | "Hitpoints" | "Prayer" | "Magic" | "Ranged" => {
-                match attribute {
-                    "level" => entry.level,
-                    _ => entry.xp,
-                }
-            }
-            _ => 0,
-        })
-        .sum()
-}
-
 pub struct Source {
     pub rsn_n: String,
     pub author: Author,
@@ -228,47 +232,99 @@ impl Source {
 pub struct Author {
     pub nick: String,
     pub host: String,
+    #[allow(dead_code)]
     pub ident: String,
+    #[allow(dead_code)]
     pub address: String,
     pub full: String,
 }
 
 impl Author {
     pub fn create(author: &str) -> Self {
-        let split = author.split_once("!").unwrap_or(("", author));
-        let nick = split.0.to_string();
-        let mut host = split.1.to_string();
+        let (nick, mut host) = author.split_once("!").unwrap_or(("", author));
         if host.starts_with("~") {
-            host = host
-                .split_once("~")
-                .unwrap_or(("", host.as_str()))
-                .1
-                .to_string();
+            host = host.split_once("~").unwrap_or(("", host)).1;
         }
-        let split = host.split_once("@").unwrap_or(("", &host));
-        let ident = split.0.to_string();
-        let address = split.1.to_string();
+
+        let (ident, address) = host.split_once("@").unwrap_or(("", &host));
 
         Self {
-            nick,
-            host,
-            ident,
-            address,
+            nick: nick.to_string(),
+            host: host.to_string(),
+            ident: ident.to_string(),
+            address: address.to_string(),
             full: author.to_string(),
         }
     }
 }
 
 pub struct Stats {
-    pub hiscores: Hiscores,
+    pub hiscores: Listings,
     pub flags: StatsFlags,
+    #[allow(dead_code)]
     pub source: Source,
 }
 
-pub type Hiscores = Vec<Hiscore>;
+impl Stats {
+    pub fn combat(&self) -> Combat {
+        let attack = self.level("Attack");
+        let strength = self.level("Strength");
+        let defence = self.level("Defence");
+        let hitpoints = self.level("Hitpoints");
+        let magic = self.level("Magic");
+        let ranged = self.level("Ranged");
+        let prayer = self.level("Prayer");
+
+        get_cmb(attack, strength, defence, hitpoints, ranged, prayer, magic)
+    }
+
+    pub fn summary(&self, skill: &str) -> String {
+        let level = self.level(skill) as f64;
+        let rank = self.rank(skill) as f64;
+        let xp = self.xp(skill) as f64;
+
+        format!(
+            "{}{} {}{} {}{}",
+            c1("Level:"),
+            c2(&commas(level, "d")),
+            c1("XP:"),
+            c2(&commas(xp, "d")),
+            c1("Rank:"),
+            c2(&commas(rank, "d")),
+        )
+    }
+
+    pub fn level(&self, skill: &str) -> u32 {
+        self.skill_listing(skill).level()
+    }
+
+    pub fn rank(&self, skill: &str) -> u32 {
+        self.skill_listing(skill).rank()
+    }
+
+    pub fn xp(&self, skill: &str) -> u32 {
+        self.skill_listing(skill).xp()
+    }
+
+    pub fn skill_listing(&self, skill: &str) -> Listing {
+        let index = skill_from_stats(skill);
+
+        self.hiscores.index(index)
+    }
+
+    pub fn filter(&mut self) {
+        self.hiscores.filter(&self.flags)
+    }
+}
+
+pub fn skill_from_stats(skill: &str) -> usize {
+    let skills = skills();
+
+    skills.iter().position(|x| x.eq(skill)).unwrap_or(0)
+}
 
 #[derive(PartialEq, Copy, Clone)]
-pub enum Hiscore {
+pub enum HiscoreName {
     Overall,
     Attack,
     Defence,
@@ -382,7 +438,7 @@ pub enum Hiscore {
     None,
 }
 
-impl Hiscore {
+impl HiscoreName {
     pub fn all() -> Vec<Self> {
         vec![
             Self::Overall,
@@ -499,12 +555,61 @@ impl Hiscore {
         ]
     }
 
+    #[allow(dead_code)]
     pub fn index(&self) -> Option<usize> {
         Self::all().iter().position(|x| x == self)
     }
+
+    #[allow(dead_code)]
+    pub fn from_index(index: usize) -> Self {
+        match Self::all().get(index) {
+            Some(x) => x.to_owned(),
+            None => Self::None,
+        }
+    }
+
+    pub fn to(&self) -> Listing {
+        match self {
+            HiscoreName::Overall
+            | HiscoreName::Attack
+            | HiscoreName::Defence
+            | HiscoreName::Strength
+            | HiscoreName::Hitpoints
+            | HiscoreName::Ranged
+            | HiscoreName::Prayer
+            | HiscoreName::Magic
+            | HiscoreName::Cooking
+            | HiscoreName::Woodcutting
+            | HiscoreName::Fletching
+            | HiscoreName::Fishing
+            | HiscoreName::Firemaking
+            | HiscoreName::Crafting
+            | HiscoreName::Smithing
+            | HiscoreName::Mining
+            | HiscoreName::Herblore
+            | HiscoreName::Agility
+            | HiscoreName::Thieving
+            | HiscoreName::Slayer
+            | HiscoreName::Farming
+            | HiscoreName::Runecraft
+            | HiscoreName::Hunter
+            | HiscoreName::Construction
+            | HiscoreName::Sailing => Listing::Entry(Entry {
+                name: self.to_owned(),
+                rank: 0,
+                level: 0,
+                xp: 0,
+            }),
+            _ => Listing::SubEntry(SubEntry {
+                name: self.to_owned(),
+                rank: 0,
+                xp: 0,
+            }),
+        }
+    }
 }
 
-impl From<&str> for Hiscore {
+impl From<&str> for HiscoreName {
     fn from(value: &str) -> Self {
         let mut all = Self::all();
 
@@ -521,7 +626,7 @@ impl From<&str> for Hiscore {
     }
 }
 
-impl Display for Hiscore {
+impl Display for HiscoreName {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let name = match self {
             Self::Overall => "Overall",
@@ -641,11 +746,7 @@ impl Display for Hiscore {
     }
 }
 
-pub fn collect_hiscores(
-    input: &str,
-    source: Source,
-    flags: &StatsFlags,
-) -> Result<Vec<Vec<u32>>, ()> {
+pub fn collect_hiscores(input: &str, source: &Source, flags: &StatsFlags) -> Result<Listings, ()> {
     let nick = source.author.nick.to_string();
 
     let rsn = if input.is_empty() {
@@ -670,78 +771,243 @@ pub fn collect_hiscores(
         .header(USER_AGENT, "Reinze.com")
         .send()
     {
-        Ok(resp) => match resp.text() {
-            Ok(string) => string,
-            Err(e) => {
-                println!("Error getting text: {}", e);
-                return Err(());
+        Ok(resp) => {
+            let status = &resp.status();
+            let text = resp.text();
+            match text {
+                Ok(string) => {
+                    if *status == 200 {
+                        string
+                    } else {
+                        return Err(());
+                    }
+                }
+                Err(e) => {
+                    println!("Error getting text: {}", e);
+                    return Err(());
+                }
             }
-        },
+        }
         Err(e) => {
             println!("Error making HTTP request: {}", e);
             return Err(());
         }
     };
 
-    let hiscores_split = hiscores_str.split('\n').collect::<Vec<&str>>();
-    let hiscores_len = hiscores_split.len().min(25);
-
-    let result = hiscores_split[0..hiscores_len]
+    let result = hiscores_str
+        .split('\n')
+        .collect::<Vec<&str>>()
         .iter()
-        .map(|x| {
-            x.split(',')
-                .map(|y| y.parse::<u32>().unwrap_or(0))
-                .collect::<Vec<u32>>()
-        })
-        .collect::<Vec<Vec<u32>>>();
+        .enumerate()
+        .collect::<Listings>();
 
     Ok(result)
 }
 
-type Listings = Vec<Listing>;
+#[derive(Clone)]
+pub struct Listings(Vec<Listing>);
 
+impl Listings {
+    pub fn index(&self, index: usize) -> Listing {
+        let none = Listing::SubEntry(SubEntry {
+            name: HiscoreName::None,
+            rank: 0,
+            xp: 0,
+        });
+
+        if index > self.0.len() - 1 {
+            return none;
+        }
+
+        match self.0.get(index) {
+            Some(index) => index.clone(),
+            None => none,
+        }
+    }
+
+    pub fn skill(&self, skill: &str) -> Option<Listing> {
+        let mut results = self
+            .0
+            .iter()
+            .map(|listing| {
+                if listing.name().eq(skill) {
+                    Some(listing.clone())
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<Option<Listing>>>();
+
+        results.retain(|result| !result.is_none());
+
+        match results.pop() {
+            Some(result) => match result {
+                Some(listing) => Some(listing.clone()),
+                None => None,
+            },
+            None => None,
+        }
+    }
+
+    pub fn iter(&'_ self) -> Iter<'_, Listing> {
+        self.0.iter()
+    }
+
+    pub fn retain_entries(&mut self) {
+        self.0.retain(|listing| match listing {
+            Listing::Entry(_) => true,
+            Listing::SubEntry(_) => false,
+        });
+    }
+
+    pub fn retain_combat(&mut self) {
+        self.0.retain(|listing| match listing {
+            Listing::Entry(entry) => vec![
+                "Attack",
+                "Strength",
+                "Defence",
+                "Prayer",
+                "Hitpoints",
+                "Ranged",
+                "Magic",
+            ]
+            .contains(&entry.name.to_string().as_str()),
+            Listing::SubEntry(_) => false,
+        });
+    }
+
+    pub fn filter(&mut self, flags: &StatsFlags) {
+        self.0
+            .retain(|listing| listing.name().ne("Overall") && flags.filter(&listing.level()))
+    }
+}
+
+#[derive(Clone)]
 pub enum Listing {
     Entry(Entry),
     SubEntry(SubEntry),
 }
 
-pub type SubEntries = Vec<SubEntry>;
-
-#[derive(Clone)]
-pub struct SubEntry {
-    pub name: String,
-    pub rank: u32,
-    pub xp: u32,
-}
-
-pub type Entries = Vec<Entry>;
-
-#[derive(Clone)]
-pub struct Entry {
-    pub name: String,
-    pub rank: u32,
-    pub level: u32,
-    pub xp: u32,
-}
-
-impl Entry {
-    #[allow(dead_code)]
-    pub fn rank(&self) -> String {
-        self.rank.to_string()
+impl Listing {
+    pub fn next_level(&self, flags: &StatsFlags) -> u32 {
+        if flags.end > 0 {
+            if flags.end <= 126 {
+                flags.end
+            } else {
+                xp_to_level(flags.end)
+            }
+        } else {
+            self.actual_level() + 1
+        }
     }
 
-    pub fn level(&self) -> String {
-        self.level.to_string()
+    pub fn actual_level(&self) -> u32 {
+        xp_to_level(self.xp())
     }
 
-    #[allow(dead_code)]
-    pub fn xp(&self) -> String {
-        self.xp.to_string()
+    pub fn level(&self) -> u32 {
+        match self {
+            Listing::Entry(entry) => entry.level,
+            _ => 0,
+        }
+    }
+
+    pub fn name(&self) -> String {
+        match self {
+            Listing::Entry(entry) => entry.name.to_string(),
+            Listing::SubEntry(subentry) => subentry.name.to_string(),
+        }
+    }
+
+    pub fn rank(&self) -> u32 {
+        match self {
+            Listing::Entry(entry) => entry.rank,
+            Listing::SubEntry(subentry) => subentry.rank,
+        }
+    }
+
+    pub fn xp(&self) -> u32 {
+        match self {
+            Listing::Entry(entry) => entry.xp,
+            Listing::SubEntry(subentry) => subentry.xp,
+        }
     }
 
     pub fn empty(&self) -> bool {
-        self.xp == 0
+        self.xp() == 0 || self.name() == ""
     }
+}
+
+impl<'a> FromIterator<Listing> for Listings {
+    fn from_iter<T: IntoIterator<Item = Listing>>(iter: T) -> Self {
+        let mut it = iter.into_iter();
+        let index = it.next().unwrap_or(Listing::SubEntry(SubEntry {
+            name: HiscoreName::None,
+            rank: 0,
+            xp: 0,
+        }));
+
+        Self(vec![index])
+    }
+}
+
+impl<'a> FromIterator<&'a HiscoreName> for Listing {
+    fn from_iter<T: IntoIterator<Item = &'a HiscoreName>>(iter: T) -> Self {
+        let mut it = iter.into_iter();
+        let index = it.next().unwrap_or(&HiscoreName::None);
+
+        index.to()
+    }
+}
+
+impl<'a> FromIterator<(usize, &'a &'a str)> for Listings {
+    fn from_iter<T: IntoIterator<Item = (usize, &'a &'a str)>>(iter: T) -> Self {
+        let mut it = iter.into_iter();
+
+        let mut listings = vec![];
+
+        while let Some(index) = it.next() {
+            let i = index.0;
+            let name = HiscoreName::all()
+                .get(i)
+                .unwrap_or(&HiscoreName::None)
+                .to_owned();
+            let split = index.1.split(",").collect::<Vec<&str>>();
+
+            let listing = match split.len() {
+                ..=2 => Listing::SubEntry(SubEntry {
+                    name,
+                    rank: split.get(0).unwrap_or(&"0").parse().unwrap_or(0),
+                    xp: split.get(1).unwrap_or(&"0").parse().unwrap_or(0),
+                }),
+                _ => Listing::Entry(Entry {
+                    name,
+                    rank: split[0].parse().unwrap_or(0),
+                    level: split[1].parse().unwrap_or(0),
+                    xp: split[2].parse().unwrap_or(0),
+                }),
+            };
+
+            listings.push(listing);
+        }
+
+        Self(listings)
+    }
+}
+
+#[derive(Clone)]
+pub struct SubEntry {
+    pub name: HiscoreName,
+    pub rank: u32,
+    pub xp: u32,
+}
+
+#[derive(Clone)]
+pub struct Entry {
+    pub name: HiscoreName,
+    pub rank: u32,
+    pub level: u32,
+    pub xp: u32,
 }
 
 impl Display for Entry {
@@ -764,7 +1030,7 @@ impl Display for Entry {
     }
 }
 
-pub fn get_rsn(source: Source) -> core::result::Result<Vec<Row>, Error> {
+pub fn get_rsn(source: &Source) -> core::result::Result<Vec<Row>, Error> {
     let mut conn = match database::connect() {
         Ok(conn) => conn,
         Err(e) => {
@@ -773,8 +1039,8 @@ pub fn get_rsn(source: Source) -> core::result::Result<Vec<Row>, Error> {
         }
     };
 
-    let host = source.author.host;
-    let rsn_n = source.rsn_n;
+    let host = source.author.host.to_string();
+    let rsn_n = source.rsn_n.to_string();
 
     match conn.exec_first(
         "SELECT rsn FROM rsn WHERE host = :host AND rsn_ident = :rsn_n",
@@ -843,62 +1109,62 @@ pub fn process_account_type_flags(
     );
 
     let (mut output, flag) = re_ser
-        .captures(query)
-        .map(|capture| {
-            let flag = capture.get(1).map_or("", |flag| flag.as_str());
-            (
-                match flag {
-                    "i" => (
-                        split,
-                        l("Iron"),
-                        "https://secure.runescape.com/m=hiscore_oldschool_ironman/index_lite.ws?player=".to_owned(),
-                    ),
-                    "u" => (
-                        split,
-                        l("Ultimate"),
-                        "https://secure.runescape.com/m=hiscore_oldschool_ultimate/index_lite.ws?player=".to_owned(),
-                    ),
-                    "h" => (
-                        split,
-                        l("Hardcore"),
-                        "https://secure.runescape.com/m=hiscore_oldschool_hardcore_ironman/index_lite.ws?player=".to_owned(),
-                    ),
-                    "d" => (
-                        split,
-                        l("Deadman"),
-                        "https://secure.runescape.com/m=hiscore_oldschool_deadman/index_lite.ws?player=".to_owned(),
-                    ),
-                    "l" => (
-                        split,
-                        l("Leagues"),
-                        "https://secure.runescape.com/m=hiscore_oldschool_seasonal/index_lite.ws?player=".to_owned(),
-                    ),
-                    "t" => (
-                        split,
-                        l("Tournament"),
-                        "https://secure.runescape.com/m=hiscore_oldschool_tournament/index_lite.ws?player=".to_owned(),
-                    ),
-                    "1" => (
-                        split,
-                        l("1 Def"),
-                        "https://secure.runescape.com/m=hiscore_oldschool_skiller_defence/index_lite.ws?player=".to_owned(),
-                    ),
-                    "sk" => (
-                        split,
-                        l("Skiller"),
-                        "https://secure.runescape.com/m=hiscore_oldschool_skiller/index_lite.ws?player=".to_owned(),
-                    ),
-                    "fs" => (
-                        split,
-                        l("Fresh Start"),
-                        "https://secure.runescape.com/m=hiscore_oldschool_fresh_start/index_lite.ws?player=".to_owned(),
-                    ),
-                    _ => nil.to_owned(),
-                },
-                flag,
-            )
-        })
-        .unwrap_or_else(|| (nil, ""));
+            .captures(query)
+            .map(|capture| {
+                let flag = capture.get(1).map_or("", |flag| flag.as_str());
+                (
+                    match flag {
+                        "i" => (
+                            split,
+                            l("Iron"),
+                            "https://secure.runescape.com/m=hiscore_oldschool_ironman/index_lite.ws?player=".to_owned(),
+                        ),
+                        "u" => (
+                            split,
+                            l("Ultimate"),
+                            "https://secure.runescape.com/m=hiscore_oldschool_ultimate/index_lite.ws?player=".to_owned(),
+                        ),
+                        "h" => (
+                            split,
+                            l("Hardcore"),
+                            "https://secure.runescape.com/m=hiscore_oldschool_hardcore_ironman/index_lite.ws?player=".to_owned(),
+                        ),
+                        "d" => (
+                            split,
+                            l("Deadman"),
+                            "https://secure.runescape.com/m=hiscore_oldschool_deadman/index_lite.ws?player=".to_owned(),
+                        ),
+                        "l" => (
+                            split,
+                            l("Leagues"),
+                            "https://secure.runescape.com/m=hiscore_oldschool_seasonal/index_lite.ws?player=".to_owned(),
+                        ),
+                        "t" => (
+                            split,
+                            l("Tournament"),
+                            "https://secure.runescape.com/m=hiscore_oldschool_tournament/index_lite.ws?player=".to_owned(),
+                        ),
+                        "1" => (
+                            split,
+                            l("1 Def"),
+                            "https://secure.runescape.com/m=hiscore_oldschool_skiller_defence/index_lite.ws?player=".to_owned(),
+                        ),
+                        "sk" => (
+                            split,
+                            l("Skiller"),
+                            "https://secure.runescape.com/m=hiscore_oldschool_skiller/index_lite.ws?player=".to_owned(),
+                        ),
+                        "fs" => (
+                            split,
+                            l("Fresh Start"),
+                            "https://secure.runescape.com/m=hiscore_oldschool_fresh_start/index_lite.ws?player=".to_owned(),
+                        ),
+                        _ => nil.to_owned(),
+                    },
+                    flag,
+                )
+            })
+            .unwrap_or_else(|| (nil, ""));
 
     if !flag.is_empty() {
         output.0.retain(|arg| arg != &format!("-{}", flag));

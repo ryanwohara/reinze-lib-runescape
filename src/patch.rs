@@ -4,7 +4,7 @@ use std::str::FromStr;
 
 pub fn patch(query: &str) -> Result<Vec<String>, ()> {
     let prefix = l("Patch");
-    let patch: Patch = query.parse()?;
+    let patch: Patch = query.parse().unwrap_or(Patch::None);
 
     let locations = patch
         .locations()
@@ -157,7 +157,11 @@ impl Patch {
                 "Hosidius South-west",
             ],
             Self::Belladonna => &["Draynor Village Manor"],
-            Self::Calquat => &["Kastori", "Tai Bwo Wannai North", "The Great Conch (Summer Shore)"],
+            Self::Calquat => &[
+                "Kastori",
+                "Tai Bwo Wannai North",
+                "The Great Conch (Summer Shore)",
+            ],
             Self::Mushroom => &["Canifis"],
             Self::Celastrus => &["Farming Guild"],
             Self::Redwood => &["Farming Guild"],
@@ -167,7 +171,11 @@ impl Patch {
             Self::Hespori => &["Farming Guild"],
             Self::Anima => &["Farming Guild"],
             Self::Cactus => &["Al Kharid", "Farming Guild"],
-            Self::Hardwood => &["Fossil Island (Mushroom Forest)", "Locus Oasis (Varlamore)", "Anglers' Retreat"],
+            Self::Hardwood => &[
+                "Fossil Island (Mushroom Forest)",
+                "Locus Oasis (Varlamore)",
+                "Anglers' Retreat",
+            ],
             Self::Coral => &["Coral Nurseries (East. Great Conch)"],
             Self::None => &[],
         }

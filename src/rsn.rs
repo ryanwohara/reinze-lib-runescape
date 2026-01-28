@@ -150,7 +150,7 @@ fn show(source: Source) -> Result<Vec<String>, ()> {
         }
     };
 
-    let mut host = source.author.host;
+    let host = source.author.host;
     let rsn_n = &source.rsn_n;
     let author = source.author.full;
 
