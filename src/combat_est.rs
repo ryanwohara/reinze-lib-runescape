@@ -2,7 +2,7 @@ use crate::common::HiscoreName::{Attack, Defence, Hitpoints, Magic, Prayer, Rang
 use crate::common::{Listing, Listings, Source, Stats, eval_query};
 use crate::stats::{stats_parameters, strip_stats_parameters};
 use common::{c1, c2, commas, l, p};
-use regex::Regex;
+use regex::{Match, Regex};
 
 struct CmbEst {
     pub a: Option<Listing>,
@@ -42,6 +42,17 @@ impl CmbEst {
     }
 }
 
+fn parse(input: Option<Option<Match>>) -> String {
+    match input {
+        Some(result) => match result {
+            Some(number) => number.as_str(),
+            None => "",
+        },
+        None => "",
+    }
+    .to_string()
+}
+
 pub fn estimate(source: Source) -> Result<Vec<String>, ()> {
     let prefix = l("Combat Estimation");
     let mut cmbest = CmbEst::new();
@@ -60,23 +71,11 @@ pub fn estimate(source: Source) -> Result<Vec<String>, ()> {
             let mut iter = captures.iter();
             let _total_match = iter.next();
 
-            let number = match iter.next() {
-                Some(result) => match result {
-                    Some(number) => match eval_query(number.as_str()) {
-                        Ok(num) => num as u32,
-                        _ => return,
-                    },
-                    None => return,
-                },
-                None => return,
+            let number = match eval_query(parse(iter.next())) {
+                Ok(num) => num as u32,
+                _ => return,
             };
-            let letter = match iter.next() {
-                Some(result) => match result {
-                    Some(letter) => letter.as_str().to_lowercase(),
-                    None => return,
-                },
-                None => return,
-            };
+            let letter = parse(iter.next()).to_lowercase();
 
             match letter.as_str() {
                 "a" => cmbest.a = Some(Listing::set_level(Attack, number)),

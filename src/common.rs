@@ -1,4 +1,3 @@
-use crate::common::HiscoreName::Hitpoints;
 use crate::items::Mapping;
 use crate::stats::{StatsFlags, stats_parameters, strip_stats_parameters};
 use common::{database, *};
@@ -1035,7 +1034,7 @@ impl Listing {
     }
 
     pub fn set_level(name: HiscoreName, level: u32) -> Self {
-        let level = if name.eq(&Hitpoints) {
+        let level = if name.eq(&HiscoreName::Hitpoints) {
             level.max(10)
         } else {
             level.max(1)
@@ -1531,31 +1530,31 @@ mod tests {
         assert_eq!(
             skills(),
             vec![
-                "Overall",
-                "Attack",
-                "Defence",
-                "Strength",
-                "Hitpoints",
-                "Ranged",
-                "Prayer",
-                "Magic",
-                "Cooking",
-                "Woodcutting",
-                "Fletching",
-                "Fishing",
-                "Firemaking",
-                "Crafting",
-                "Smithing",
-                "Mining",
-                "Herblore",
-                "Agility",
-                "Thieving",
-                "Slayer",
-                "Farming",
-                "Runecraft",
-                "Hunter",
-                "Construction",
-                "Sailing",
+                HiscoreName::Overall,
+                HiscoreName::Attack,
+                HiscoreName::Defence,
+                HiscoreName::Strength,
+                HiscoreName::Hitpoints,
+                HiscoreName::Ranged,
+                HiscoreName::Prayer,
+                HiscoreName::Magic,
+                HiscoreName::Cooking,
+                HiscoreName::Woodcutting,
+                HiscoreName::Fletching,
+                HiscoreName::Fishing,
+                HiscoreName::Firemaking,
+                HiscoreName::Crafting,
+                HiscoreName::Smithing,
+                HiscoreName::Mining,
+                HiscoreName::Herblore,
+                HiscoreName::Agility,
+                HiscoreName::Thieving,
+                HiscoreName::Slayer,
+                HiscoreName::Farming,
+                HiscoreName::Runecraft,
+                HiscoreName::Hunter,
+                HiscoreName::Construction,
+                HiscoreName::Sailing,
             ]
             .iter()
             .map(|x| x.to_string())
