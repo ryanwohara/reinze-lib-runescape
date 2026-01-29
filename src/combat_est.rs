@@ -84,7 +84,8 @@ pub fn estimate(source: Source) -> Result<Vec<String>, ()> {
                 "p" => cmbest.p = Some(Listing::set_level(Prayer, number)),
                 "h" => cmbest.h = Some(Listing::set_level(Hitpoints, number)),
                 "r" => cmbest.r = Some(Listing::set_level(Ranged, number)),
-                "m" | _ => cmbest.m = Some(Listing::set_level(Magic, number)),
+                "m" => cmbest.m = Some(Listing::set_level(Magic, number)),
+                _ => (),
             };
         });
 
