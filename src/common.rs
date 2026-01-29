@@ -1,3 +1,4 @@
+use crate::common::HiscoreName::Hitpoints;
 use crate::items::Mapping;
 use crate::stats::{StatsFlags, stats_parameters, strip_stats_parameters};
 use common::{database, *};
@@ -307,9 +308,33 @@ impl Stats {
     }
 
     pub fn skill_listing(&self, skill: &str) -> Listing {
-        let index = skill_from_stats(skill);
+        let mut results = self
+            .hiscores
+            .0
+            .iter()
+            .map(|listing| match listing {
+                Listing::Entry(entry) => {
+                    if skill.eq(&entry.name.to_string()) {
+                        Some(entry)
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            })
+            .collect::<Vec<Option<&Entry>>>();
+        results.retain(|result| result.is_some());
 
-        self.hiscores.index(index)
+        if let Some(Some(entry)) = results.pop() {
+            Listing::Entry(entry.clone())
+        } else {
+            Listing::Entry(Entry {
+                name: HiscoreName::None,
+                rank: 0,
+                level: 0,
+                xp: 0,
+            })
+        }
     }
 
     pub fn filter(&mut self) {
@@ -317,13 +342,7 @@ impl Stats {
     }
 }
 
-pub fn skill_from_stats(skill: &str) -> usize {
-    let skills = skills();
-
-    skills.iter().position(|x| x.eq(skill)).unwrap_or(0)
-}
-
-#[derive(PartialEq, Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum HiscoreName {
     Overall,
     Attack,
@@ -861,10 +880,14 @@ pub fn collect_hiscores(input: &str, source: &Source, flags: &StatsFlags) -> Res
     Ok(result)
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Listings(Vec<Listing>);
 
 impl Listings {
+    pub fn new(listings: Vec<Listing>) -> Self {
+        Self(listings)
+    }
+
     pub fn index(&self, index: usize) -> Listing {
         let none = Listing::SubEntry(SubEntry {
             name: HiscoreName::None,
@@ -956,7 +979,7 @@ impl Listings {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Listing {
     Entry(Entry),
     SubEntry(SubEntry),
@@ -1009,6 +1032,21 @@ impl Listing {
 
     pub fn empty(&self) -> bool {
         self.xp() == 0 || self.name() == HiscoreName::None
+    }
+
+    pub fn set_level(name: HiscoreName, level: u32) -> Self {
+        let level = if name.eq(&Hitpoints) {
+            level.max(10)
+        } else {
+            level.max(1)
+        };
+
+        Listing::Entry(Entry {
+            name,
+            level,
+            xp: level_to_xp(level),
+            rank: 0,
+        })
     }
 }
 
@@ -1069,14 +1107,14 @@ impl<'a> FromIterator<(usize, &'a &'a str)> for Listings {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SubEntry {
     pub name: HiscoreName,
     pub rank: u32,
     pub xp: u32,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Entry {
     pub name: HiscoreName,
     pub rank: u32,

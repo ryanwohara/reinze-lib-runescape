@@ -8,6 +8,7 @@ mod bosses;
 mod clues;
 mod collectionlog;
 mod colosseum;
+mod combat_est;
 mod common;
 mod fairy;
 mod ge;
@@ -92,6 +93,8 @@ pub extern "C" fn exported(
         "boost" | "boosts" => boost::boost(query),
         "boss" | "bosses" | "kc" => bosses::lookup(source),
         "clue" | "clues" => clues::lookup(source),
+        "combat" | "cmb" => stats::combat(source),
+        "combatest" | "cmbest" | "cmb-est" | "combat-est" => combat_est::estimate(source),
         command if command.starts_with("colo") => colosseum::lookup(source),
         "coll" | "collection" | "collectionlog" => collectionlog::lookup(source),
         "congratulations" | "congratulation" | "congrats" | "congratz" | "grats" | "gratz"
@@ -120,7 +123,6 @@ pub extern "C" fn exported(
         | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
         | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
         | "hunt" | "construction" | "con" | "sail" | "sailing" => stats::lookup(source),
-        "combat" | "cmb" => stats::combat(source),
         "payment" | "plant" | "plants" => plant::lookup(query),
         "pvparena" | "pvp" | "arena" => pvparena::lookup(source),
         "rift" | "rifts" => rifts::lookup(source),
@@ -137,6 +139,7 @@ clues[N]
 colosseum[N]
 collectionlog[N]
 combat[N]
+combat-est
 congrats
 fairy
 ge
@@ -171,7 +174,8 @@ boss\d*
 fairy
 kc\d*
 clues?\d*
-co?mb(at)?\d*
+co?mb(at)?\d*$
+co?mb(at)?-?est
 colo(sseum)?\d*
 coll(ection(log)?)?\d*
 ((con)?grat[sz]?(ulations?)?|gz)
