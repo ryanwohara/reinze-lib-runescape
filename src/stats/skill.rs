@@ -230,6 +230,9 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             .iter()
             .map(|x| x.details())
             .collect(),
+        "Attack" | "Strength" | "Defence" | "Ranged" => {
+            Npc::search(query).iter().map(|x| x.details()).collect()
+        }
         _ => vec![],
     }
 }
