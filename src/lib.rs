@@ -20,6 +20,7 @@ mod level;
 mod lms;
 mod money;
 mod noburn;
+mod npc;
 mod params;
 mod patch;
 mod plant;
@@ -112,6 +113,7 @@ pub extern "C" fn exported(
             money::printer(query)
         }
         "noburn" | "burn" => noburn::noburn(query),
+        "npc" => npc::lookup(query),
         "param" | "params" => params::params(query),
         "patch" => patch::patch(query),
         "players" => players::players(),
@@ -150,6 +152,7 @@ leagues[N]
 lms[N]
 money
 noburn
+npc
 params
 plant
 players
@@ -187,6 +190,7 @@ leagues?\d*
 lvl
 mp|money|moneyprinter|profit|printer|profitprinter
 (no)?burn
+npc
 params?
 patch
 payment|plants?
