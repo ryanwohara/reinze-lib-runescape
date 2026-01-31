@@ -1,4 +1,5 @@
 use crate::common::{skill_by_id, skill_id, skills};
+use crate::npc::data::{Npc, NpcMetadata};
 use crate::stats::agility::{Agility, AgilityDetails, AgilityMultipliers};
 use crate::stats::construction::{Construction, ConstructionDetails, ConstructionMultipliers};
 use crate::stats::cooking::{Cooking, CookingDetails};
@@ -51,6 +52,7 @@ pub enum Details {
     Smithing(SmithingDetails),
     Thieving(ThievingDetails),
     Woodcutting(WoodcuttingDetails),
+    Npc(NpcMetadata),
 }
 
 pub trait IntoString {
@@ -78,6 +80,7 @@ impl Details {
             Details::Smithing(smithing) => smithing.to_string(xp_difference),
             Details::Thieving(thieving) => thieving.to_string(xp_difference),
             Details::Woodcutting(woodcutting) => woodcutting.to_string(xp_difference),
+            Details::Npc(npc) => IntoString::to_string(npc, xp_difference),
         }
     }
 
@@ -95,7 +98,6 @@ impl Details {
         skill_id(self.skill())
     }
 
-    #[allow(dead_code)]
     pub fn skill(&self) -> String {
         match self {
             Details::Agility(_) => "Agility",
@@ -116,8 +118,9 @@ impl Details {
             Details::Smithing(_) => "Smithing",
             Details::Thieving(_) => "Thieving",
             Details::Woodcutting(_) => "Woodcutting",
+            Details::Npc(_) => "NPC",
         }
-        .to_owned()
+        .to_string()
     }
 
     #[allow(dead_code)]
@@ -174,6 +177,9 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             "Smithing" => Smithing::defaults(),
             "Thieving" => Thieving::defaults(),
             "Woodcutting" => Woodcutting::defaults(),
+            // Combat skills are (ultimately) stored in
+            // data.rs for easy updates with cmd-xp.py.
+            "Attack" | "Strength" | "Defence" | "Ranged" => Npc::defaults(),
             _ => vec![],
         };
     }

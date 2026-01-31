@@ -1,4 +1,5 @@
 mod agility;
+mod attack;
 mod construction;
 mod cooking;
 mod crafting;
@@ -13,7 +14,7 @@ mod mining;
 mod prayer;
 mod runecraft;
 mod sailing;
-mod skill;
+pub mod skill;
 mod smithing;
 mod thieving;
 mod woodcutting;

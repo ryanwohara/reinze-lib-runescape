@@ -1,7 +1,8 @@
 use crate::npc::data::{Npc, NpcMetadata};
+use crate::stats::skill::Skill;
 use common::{c1, c2, commas, l, p};
 
-mod data;
+pub mod data;
 
 pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
     let result = Npc::lookup(query);
@@ -10,8 +11,8 @@ pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
 
     if result == Npc::None {
         let list = Npc::search(query);
-        if list.is_empty() {
-            return Ok(vec![not_found]);
+        return if list.is_empty() {
+            Ok(vec![not_found])
         } else {
             let found = list
                 .iter()
@@ -49,8 +50,8 @@ pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
                 }
             }
 
-            return Ok(returnable);
-        }
+            Ok(returnable)
+        };
     }
 
     let npc = NpcMetadata::from(&result);
