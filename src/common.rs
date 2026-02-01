@@ -1052,13 +1052,12 @@ impl Listing {
 impl<'a> FromIterator<Listing> for Listings {
     fn from_iter<T: IntoIterator<Item = Listing>>(iter: T) -> Self {
         let mut it = iter.into_iter();
-        let index = it.next().unwrap_or(Listing::SubEntry(SubEntry {
-            name: HiscoreName::None,
-            rank: 0,
-            xp: 0,
-        }));
+        let mut results = vec![];
+        while let Some(index) = it.next() {
+            results.push(index);
+        }
 
-        Self(vec![index])
+        Self(results)
     }
 }
 

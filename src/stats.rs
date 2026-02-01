@@ -257,7 +257,7 @@ fn prepare(command: &str) -> (usize, String) {
     (skill_id, skill_name)
 }
 
-fn prefix(skill_name: String, flags: &StatsFlags) -> String {
+fn prefix(skill_name: &str, flags: &StatsFlags) -> String {
     vec![
         l(&skill_name),
         flags
@@ -280,7 +280,7 @@ pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
         .collect::<Vec<&str>>()
         .join(" ");
 
-    let prefix = prefix(skill_name, &flags);
+    let prefix = prefix(&skill_name, &flags);
 
     let not_found = vec![invalid(&prefix)];
 
@@ -292,28 +292,22 @@ pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
 
     let start_level = xp_to_level(start_xp);
 
-    let mut hiscores_template: Listings = HiscoreName::all()
+    let mut hiscores: Listings = HiscoreName::all()
         .iter()
-        .map(|name| name.to())
-        .collect::<Listings>();
-    hiscores_template.retain_entries();
-
-    let mut hiscores = hiscores_template
-        .iter()
-        .map(|listing| match listing {
-            Listing::Entry(entry) => {
-                let new_entry = Listing::Entry(Entry {
+        .map(|name| {
+            let obj = match name.to() {
+                Listing::Entry(entry) => Listing::Entry(Entry {
                     name: entry.name,
                     level: start_level,
                     xp: start_xp,
                     rank: 0,
-                });
+                }),
+                Listing::SubEntry(subentry) => Listing::SubEntry(subentry.to_owned()),
+            };
 
-                new_entry
-            }
-            Listing::SubEntry(subentry) => Listing::SubEntry(subentry.to_owned()),
+            obj
         })
-        .collect::<Listings>();
+        .collect();
 
     if flags.start == 0 {
         hiscores = match collect_hiscores(&joined, &source, &flags) {
@@ -332,11 +326,12 @@ pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
     if skill_id > 0 {
         // Individual skill lookup
 
-        let listing = stats.hiscores.index(skill_id);
+        let listing = stats.hiscores.skill(&skill_name);
 
-        if listing.empty() {
+        if listing.is_none() {
             return Ok(not_found);
         }
+        let listing = listing.unwrap();
 
         let next_level = listing.next_level(&stats.flags);
         let next_level_xp = level_to_xp(next_level);
