@@ -1,5 +1,4 @@
 mod agility;
-mod attack;
 mod construction;
 mod cooking;
 mod crafting;

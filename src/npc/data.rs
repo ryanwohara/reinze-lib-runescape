@@ -5502,6 +5502,24 @@ impl Npc {
             .unwrap_or(&Self::None)
             .clone()
     }
+
+    pub fn hitpoints() -> Vec<Details> {
+        vec![
+            Self::HillGiant,
+            Self::SandCrabActive,
+            Self::GreendragonLevel79,
+            Self::Bluedragon1,
+            Self::AbyssaldemonStandard,
+            Self::Deviantspectre,
+        ]
+        .iter()
+        .map(|x| x.hitpoints_details())
+        .collect()
+    }
+
+    pub fn hitpoints_details(&self) -> Details {
+        Details::Hitpoints(NpcMetadata::from(&self))
+    }
 }
 
 impl IntoString for NpcMetadata {
@@ -5542,6 +5560,18 @@ pub struct NpcMetadata {
 }
 
 impl NpcMetadata {
+    pub fn hp(&self, xp_difference: f64) -> String {
+        format!(
+            "{}: {}",
+            c1(self.name.as_str()),
+            c2(common::commas_from_string(
+                format!("{}", (xp_difference / self.hitpoints_xp).ceil()).as_str(),
+                "d"
+            )
+            .as_str())
+        )
+    }
+
     pub fn create(
         name: String,
         members: bool,

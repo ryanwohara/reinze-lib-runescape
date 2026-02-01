@@ -149,6 +149,24 @@ impl Npc {
             .unwrap_or(&Self::None)
             .clone()
     }
+
+    pub fn hitpoints() -> Vec<Details> {
+        vec![
+            Self::HillGiant,
+            Self::SandCrabActive,
+            Self::GreendragonLevel79,
+            Self::Bluedragon1,
+            Self::AbyssaldemonStandard,
+            Self::Deviantspectre,
+        ]
+        .iter()
+        .map(|x| x.hitpoints_details())
+        .collect()
+    }
+
+    pub fn hitpoints_details(&self) -> Details {
+        Details::Hitpoints(NpcMetadata::from(&self))
+    }
 }
 
 impl Skill for Npc {

@@ -887,23 +887,6 @@ impl Listings {
         Self(listings)
     }
 
-    pub fn index(&self, index: usize) -> Listing {
-        let none = Listing::SubEntry(SubEntry {
-            name: HiscoreName::None,
-            rank: 0,
-            xp: 0,
-        });
-
-        if index > self.0.len() - 1 {
-            return none;
-        }
-
-        match self.0.get(index) {
-            Some(index) => index.clone(),
-            None => none,
-        }
-    }
-
     pub fn skill(&self, skill: &str) -> Option<Listing> {
         let mut results = self
             .0
@@ -1027,10 +1010,6 @@ impl Listing {
             Listing::Entry(entry) => entry.xp,
             Listing::SubEntry(subentry) => subentry.xp,
         }
-    }
-
-    pub fn empty(&self) -> bool {
-        self.xp() == 0 || self.name() == HiscoreName::None
     }
 
     pub fn set_level(name: HiscoreName, level: u32) -> Self {
