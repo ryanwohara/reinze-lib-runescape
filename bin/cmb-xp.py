@@ -27,7 +27,14 @@ links = ["Levels_1_to_10",
          "Levels_181_to_190",
          "Levels_191_to_200",
          "Levels_201_to_400",
-         "Levels_higher_than_400"]
+         "Levels_higher_than_400",
+         "Slayer_assignments_(A_to_B)",
+         "Slayer_assignments_(C_to_D)",
+         "Slayer_assignments_(E_to_H)",
+         "Slayer_assignments_(I_to_M)",
+         "Slayer_assignments_(N_to_R)",
+         "Slayer_assignments_(S)",
+         "Slayer_assignments_(T_to_Z)"]
 
 class NPC:
     name = None
@@ -126,35 +133,16 @@ for link in links:
 
         for row in rows:
             data = row.find_all(name="td")
+            if not data or len(data) < 2:
+                continue
 
-            npc = NPC(data)
-            if npc.name:
-                npcs[sanitize(npc.name)] = npc
+            sanitized = sanitize(data[1].text)
 
-
-response = requests.request(method="GET", url="https://oldschool.runescape.wiki/w/Slayer/Experience_table",
-                            headers={"User-Agent": "Reinze - https://reinze.com/"})
-
-if response.status_code != 200:
-    print("Got response code: {}".format(response.status_code))
-    exit(1)
-
-soup = BeautifulSoup(response.text, 'html.parser')
-
-wikitable = soup.find_all(class_="wikitable")[1]
-
-rows = wikitable.find_all(name="tr")
-
-for row in rows:
-    data = row.find_all(name="td")
-
-    if not data or len(data) < 2:
-        continue
-
-    sanitized = sanitize(data[1].text)
-
-    if npcs[sanitized]:
-        npcs[sanitized].slayer(data[18].text, data[19].text, data[20].text, data[21].text)
+            if sanitized in npcs and len(data) > 18:
+                npcs[sanitized].slayer(data[18].text, data[19].text, data[20].text, data[21].text)
+            else:
+                npc = NPC(data)
+                npcs[sanitized] = npc
 
 fh = open("./src/npc/data.rs", "w")
 
@@ -397,8 +385,8 @@ for name in npcs:
     heavy_ranged = (value.heavy_ranged * 1) if value.heavy_ranged else 0
     flat_armor = value.flat_armor
     weakness = value.weakness
-    combat_xp = value.combat_xp * 1.0
-    hitpoints_xp = value.hitpoints_xp * 1.0
+    combat_xp = 0.0 if not value.combat_xp else value.combat_xp * 1.0
+    hitpoints_xp = 0.0 if not value.hitpoints_xp else value.hitpoints_xp * 1.0
     slayer_req = (value.slayer_req * 1) if value.slayer_req else 0
     slayer_xp = (value.slayer_xp * 1.0) if value.slayer_xp else 0.0
     slayer_categories = value.slayer_categories if value.slayer_categories else ""
