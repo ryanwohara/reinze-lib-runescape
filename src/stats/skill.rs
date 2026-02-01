@@ -54,6 +54,7 @@ pub enum Details {
     Woodcutting(WoodcuttingDetails),
     Npc(NpcMetadata),
     Hitpoints(NpcMetadata),
+    Slayer(NpcMetadata),
 }
 
 pub trait IntoString {
@@ -83,6 +84,7 @@ impl Details {
             Details::Woodcutting(woodcutting) => woodcutting.to_string(xp_difference),
             Details::Npc(npc) => IntoString::to_string(npc, xp_difference),
             Details::Hitpoints(npc) => npc.hp(xp_difference),
+            Details::Slayer(npc) => npc.slay(xp_difference),
         }
     }
 
@@ -122,6 +124,7 @@ impl Details {
             Details::Woodcutting(_) => "Woodcutting",
             Details::Npc(_) => "NPC",
             Details::Hitpoints(_) => "Hitpoints",
+            Details::Slayer(_) => "Slayer",
         }
         .to_string()
     }
@@ -184,6 +187,7 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             // data.rs for easy updates with cmd-xp.py.
             "Attack" | "Strength" | "Defence" | "Ranged" => Npc::defaults(),
             "Hitpoints" => Npc::hitpoints(),
+            "Slayer" => Npc::slayer(),
             _ => vec![],
         };
     }
@@ -240,6 +244,10 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
         "Hitpoints" => Npc::search(query)
             .iter()
             .map(|x| x.hitpoints_details())
+            .collect(),
+        "Slayer" => Npc::search(query)
+            .iter()
+            .map(|x| x.slayer_details())
             .collect(),
         _ => vec![],
     }

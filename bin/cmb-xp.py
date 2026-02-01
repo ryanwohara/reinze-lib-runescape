@@ -48,6 +48,10 @@ class NPC:
     weakness = None
     combat_xp = None
     hitpoints_xp = None
+    slayer_req = None
+    slayer_xp = None
+    slayer_categories = None
+    slayer_masters = None
 
     def __init__(self, data):
         if not len(data):
@@ -89,12 +93,21 @@ class NPC:
         self.combat_xp = self.hitpoints * 4
         self.hitpoints_xp = self.hitpoints * 1.3
 
+    def slayer(self, slayer_req, slayer_xp, slayer_categories, slayer_masters):
+        self.slayer_req = 0 if not len(slayer_req) else int(slayer_req)
+        self.slayer_xp = 0.0 if not len(slayer_xp) else float(slayer_xp)
+        self.slayer_categories = slayer_categories
+        self.slayer_masters = slayer_masters
+
     def to_string(self):
         return " ".join([self.name, "||", self.members, "|| Cmb XP: ", str(self.combat_xp), "|| Hitpoints XP:",
                          str(self.hitpoints_xp), "||", self.weakness if self.weakness else "No weakness"])
 
 
-npcs = []
+def sanitize(dirty):
+    return re.sub(r"[\[\](){}*.',\s!&\\/%-]", "", dirty)
+
+npcs = {}
 
 for link in links:
     response = requests.request(method="GET", url=f"https://oldschool.runescape.wiki/w/Bestiary/{link}",
@@ -116,21 +129,46 @@ for link in links:
 
             npc = NPC(data)
             if npc.name:
-                npcs.append(npc)
+                npcs[sanitize(npc.name)] = npc
 
-def sanitize(dirty):
-    return re.sub(r"[\[\](){}*.',\s!&\\/%-]", "", dirty)
 
-names = {sanitize(npc.name): npc for npc in npcs}
+response = requests.request(method="GET", url="https://oldschool.runescape.wiki/w/Slayer/Experience_table",
+                            headers={"User-Agent": "Reinze - https://reinze.com/"})
+
+if response.status_code != 200:
+    print("Got response code: {}".format(response.status_code))
+    exit(1)
+
+soup = BeautifulSoup(response.text, 'html.parser')
+
+wikitable = soup.find_all(class_="wikitable")[1]
+
+rows = wikitable.find_all(name="tr")
+
+for row in rows:
+    data = row.find_all(name="td")
+
+    if not data or len(data) < 2:
+        continue
+
+    sanitized = sanitize(data[1].text)
+
+    if npcs[sanitized]:
+        npcs[sanitized].slayer(data[18].text, data[19].text, data[20].text, data[21].text)
+
 fh = open("./src/npc/data.rs", "w")
 
-fh.write("use std::fmt;\n\n\n")
+fh.write("""use crate::stats::skill::{Details, IntoString, Skill};
+use common::{c1, c2};
+use std::fmt;
+
+""")
 
 fh.write("""
 #[derive(Clone,PartialEq)]
 pub enum Npc {
 """)
-for name in names:
+for name in npcs:
     fh.write(f"     {name},\n")
 fh.write("""
     None,
@@ -167,6 +205,24 @@ impl Npc {
     pub fn hitpoints_details(&self) -> Details {
         Details::Hitpoints(NpcMetadata::from(&self))
     }
+
+    pub fn slayer() -> Vec<Details> {
+        vec![
+            Self::HillGiant,
+            Self::SandCrabActive,
+            Self::GreendragonLevel79,
+            Self::Bluedragon1,
+            Self::AbyssaldemonStandard,
+            Self::Deviantspectre,
+        ]
+        .iter()
+        .map(|x| x.slayer_details())
+        .collect()
+    }
+
+    pub fn slayer_details(&self) -> Details {
+        Details::Slayer(NpcMetadata::from(&self))
+    }
 }
 
 impl Skill for Npc {
@@ -174,11 +230,12 @@ impl Skill for Npc {
         vec![
             Self::None,
 """)
-for name in names:
+for name in npcs:
     fh.write(f"             Self::{name},\n")
 fh.write("""
         ]
     }
+
     fn defaults() -> Vec<Details> {
         vec![
             Self::HillGiant,
@@ -217,6 +274,7 @@ fh.write("""
 """)
 
 fh.write("""
+#[derive(Clone, PartialEq, PartialOrd)]
 pub struct NpcMetadata {
     pub name: String,
     pub members: bool,
@@ -235,58 +293,94 @@ pub struct NpcMetadata {
     #[allow(dead_code)]
     pub flat_armor: String,
     pub weakness: String,
-    pub combat_xp: f32,
-    pub hitpoints_xp: f32
+    pub combat_xp: f64,
+    pub hitpoints_xp: f64,
+    pub slayer_req: u32,
+    pub slayer_xp: f64,
+    pub slayer_categories: String,
+    pub slayer_masters: String
 }
 
 impl NpcMetadata {
-    pub fn create(
-    name: String,
-    members: bool,
-    hitpoints: u32,
-    attack: u32,
-    defence: u32,
-    magic: u32,
-    ranged: u32,
-    stab: i32,
-    slash: i32,
-    crush: i32,
-    magic_def: i32,
-    light_ranged: i32,
-    std_ranged: i32,
-    heavy_ranged: i32,
-    flat_armor: String,
-    weakness: String,
-    combat_xp: f32,
-    hitpoints_xp: f32) -> Self {
-        Self {
-            name,
-            members,
-            hitpoints,
-            attack,
-            defence,
-            magic,
-            ranged,
-            stab,
-            slash,
-            crush,
-            magic_def,
-            light_ranged,
-            std_ranged,
-            heavy_ranged,
-            flat_armor,
-            weakness,
-            combat_xp,
-            hitpoints_xp,
-        }
+    pub fn hp(&self, xp_difference: f64) -> String {
+        format!(
+            "{}: {}",
+            c1(self.name.as_str()),
+            c2(common::commas_from_string(
+                format!("{}", (xp_difference / self.hitpoints_xp).ceil()).as_str(),
+                "d"
+            )
+            .as_str())
+        )
     }
     
+    pub fn slay(&self, xp_difference: f64) -> String {
+        format!(
+            "{}: {}",
+            c1(self.name.as_str()),
+            c2(common::commas_from_string(
+                format!("{}", (xp_difference / self.slayer_xp).ceil()).as_str(),
+                "d"
+            )
+            .as_str())
+        )
+    }
+
+    pub fn create(
+        name: String,
+        members: bool,
+        hitpoints: u32,
+        attack: u32,
+        defence: u32,
+        magic: u32,
+        ranged: u32,
+        stab: i32,
+        slash: i32,
+        crush: i32,
+        magic_def: i32,
+        light_ranged: i32,
+        std_ranged: i32,
+        heavy_ranged: i32,
+        flat_armor: String,
+        weakness: String,
+        combat_xp: f64,
+        hitpoints_xp: f64,
+        slayer_req: u32,
+        slayer_xp: f64,
+        slayer_categories: String,
+        slayer_masters: String) -> Self {
+            Self {
+                name,
+                members,
+                hitpoints,
+                attack,
+                defence,
+                magic,
+                ranged,
+                stab,
+                slash,
+                crush,
+                magic_def,
+                light_ranged,
+                std_ranged,
+                heavy_ranged,
+                flat_armor,
+                weakness,
+                combat_xp,
+                hitpoints_xp,
+                slayer_req,
+                slayer_xp,
+                slayer_categories,
+                slayer_masters
+        }
+    }
+
     pub fn from(npc: &Npc) -> Self {
         match npc {
 """)
 
-for name in names:
-    value = names[name]
+for name in npcs:
+    value = npcs[name]
     strname = value.name
     members = "true" if value.members == "Members" else "false"
     hitpoints = (value.hitpoints * 1) if value.hitpoints else 0
@@ -305,6 +399,10 @@ for name in names:
     weakness = value.weakness
     combat_xp = value.combat_xp * 1.0
     hitpoints_xp = value.hitpoints_xp * 1.0
+    slayer_req = (value.slayer_req * 1) if value.slayer_req else 0
+    slayer_xp = (value.slayer_xp * 1.0) if value.slayer_xp else 0.0
+    slayer_categories = value.slayer_categories if value.slayer_categories else ""
+    slayer_masters = value.slayer_masters if value.slayer_masters else ""
     fh.write(f"""
             Npc::{name} => Self::create(
                 "{strname}".to_string(),
@@ -324,7 +422,12 @@ for name in names:
                 "{flat_armor}".to_string(),
                 "{weakness}".to_string(),
                 {combat_xp},
-                {hitpoints_xp}),
+                {hitpoints_xp},
+                {slayer_req},
+                {slayer_xp},
+                "{slayer_categories}".to_string(),
+                "{slayer_masters}".to_string()
+                ),
 """)
 
 
@@ -348,6 +451,10 @@ fh.write("""
                 "".to_string(),
                 0.0,
                 0.0,
+                0,
+                0.0,
+                "".to_string(),
+                "".to_string(),
             ),
         }
     }
