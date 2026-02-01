@@ -74,6 +74,8 @@ pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
 
     let combat_xp = c1(&vec!["CombatXP:", &c2(&commas(npc.combat_xp as f64, "d"))].join(""));
     let hitpoints_xp = c1(&vec!["HpXp:", &c2(&commas(npc.hitpoints_xp as f64, "d"))].join(""));
+    let slayer_xp = c1(&vec!["XP:", &c2(&commas(npc.slayer_xp as f64, "d"))].join(""));
+    let slayer_req = c1(&vec!["Req:", &c2(npc.slayer_req.to_string().as_str())].join(""));
 
     let weakness = if !npc.weakness.is_empty() {
         npc.weakness
@@ -113,8 +115,19 @@ pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
 
     let second_output = vec![c2(&weakness), defensive_stats].join(&c1(" | "));
 
-    println!("{}", first_output);
-    println!("{}", second_output);
+    if npc.slayer_masters.is_empty() {
+        Ok(vec![first_output, second_output])
+    } else {
+        let third_output = vec![
+            l("Slayer"),
+            p(&slayer_req),
+            p(&slayer_xp),
+            c1("Assigned by:"),
+            c2(&npc.slayer_masters),
+            l(&npc.slayer_categories),
+        ]
+        .join(" ");
 
-    Ok(vec![first_output, second_output])
+        Ok(vec![first_output, second_output, third_output])
+    }
 }
