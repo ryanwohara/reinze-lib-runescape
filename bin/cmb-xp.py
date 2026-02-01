@@ -137,26 +137,6 @@ fh.write("""
 }
 
 impl Npc {
-    pub fn all() -> Vec<Self> {
-        vec![
-            Self::None,
-""")
-for name in names:
-    fh.write(f"             Self::{name},\n")
-fh.write("""
-        ]
-    }
-    
-    #[allow(dead_code)]
-    pub fn index(name: &str) -> usize {
-        let query = Self::lookup(name);
-
-        Self::all()
-            .iter()
-            .position(|npc| npc.eq(&query))
-            .unwrap_or(0)
-    }
-
     pub fn lookup(name: &str) -> Self {
         Self::all()
             .iter()
@@ -169,15 +149,48 @@ fh.write("""
             .unwrap_or(&Self::None)
             .clone()
     }
+}
 
-    pub fn search(name: &str) -> Vec<Self> {
+impl Skill for Npc {
+    fn all() -> Vec<Self> {
+        vec![
+            Self::None,
+""")
+for name in names:
+    fh.write(f"             Self::{name},\n")
+fh.write("""
+        ]
+    }
+    fn defaults() -> Vec<Details> {
+        vec![
+            Self::HillGiant,
+            Self::SandCrabActive,
+            Self::GreendragonLevel79,
+            Self::Bluedragon1,
+            Self::AbyssaldemonStandard,
+            Self::Deviantspectre,
+        ]
+        .iter()
+        .map(|x| x.details())
+        .collect()
+    }
+
+    fn details(&self) -> Details {
+        Details::Npc(NpcMetadata::from(self))
+    }
+
+    fn search<T>(name: T) -> Vec<Self>
+    where
+        T: ToString,
+        Self: Sized,
+    {
         let mut all = Self::all();
 
         all.retain(|npc| {
             NpcMetadata::from(npc)
                 .name
                 .to_lowercase()
-                .contains(&name.to_lowercase())
+                .contains(&name.to_string().to_lowercase())
         });
 
         all
@@ -329,8 +342,21 @@ impl fmt::Display for NpcMetadata {
         write!(f, "{}", self.name)
     }
 }
-""")
 
+impl IntoString for NpcMetadata {
+    fn to_string(&self, xp_difference: f64) -> String {
+        format!(
+            "{}: {}",
+            c1(self.name.as_str()),
+            c2(common::commas_from_string(
+                format!("{}", (xp_difference / self.combat_xp).ceil()).as_str(),
+                "d"
+            )
+            .as_str())
+        )
+    }
+}
+""")
 
 fh.close()
 

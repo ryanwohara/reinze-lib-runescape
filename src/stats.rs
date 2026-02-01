@@ -294,18 +294,14 @@ pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
 
     let mut hiscores: Listings = HiscoreName::all()
         .iter()
-        .map(|name| {
-            let obj = match name.to() {
-                Listing::Entry(entry) => Listing::Entry(Entry {
-                    name: entry.name,
-                    level: start_level,
-                    xp: start_xp,
-                    rank: 0,
-                }),
-                Listing::SubEntry(subentry) => Listing::SubEntry(subentry.to_owned()),
-            };
-
-            obj
+        .map(|name| match name.to() {
+            Listing::Entry(entry) => Listing::Entry(Entry {
+                name: entry.name,
+                level: start_level,
+                xp: start_xp,
+                rank: 0,
+            }),
+            Listing::SubEntry(subentry) => Listing::SubEntry(subentry.to_owned()),
         })
         .collect();
 
