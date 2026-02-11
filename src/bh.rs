@@ -2,8 +2,8 @@ use super::common::process_stats_subsection;
 use crate::common::HiscoreName::{
     BountyHunterHunter, BountyHunterLegacyHunter, BountyHunterLegacyRogue, BountyHunterRogue,
 };
-use crate::common::Source;
 use common::l;
+use common::source::Source;
 
 pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
     let categories = vec![

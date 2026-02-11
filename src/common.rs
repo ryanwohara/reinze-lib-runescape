@@ -1,6 +1,6 @@
 use crate::items::Mapping;
 use crate::stats::{StatsFlags, stats_parameters, strip_stats_parameters};
-use common::{database, *};
+use common::{database, source::Source, *};
 use itertools::Itertools;
 use meval::eval_str;
 use mysql::{prelude::*, *};
@@ -208,53 +208,6 @@ pub fn get_cmb(att: u32, str: u32, def: u32, hp: u32, range: u32, pray: u32, mag
     } else {
         // if magic > melee && magic > ranged
         Combat::new(level, "Magic")
-    }
-}
-
-pub struct Source {
-    pub rsn_n: String,
-    pub author: Author,
-    pub command: String,
-    pub query: String,
-}
-
-impl Source {
-    pub fn create(rsn_n: &str, author: Author, command: &str, query: &str) -> Self {
-        Self {
-            rsn_n: rsn_n.to_string(),
-            author,
-            command: command.to_string(),
-            query: query.to_string(),
-        }
-    }
-}
-
-pub struct Author {
-    pub nick: String,
-    pub host: String,
-    #[allow(dead_code)]
-    pub ident: String,
-    #[allow(dead_code)]
-    pub address: String,
-    pub full: String,
-}
-
-impl Author {
-    pub fn create(author: &str) -> Self {
-        let (nick, mut host) = author.split_once("!").unwrap_or(("", author));
-        if host.starts_with("~") {
-            host = host.split_once("~").unwrap_or(("", host)).1;
-        }
-
-        let (ident, address) = host.split_once("@").unwrap_or(("", &host));
-
-        Self {
-            nick: nick.to_string(),
-            host: host.to_string(),
-            ident: ident.to_string(),
-            address: address.to_string(),
-            full: author.to_string(),
-        }
     }
 }
 

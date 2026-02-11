@@ -36,7 +36,8 @@ mod tog;
 mod wiki;
 mod xp;
 
-use crate::common::{Author, Source};
+use ::common::author::Author;
+use ::common::source::Source;
 use regex::Regex;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;

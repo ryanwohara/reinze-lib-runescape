@@ -1,7 +1,7 @@
 use crate::common::HiscoreName::{Attack, Defence, Hitpoints, Magic, Prayer, Ranged, Strength};
-use crate::common::{Listing, Listings, Source, Stats, eval_query};
+use crate::common::{Listing, Listings, Stats, eval_query};
 use crate::stats::{stats_parameters, strip_stats_parameters};
-use common::{c1, c2, commas, l, p};
+use common::{c1, c2, commas, l, p, source::Source};
 use regex::{Match, Regex};
 
 struct CmbEst {

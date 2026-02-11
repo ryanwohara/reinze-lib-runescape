@@ -19,11 +19,11 @@ mod thieving;
 mod woodcutting;
 
 use super::common::{
-    Entry, HiscoreName, Listing, Listings, Source, Stats, collect_hiscores, eval_query,
-    level_to_xp, skill, skills, xp_to_level,
+    Entry, HiscoreName, Listing, Listings, Stats, collect_hiscores, eval_query, level_to_xp, skill,
+    skills, xp_to_level,
 };
 use crate::stats::skill::details_by_skill_id;
-use common::{c1, c2, commas, l, p};
+use common::{c1, c2, commas, l, p, source::Source};
 use regex::Regex;
 
 pub struct StatsFlags {
