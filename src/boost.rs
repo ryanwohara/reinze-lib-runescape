@@ -137,7 +137,7 @@ fn get_modifiers(skill: &str) -> Vec<(String, String)> {
             ("Dragon/Infernal/3rd age/Crystal pickaxe", "+3"),
             ("Celestial signet", "+4"),
             ("Brown spicy stew", "-5/+5"),
-            ("Mining guild", "+7"),
+            ("Mining guild (invis)", "+7"),
         ],
         "Prayer" => vec![
             ("Monastery altar", "+2"),

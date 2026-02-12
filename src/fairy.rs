@@ -28,6 +28,7 @@ pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
 
 enum FairyRing {
     AIQ,
+    AJP,
     AJR,
     AJS,
     AKQ,
@@ -73,6 +74,7 @@ impl FairyRing {
     fn all() -> Vec<Self> {
         vec![
             Self::AIQ,
+            Self::AJP,
             Self::AJR,
             Self::AJS,
             Self::AKQ,
@@ -120,6 +122,7 @@ impl FairyRing {
     fn details(&self) -> FairyRingDetails {
         match self {
             Self::AIQ => FairyRingDetails::from("AIQ", "Mudskipper Point"),
+            Self::AJP => FairyRingDetails::from("AJP", "Avium Savannah"),
             Self::AJR => FairyRingDetails::from("AJR", "Slayer Cave"),
             Self::AJS => FairyRingDetails::from("AJS", "Pengin Island"),
             Self::AKQ => FairyRingDetails::from("AKQ", "Piscatoris/Woodlands Hunting Area"),

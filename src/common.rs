@@ -238,12 +238,12 @@ impl Stats {
 
         format!(
             "{}{} {}{} {}{}",
-            c1("Level:"),
-            c2(&commas(level, "d")),
-            c1("XP:"),
-            c2(&commas(xp, "d")),
-            c1("Rank:"),
-            c2(&commas(rank, "d")),
+            self.source.c1("Level:"),
+            self.source.c2(&commas(level, "d")),
+            self.source.c1("XP:"),
+            self.source.c2(&commas(xp, "d")),
+            self.source.c1("Rank:"),
+            self.source.c2(&commas(rank, "d")),
         )
     }
 
@@ -728,7 +728,7 @@ pub fn process_stats_subsection(
     cmd_prefix: &str,
     mut categories: Vec<HiscoreName>,
 ) -> Result<Vec<String>, ()> {
-    let not_found = vec![vec![cmd_prefix, &c1("Stats not found")].join(" ")];
+    let not_found = vec![vec![cmd_prefix, &source.c1("Stats not found")].join(" ")];
     let flags = stats_parameters(&source.query);
     let joined: String = strip_stats_parameters(&source.query)
         .split_whitespace()
