@@ -97,7 +97,7 @@ pub extern "C" fn exported(
         "clue" | "clues" => clues::lookup(source),
         "combat" | "cmb" => stats::combat(source),
         "combatest" | "cmbest" | "cmb-est" | "combat-est" => combat_est::estimate(source),
-        command if command.starts_with("colo") => colosseum::lookup(source),
+        "colo" | "colosseum" => colosseum::lookup(source),
         "coll" | "collection" | "collectionlog" => collectionlog::lookup(source),
         "congratulations" | "congratulation" | "congrats" | "congratz" | "grats" | "gratz"
         | "gz" => grats::get(query, author),
@@ -180,7 +180,7 @@ kc\d*
 clues?\d*
 co?mb(at)?\d*$
 co?mb(at)?-?est
-colo(sseum)?\d*
+colo(sseum)?\d*$
 coll(ection(log)?)?\d*
 ((con)?grat[sz]?(ulations?)?|gz)
 ^ge
