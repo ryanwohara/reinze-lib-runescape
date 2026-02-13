@@ -102,7 +102,7 @@ pub extern "C" fn exported(
         "congratulations" | "congratulation" | "congrats" | "congratz" | "grats" | "gratz"
         | "gz" => grats::get(query, author),
         "experience" | "xperience" | "exp" | "xp" => xp::xp(query),
-        "fairy" => fairy::lookup(query),
+        "fairy" => fairy::lookup(source),
         "ge" => ge::ge(query),
         "grid" => gridmaster::lookup(source),
         "level" | "lvl" => level::level(query),

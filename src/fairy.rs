@@ -1,10 +1,11 @@
-use common::{c1, c2, l, p};
+use common::source::Source;
 
-pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
-    let prefix = l("Fairy Ring");
+pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
+    let prefix = source.l("Fairy Ring");
+    let query = &source.query;
 
     if query.len() == 0 {
-        return Ok(vec![format!("{} {}", prefix, c1("No query provided"))]);
+        return Ok(vec![vec![prefix, source.c1("No query provided")].join(" ")]);
     }
 
     for ring in FairyRing::all() {
@@ -19,11 +20,15 @@ pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
                 .to_ascii_lowercase()
                 .contains(&query.to_ascii_lowercase())
         {
-            return Ok(vec![format!("{} {}", prefix, details.to_string(),)]);
+            return Ok(vec![format!("{} {}", prefix, details.to_string(&source),)]);
         }
     }
 
-    Ok(vec![format!("{}: {}", prefix, c1("No results found"))])
+    Ok(vec![format!(
+        "{}: {}",
+        prefix,
+        source.c1("No results found")
+    )])
 }
 
 enum FairyRing {
@@ -182,7 +187,7 @@ impl FairyRingDetails {
         }
     }
 
-    fn to_string(&self) -> String {
-        vec![p(&self.code), c2(&self.location)].join(" ")
+    fn to_string(&self, s: &Source) -> String {
+        vec![s.p(&self.code), s.c2(&self.location)].join(" ")
     }
 }
