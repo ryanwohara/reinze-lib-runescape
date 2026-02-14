@@ -270,11 +270,11 @@ fn prefix(skill_name: &str, flags: &StatsFlags) -> String {
     .replace("  ", " ")
 }
 
-pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
-    let (skill_id, skill_name) = prepare(&source.command);
+pub fn lookup(s: Source) -> Result<Vec<String>, ()> {
+    let (skill_id, skill_name) = prepare(&s.command);
 
-    let flags = stats_parameters(&source.query);
-    let joined: String = strip_stats_parameters(&source.query)
+    let flags = stats_parameters(&s.query);
+    let joined: String = strip_stats_parameters(&s.query)
         .split_whitespace()
         .collect::<Vec<&str>>()
         .join(" ");
@@ -305,7 +305,7 @@ pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
         .collect();
 
     if flags.start == 0 {
-        hiscores = match collect_hiscores(&joined, &source, &flags) {
+        hiscores = match collect_hiscores(&joined, &s, &flags) {
             Ok(hiscores) => hiscores,
             Err(_) => return Ok(not_found),
         };
@@ -315,8 +315,10 @@ pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
     let mut stats: Stats = Stats {
         flags,
         hiscores,
-        source,
+        source: s,
     };
+
+    let s = &stats.source;
 
     if skill_id > 0 {
         // Individual skill lookup
@@ -340,9 +342,9 @@ pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
         };
 
         let goal = vec![
-            c1(&format!("XP to {}", next_level)),
-            c2(&commas(xp_difference as f64, "d")),
-            p(&format!("{}%", {
+            s.c1(&format!("XP to {}", next_level)),
+            s.c2(&commas(xp_difference as f64, "d")),
+            s.p(&format!("{}%", {
                 let current_level_xp = level_to_xp(actual_level);
                 let total_level_gap = next_level_xp - current_level_xp;
                 let percentage = (1.0 - (xp_difference as f64 / total_level_gap as f64)) * 100.0;
@@ -354,15 +356,15 @@ pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
 
         let level_string = vec![
             prefix,
-            c1("Level"),
-            c2(&commas(listing.actual_level() as f64, "d")),
+            s.c1("Level"),
+            s.c2(&commas(listing.actual_level() as f64, "d")),
             actual_level_string,
         ]
         .join(" ");
 
-        let xp_string = vec![c1("XP"), c2(&commas(listing.xp() as f64, "d"))].join(" ");
+        let xp_string = vec![s.c1("XP"), s.c2(&commas(listing.xp() as f64, "d"))].join(" ");
 
-        let rank_string = vec![c1("Rank"), c2(&commas(listing.rank() as f64, "d"))].join(" ");
+        let rank_string = vec![s.c1("Rank"), s.c2(&commas(listing.rank() as f64, "d"))].join(" ");
 
         let mut result = vec![
             level_string.trim(),
@@ -380,7 +382,7 @@ pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
             .iter()
             .map(|detail| detail.to_string(xp_difference as f64))
             .collect::<Vec<String>>()
-            .join(&c1(" | "));
+            .join(&s.c1(" | "));
 
         Ok(vec![output, calc])
     } else {
@@ -389,7 +391,7 @@ pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
         let combat = stats.combat();
         let overall = stats.summary("Overall");
 
-        stats.filter();
+        stats.hiscores.filter(&stats.flags);
 
         let results = &mut stats
             .hiscores
@@ -432,8 +434,8 @@ pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
             .iter()
             .map(|(name, number)| {
                 vec![
-                    c1(&vec![name, ":"].join("")),
-                    c2(&commas(*number as f64, "d")),
+                    s.c1(&vec![name, ":"].join("")),
+                    s.c2(&commas(*number as f64, "d")),
                 ]
                 .join("")
             })
@@ -461,19 +463,19 @@ fn tier(points: u32) -> String {
     .to_string()
 }
 
-pub fn combat(source: Source) -> Result<Vec<String>, ()> {
-    let prefix = l("Combat");
+pub fn combat(s: Source) -> Result<Vec<String>, ()> {
+    let prefix = s.l("Combat");
 
     let not_found: Vec<String> =
-        vec![vec![prefix.as_str(), &c1("No combat stats found")].join(" ")];
+        vec![vec![prefix.as_str(), &s.c1("No combat stats found")].join(" ")];
 
-    let flags = stats_parameters(&source.query);
-    let joined: String = strip_stats_parameters(&source.query)
+    let flags = stats_parameters(&s.query);
+    let joined: String = strip_stats_parameters(&s.query)
         .split_whitespace()
         .collect::<Vec<&str>>()
         .join(" ");
 
-    let hiscores = match collect_hiscores(&joined, &source, &flags) {
+    let hiscores = match collect_hiscores(&joined, &s, &flags) {
         Ok(hiscores) => hiscores,
         Err(_) => return Ok(not_found),
     };
@@ -481,8 +483,10 @@ pub fn combat(source: Source) -> Result<Vec<String>, ()> {
     let mut stats: Stats = Stats {
         flags,
         hiscores,
-        source,
+        source: s,
     };
+
+    let s = &stats.source;
 
     let combat = stats.combat();
     stats.hiscores.retain_combat();
@@ -490,19 +494,19 @@ pub fn combat(source: Source) -> Result<Vec<String>, ()> {
     if total_level == 0 {
         return Ok(not_found);
     }
-    let total_lvl_str = vec![c1("Levels:"), c2(&commas(total_level as f64, "d"))].join(" ");
+    let total_lvl_str = vec![s.c1("Levels:"), s.c2(&commas(total_level as f64, "d"))].join(" ");
 
     let total_xp: u32 = stats.hiscores.iter().map(|listing| listing.xp()).sum();
-    let total_xp_str = vec![c1("XP:"), c2(&commas(total_xp as f64, "d"))].join(" ");
-    let total_str = vec![total_lvl_str, total_xp_str].join(&c1(" | "));
+    let total_xp_str = vec![s.c1("XP:"), s.c2(&commas(total_xp as f64, "d"))].join(" ");
+    let total_str = vec![total_lvl_str, total_xp_str].join(&s.c1(" | "));
 
     let summary = stats
         .hiscores
         .iter()
         .map(|listing| {
             vec![
-                c1(&vec![&listing.name().to_string(), ":"].join("")),
-                c2(&listing.level().to_string()),
+                s.c1(&vec![&listing.name().to_string(), ":"].join("")),
+                s.c2(&listing.level().to_string()),
             ]
             .join("")
         })
@@ -513,19 +517,21 @@ pub fn combat(source: Source) -> Result<Vec<String>, ()> {
     calculations.retain(|(_string, int)| int > &0u32);
     let calc = calculations
         .iter()
-        .map(|(string, int)| vec![c1(&vec![string, ":"].join("")), c2(&int.to_string())].join(""))
+        .map(|(string, int)| {
+            vec![s.c1(&vec![string, ":"].join("")), s.c2(&int.to_string())].join("")
+        })
         .collect::<Vec<String>>()
         .join(" ");
 
     let output = vec![
         prefix,
         combat.to_string(),
-        c1("Total Combat"),
-        l(&total_str),
-        c1("To Next Level:"),
-        p(&calc),
-        c1("Current Levels:"),
-        p(&summary),
+        s.c1("Total Combat"),
+        s.l(&total_str),
+        s.c1("To Next Level:"),
+        s.p(&calc),
+        s.c1("Current Levels:"),
+        s.p(&summary),
     ]
     .join(" ");
 

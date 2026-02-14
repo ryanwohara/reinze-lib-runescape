@@ -1,5 +1,4 @@
 use common::source::Source;
-use common::{c1, c2, l, p};
 
 pub fn noburn(s: &Source) -> Result<Vec<String>, ()> {
     let query = &s.query;
@@ -20,7 +19,7 @@ pub fn noburn(s: &Source) -> Result<Vec<String>, ()> {
         .collect();
 
     Ok(vec![
-        format!("{} {}", l("NoBurn"), output.join(&s.c1(" | "))),
+        format!("{} {}", s.l("NoBurn"), output.join(&s.c1(" | "))),
         s.p(
             "Fire | Range | Hosidius 5% | Hosidius 10% | (Gauntlets | Gauntlets + Hosidius 5% | Gauntlet + Hosidius 10%)",
         ),
