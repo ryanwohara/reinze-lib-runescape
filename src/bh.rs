@@ -13,5 +13,5 @@ pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
         BountyHunterLegacyRogue,
     ];
 
-    process_stats_subsection(source, &l("Bounty Hunter"), categories)
+    process_stats_subsection(source, "Bounty Hunter", categories)
 }

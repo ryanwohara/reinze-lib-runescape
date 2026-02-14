@@ -17,5 +17,5 @@ pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
         ClueScrollMaster,
     ];
 
-    process_stats_subsection(source, &l("Clues"), categories)
+    process_stats_subsection(source, "Clues", categories)
 }

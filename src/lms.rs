@@ -6,5 +6,5 @@ use common::source::Source;
 pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
     let categories = vec![LMS];
 
-    process_stats_subsection(source, &l("Last Man Standing"), categories)
+    process_stats_subsection(source, "Last Man Standing", categories)
 }

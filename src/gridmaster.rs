@@ -8,5 +8,5 @@ pub fn lookup(mut source: Source) -> Result<Vec<String>, ()> {
 
     source.query = format!("{} -t", source.query);
 
-    process_stats_subsection(source, &l("Grid Master"), categories)
+    process_stats_subsection(source, "Grid Master", categories)
 }

@@ -725,7 +725,9 @@ pub fn process_stats_subsection(
     cmd_prefix: &str,
     mut categories: Vec<HiscoreName>,
 ) -> Result<Vec<String>, ()> {
-    let not_found = vec![vec![cmd_prefix, &s.c1("Stats not found")].join(" ")];
+    let prefix = s.l(cmd_prefix);
+
+    let not_found = vec![vec![prefix.to_string(), s.c1("Stats not found")].join(" ")];
     let flags = stats_parameters(&s.query);
     let joined: String = strip_stats_parameters(&s.query)
         .split_whitespace()
@@ -768,7 +770,7 @@ pub fn process_stats_subsection(
         })
         .collect::<Vec<String>>();
 
-    let output = vec![cmd_prefix, &unranked(results)].join(" ");
+    let output = vec![prefix, unranked(results)].join(" ");
 
     Ok(vec![output])
 }

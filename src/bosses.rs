@@ -75,5 +75,5 @@ pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
         Zulrah,
     ];
 
-    process_stats_subsection(source, &l("Boss"), categories)
+    process_stats_subsection(source, "Boss", categories)
 }
