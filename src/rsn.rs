@@ -1,5 +1,5 @@
 use common::source::Source;
-use common::{c1, c2, database, l, not_found};
+use common::{database, not_found};
 use mysql::{prelude::Queryable, *};
 use std::vec;
 
@@ -30,9 +30,9 @@ fn set(source: Source) -> Result<Vec<String>, ()> {
         }
     };
 
-    let host = &source.author.host;
+    let host = &source.author.host.to_string();
     let rsn_n = &source.rsn_n;
-    let author = source.author.full;
+    let author = source.author.full.to_string();
     let query = &source.query.split_once(" ").unwrap().1;
 
     if query.is_empty() {
@@ -50,15 +50,15 @@ fn set(source: Source) -> Result<Vec<String>, ()> {
             ) {
                 Ok(_) => Ok::<Vec<String>, ()>(vec![format!(
                     "{} {}",
-                    l("RSN"),
+                    source.l("RSN"),
                     format!(
                         "{}{} {} {} {} {}",
-                        c1("Set rsn #"),
-                        c2(rsn_n),
-                        c1("from"),
-                        c2(&rsn),
-                        c1("to"),
-                        c2(query)
+                        source.c1("Set rsn #"),
+                        source.c2(rsn_n),
+                        source.c1("from"),
+                        source.c2(&rsn),
+                        source.c1("to"),
+                        source.c2(query)
                     )
                 )]),
                 Err(e) => {
@@ -78,13 +78,13 @@ fn set(source: Source) -> Result<Vec<String>, ()> {
             ) {
                 Ok(_) => Ok::<Vec<String>, ()>(vec![format!(
                     "{} {}",
-                    l("RSN"),
+                    source.l("RSN"),
                     format!(
                         "{}{} {} {}",
-                        c1("Set rsn #"),
-                        c2(rsn_n),
-                        c1("to"),
-                        c2(query)
+                        source.c1("Set rsn #"),
+                        source.c2(rsn_n),
+                        source.c1("to"),
+                        source.c2(query)
                     )
                 )]),
                 Err(e) => {
@@ -116,9 +116,9 @@ fn delete(source: Source) -> Result<Vec<String>, ()> {
         }
     };
 
-    let host = source.author.host;
+    let host = source.author.host.to_string();
     let rsn_n = &source.rsn_n;
-    let author = source.author.full;
+    let author = source.author.full.to_string();
 
     match conn.exec_first::<String, &str, Params>(
         "DELETE FROM rsn WHERE host = :host AND rsn_ident = :rsn_n",
@@ -126,8 +126,8 @@ fn delete(source: Source) -> Result<Vec<String>, ()> {
     ) {
         Ok(_) => Ok(vec![format!(
             "{} {}",
-            l("RSN"),
-            format!("{}{}", c1("Deleted rsn #"), c2(rsn_n))
+            source.l("RSN"),
+            format!("{}{}", source.c1("Deleted rsn #"), source.c2(rsn_n))
         )]),
         Err(e) => {
             println!("Error deleting rsn #{} for {}: {}", rsn_n, author, e);
@@ -150,9 +150,9 @@ fn show(source: Source) -> Result<Vec<String>, ()> {
         }
     };
 
-    let host = source.author.host;
+    let host = source.author.host.to_string();
     let rsn_n = &source.rsn_n;
-    let author = source.author.full;
+    let author = source.author.full.to_string();
 
     match conn.exec_first::<String, &str, Params>(
         "SELECT rsn FROM rsn WHERE host = :host AND rsn_ident = :rsn_n",
@@ -160,13 +160,18 @@ fn show(source: Source) -> Result<Vec<String>, ()> {
     ) {
         Ok(Some(rsn)) => Ok(vec![format!(
             "{} {}",
-            l("RSN"),
-            l(&format!("#{} {}", rsn_n, rsn))
+            source.l("RSN"),
+            source.l(&format!("#{} {}", rsn_n, rsn))
         )]),
         Ok(None) => Ok(vec![format!(
             "{} {}",
-            l("RSN"),
-            &format!("{}{} {}", c1("No rsn #"), c2(rsn_n), c1("set"))
+            source.l("RSN"),
+            &format!(
+                "{}{} {}",
+                source.c1("No rsn #"),
+                source.c2(rsn_n),
+                source.c1("set")
+            )
         )]),
         Err(e) => {
             println!("Error getting rsn #{} for {}: {}", rsn_n, author, e);
@@ -186,7 +191,7 @@ fn list(source: Source) -> Result<Vec<String>, ()> {
         }
     };
 
-    let host = source.author.host;
+    let host = source.author.host.to_string();
 
     match conn.exec(
         "SELECT rsn_ident, rsn FROM rsn WHERE host = :host",
@@ -200,11 +205,11 @@ fn list(source: Source) -> Result<Vec<String>, ()> {
 
             Ok(vec![format!(
                 "{} {}",
-                l("RSN"),
+                source.l("RSN"),
                 not_found(
                     mapped
                         .into_iter()
-                        .map(|(id, rsn)| l(&format!("#{} {}", &id, &rsn)))
+                        .map(|(id, rsn)| source.l(&format!("#{} {}", &id, &rsn)))
                         .collect::<Vec<String>>()
                 )
             )])
