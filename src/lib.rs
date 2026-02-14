@@ -114,11 +114,11 @@ pub extern "C" fn exported(
             money::printer(query)
         }
         "noburn" | "burn" => noburn::noburn(&source),
-        "npc" => npc::lookup(query),
-        "param" | "params" => params::params(query),
-        "patch" => patch::patch(query),
-        "players" => players::players(),
-        "price" => prices::prices(query),
+        "npc" => npc::lookup(&source),
+        "param" | "params" => params::lookup(&source),
+        "patch" => patch::patch(&source),
+        "players" => players::lookup(&source),
+        "price" => prices::lookup(&source),
         "overall" | "stats" | "total" | "attack" | "att" | "defence" | "def" | "strength"
         | "str" | "hitpoints" | "hp" | "ranged" | "range" | "prayer" | "pray" | "magic"
         | "mage" | "cooking" | "cook" | "woodcutting" | "wc" | "fletching" | "fletch"
@@ -126,7 +126,7 @@ pub extern "C" fn exported(
         | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
         | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
         | "hunt" | "construction" | "con" | "sail" | "sailing" => stats::lookup(source),
-        "payment" | "plant" | "plants" => plant::lookup(query),
+        "payment" | "plant" | "plants" => plant::lookup(&source),
         "pvparena" | "pvp" | "arena" => pvparena::lookup(source),
         "rift" | "rifts" => rifts::lookup(source),
         "rsn" => rsn::process(source),

@@ -3,8 +3,8 @@ use crate::common::HiscoreName::PvpArena;
 use common::l;
 use common::source::Source;
 
-pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
+pub fn lookup(s: Source) -> Result<Vec<String>, ()> {
     let categories = vec![PvpArena];
 
-    process_stats_subsection(source, &l("PVP Arena"), categories)
+    process_stats_subsection(s, &l("PVP Arena"), categories)
 }

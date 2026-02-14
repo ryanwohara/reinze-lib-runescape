@@ -1,30 +1,31 @@
-use common::{c2, l, not_found, p};
+use common::not_found;
+use common::source::Source;
 use std::fmt;
 use std::str::FromStr;
 
-pub fn patch(query: &str) -> Result<Vec<String>, ()> {
-    let prefix = l("Patch");
-    let patch: Patch = query.parse().unwrap_or(Patch::None);
+pub fn patch(s: &Source) -> Result<Vec<String>, ()> {
+    let prefix = s.l("Patch");
+    let patch: Patch = s.query.parse().unwrap_or(Patch::None);
 
     let locations = patch
         .locations()
         .iter()
-        .map(|location| c2(&location))
+        .map(|location| s.c2(&location))
         .collect();
 
     let output = format!(
         "{} {}{}",
         prefix,
-        format_patch(&patch.to_string()),
+        format_patch(&patch.to_string(), s),
         not_found(locations)
     );
 
     Ok(vec![output])
 }
 
-fn format_patch(patch: &str) -> String {
+fn format_patch(patch: &str, s: &Source) -> String {
     if !patch.is_empty() {
-        format!("{} ", p(&patch))
+        format!("{} ", s.p(&patch))
     } else {
         "".to_string()
     }

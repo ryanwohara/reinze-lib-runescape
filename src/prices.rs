@@ -1,18 +1,19 @@
 use crate::common::parse_item_db;
 use crate::items::Data;
-use common::{c1, c2, commas, l, not_found};
+use common::source::Source;
+use common::{commas, not_found};
 use serde_json;
 use std::fs::read_to_string;
 
 // Scan lib/item_db.json for up to 10 items that match the query
-pub fn prices(query: &str) -> Result<Vec<String>, ()> {
-    let item_db = match parse_item_db(query) {
+pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
+    let item_db = match parse_item_db(&s.query) {
         Ok(item_db) => item_db,
         Err(_) => return Err(()),
     };
 
     let ge_filename = "lib/ge.json";
-    let mut output = l("Price");
+    let mut output = s.l("Price");
     let mut found_items: Vec<String> = vec![];
     let mut total_value = 0.0;
 
@@ -47,15 +48,15 @@ pub fn prices(query: &str) -> Result<Vec<String>, ()> {
             Some(0) | Some(1) => {
                 found_items.push(format!(
                     "{}: {}{}",
-                    c1(&item.name),
+                    s.c1(&item.name),
                     match item_values.high {
                         Some(value) => {
                             total_value += value as f64;
-                            c2(&commas(value as f64, "d"))
+                            s.c2(&commas(value as f64, "d"))
                         }
-                        None => c2("0"),
+                        None => s.c2("0"),
                     },
-                    c1("gp")
+                    s.c1("gp")
                 ));
             }
             total => {
@@ -63,16 +64,16 @@ pub fn prices(query: &str) -> Result<Vec<String>, ()> {
 
                 found_items.push(format!(
                     "{}: {}{}",
-                    c1(&format!("{}x {}", commas(total as f64, "d"), item.name)),
+                    s.c1(&format!("{}x {}", commas(total as f64, "d"), item.name)),
                     match item_values.high {
                         Some(value) => {
                             let multiplied_value = value as f64 * total as f64;
                             total_value += multiplied_value;
-                            c2(&commas(multiplied_value, "d"))
+                            s.c2(&commas(multiplied_value, "d"))
                         }
-                        None => c2("0"),
+                        None => s.c2("0"),
                     },
-                    c1("gp")
+                    s.c1("gp")
                 ));
             }
         }
@@ -89,9 +90,9 @@ pub fn prices(query: &str) -> Result<Vec<String>, ()> {
     if item_count > 1 {
         output_vec.push(format!(
             "{} {}{}",
-            l("Total"),
-            c2(&commas(total_value, "d")),
-            c1("gp")
+            s.l("Total"),
+            s.c2(&commas(total_value, "d")),
+            s.c1("gp")
         ));
     }
 

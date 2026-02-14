@@ -1,11 +1,12 @@
-use common::{c1, c2, commas, l, p, remove_trailing_zeroes};
+use common::source::Source;
+use common::{commas, remove_trailing_zeroes};
 use serde::{Deserialize, Serialize};
 
-pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
-    let prefix = l("Plant");
+pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
+    let prefix = s.l("Plant");
 
-    if query.len() == 0 {
-        return Ok(vec![format!("{} {}", prefix, c1("No query provided"))]);
+    if s.query.len() == 0 {
+        return Ok(vec![format!("{} {}", prefix, s.c1("No query provided"))]);
     }
 
     for plant in Plant::all() {
@@ -14,13 +15,13 @@ pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
         if details
             .name
             .to_ascii_lowercase()
-            .contains(&query.to_ascii_lowercase())
+            .contains(&s.query.to_ascii_lowercase())
         {
-            return Ok(vec![format!("{} {}", prefix, details.to_string(),)]);
+            return Ok(vec![format!("{} {}", prefix, details.to_string(s),)]);
         }
     }
 
-    Ok(vec![format!("{} {}", prefix, c1("No results found"))])
+    Ok(vec![format!("{} {}", prefix, s.c1("No results found"))])
 }
 
 enum Plant {
@@ -613,24 +614,24 @@ impl PlantDetails {
         self.name.replace("_", " ")
     }
 
-    fn to_string(&self) -> String {
+    fn to_string(&self, s: &Source) -> String {
         vec![
-            p(&self.name()),
-            c1("Level:"),
-            c2(&self.level.to_string()),
-            c1("Time:"),
-            c2(&self.time.to_string()),
-            c1("Planting XP:"),
-            c2(&zero_or_na(self.planting_xp)),
-            c1("Checking XP:"),
-            c2(&zero_or_na(self.checking_xp)),
-            c1("Harvesting XP:"),
-            c2(&zero_or_na(self.harvesting_xp)),
-            c1("Payment:"),
+            s.p(&self.name()),
+            s.c1("Level:"),
+            s.c2(&self.level.to_string()),
+            s.c1("Time:"),
+            s.c2(&self.time.to_string()),
+            s.c1("Planting XP:"),
+            s.c2(&zero_or_na(self.planting_xp)),
+            s.c1("Checking XP:"),
+            s.c2(&zero_or_na(self.checking_xp)),
+            s.c1("Harvesting XP:"),
+            s.c2(&zero_or_na(self.harvesting_xp)),
+            s.c1("Payment:"),
             if self.payment.len() > 0 {
-                c2(&self.payment.to_string())
+                s.c2(&self.payment.to_string())
             } else {
-                c2("N/A")
+                s.c2("N/A")
             },
         ]
         .join(" ")

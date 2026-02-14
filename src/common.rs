@@ -1114,7 +1114,10 @@ pub fn get_item_db() -> Result<Vec<Mapping>, ()> {
     }
 }
 
-pub fn parse_item_db(overall_query: &str) -> Result<Vec<Mapping>, ()> {
+pub fn parse_item_db<T>(overall_query: T) -> Result<Vec<Mapping>, ()>
+where
+    T: ToString,
+{
     let mut found_items: Vec<Mapping> = vec![];
 
     let item_db = match get_item_db() {
@@ -1123,6 +1126,7 @@ pub fn parse_item_db(overall_query: &str) -> Result<Vec<Mapping>, ()> {
     };
 
     for query in overall_query
+        .to_string()
         .split(",")
         .into_iter()
         .map(|index| index.trim())

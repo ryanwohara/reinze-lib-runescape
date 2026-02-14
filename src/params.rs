@@ -1,13 +1,14 @@
 extern crate ini;
 
 use crate::common::skill as common_skill;
+use common::source::Source;
 use common::{c1, c2, capitalize, l, not_found};
 use ini::Ini;
 
-pub fn params(query: &str) -> Result<Vec<String>, ()> {
+pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
     let prefix = l("Params").to_string();
 
-    let (skill, param) = match query.split_once(" ") {
+    let (skill, param) = match s.query.split_once(" ") {
         Some((skill, param)) if !skill.is_empty() && !param.is_empty() => {
             (common_skill(skill), param)
         }
