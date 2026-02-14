@@ -23,7 +23,7 @@ use super::common::{
     skills, xp_to_level,
 };
 use crate::stats::skill::details_by_skill_id;
-use common::{c1, c2, commas, l, p, source::Source};
+use common::{commas, source::Source};
 use regex::Regex;
 
 pub struct StatsFlags {
@@ -84,7 +84,7 @@ pub enum Prefix {
 }
 
 impl Prefix {
-    pub fn to_string(&self) -> String {
+    pub fn to_string(&self, s: &Source) -> String {
         let prefix = match self {
             Self::Combat => "Combat",
             Self::Level => "Level",
@@ -96,7 +96,7 @@ impl Prefix {
         };
 
         if prefix.len() > 0 {
-            p(prefix)
+            s.p(prefix)
         } else {
             "".to_string()
         }
@@ -227,20 +227,20 @@ pub fn strip_stats_parameters(query: &str) -> String {
     get_stats_regex().replace_all(query, "").to_string()
 }
 
-fn invalid<T>(prefix: T) -> String
+fn invalid<T>(prefix: T, s: &Source) -> String
 where
     T: ToString,
 {
     vec![
         prefix.to_string(),
-        c1("Level"),
-        p("N/A"),
-        c2("|"),
-        c1("XP"),
-        p("N/A"),
-        c2("|"),
-        c1("Rank"),
-        p("N/A"),
+        s.c1("Level"),
+        s.p("N/A"),
+        s.c2("|"),
+        s.c1("XP"),
+        s.p("N/A"),
+        s.c2("|"),
+        s.c1("Rank"),
+        s.p("N/A"),
     ]
     .join(" ")
 }
@@ -256,14 +256,14 @@ fn prepare(command: &str) -> (usize, String) {
     (skill_id, skill_name)
 }
 
-fn prefix(skill_name: &str, flags: &StatsFlags) -> String {
+fn prefix(skill_name: &str, flags: &StatsFlags, s: &Source) -> String {
     vec![
-        l(&skill_name),
+        s.l(&skill_name),
         flags
             .account_type
             .name()
-            .map_or("".to_string(), |name| l(&name)),
-        flags.prefix.to_string(),
+            .map_or("".to_string(), |name| s.l(&name)),
+        flags.prefix.to_string(s),
     ]
     .join(" ")
     .trim()
@@ -279,9 +279,9 @@ pub fn lookup(s: Source) -> Result<Vec<String>, ()> {
         .collect::<Vec<&str>>()
         .join(" ");
 
-    let prefix = prefix(&skill_name, &flags);
+    let prefix = prefix(&skill_name, &flags, &s);
 
-    let not_found = vec![invalid(&prefix)];
+    let not_found = vec![invalid(&prefix, &s)];
 
     let start_xp = if flags.start > 126 {
         flags.start
@@ -336,7 +336,7 @@ pub fn lookup(s: Source) -> Result<Vec<String>, ()> {
         let actual_level = listing.actual_level();
 
         let actual_level_string = if actual_level > listing.level() {
-            p(&actual_level.to_string())
+            s.p(&actual_level.to_string())
         } else {
             "".to_string()
         };
@@ -374,7 +374,7 @@ pub fn lookup(s: Source) -> Result<Vec<String>, ()> {
         ];
         result.retain(|x| x.len() > 0);
 
-        let output = result.join(&c1(" | "));
+        let output = result.join(&s.c1(" | "));
 
         let details = details_by_skill_id(skill_id as u32, &stats.flags.search);
 
