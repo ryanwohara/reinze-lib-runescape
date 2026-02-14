@@ -111,7 +111,7 @@ pub extern "C" fn exported(
             lms::lookup(source)
         }
         "mp" | "money" | "moneyprinter" | "profit" | "printer" | "profitprinter" => {
-            money::printer(query)
+            money::printer(&source)
         }
         "noburn" | "burn" => noburn::noburn(&source),
         "npc" => npc::lookup(&source),

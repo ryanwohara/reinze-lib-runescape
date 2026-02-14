@@ -1,12 +1,15 @@
 use crate::common::{eval_query, parse_item_db};
 use crate::items::{Data, Mapping};
-use common::{c1, c2, commas, l, not_found, p};
+use common::source::Source;
+use common::{commas, not_found};
 use regex::Regex;
 use std::fs::read_to_string;
 
 const NATURE_RUNE_ID: u32 = 561;
 
-pub fn printer(query: &str) -> Result<Vec<String>, ()> {
+pub fn printer(s: &Source) -> Result<Vec<String>, ()> {
+    let query = s.query.as_str();
+
     let limit_flag_re = Regex::new(r"-l ?(\d+[kmb])").unwrap();
     let limit_flag = match limit_flag_re.captures(query) {
         Some(captured) => captured.get(1).map_or(0i64, |limit| {
@@ -33,7 +36,7 @@ pub fn printer(query: &str) -> Result<Vec<String>, ()> {
     };
 
     let ge_filename = "lib/ge.json";
-    let mut output = l("$ Alch Profit $");
+    let mut output = s.l("$ Alch Profit $");
     let mut found_items: Vec<(&Mapping, i64)> = vec![];
 
     let ge_file_contents = match read_to_string(ge_filename) {
@@ -90,10 +93,10 @@ pub fn printer(query: &str) -> Result<Vec<String>, ()> {
             if item.limit.unwrap_or(0) >= limit_flag as u64 {
                 format!(
                     "{}: {}{} {}",
-                    c1(&item.name),
-                    c2(&commas(profit as f64, "d")),
-                    c1("gp"),
-                    p(&format!("L:{}", limit))
+                    s.c1(&item.name),
+                    s.c2(&commas(profit as f64, "d")),
+                    s.c1("gp"),
+                    s.p(&format!("L:{}", limit))
                 )
             } else {
                 "".to_string()
@@ -112,7 +115,7 @@ pub fn printer(query: &str) -> Result<Vec<String>, ()> {
         iterator <= 15
     });
 
-    output = format!("{} {}", output, not_found(sorted_items));
+    output = vec![output, not_found(sorted_items)].join(" ");
 
     let output_vec: Vec<String> = vec![output];
 
