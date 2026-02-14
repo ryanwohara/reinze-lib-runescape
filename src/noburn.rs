@@ -1,6 +1,9 @@
+use common::source::Source;
 use common::{c1, c2, l, p};
 
-pub fn noburn(query: &str) -> Result<Vec<String>, ()> {
+pub fn noburn(s: &Source) -> Result<Vec<String>, ()> {
+    let query = &s.query;
+
     let fish: Vec<Fish> = vec![
         Fish::new("Tuna", 63, 0, 59, 0, 0, 0, 0),
         Fish::new("Lobster", 74, 74, 70, 0, 64, 61, 0),
@@ -9,17 +12,19 @@ pub fn noburn(query: &str) -> Result<Vec<String>, ()> {
         Fish::new("Shark", 0, 0, 0, 99, 94, 89, 84),
         Fish::new("Anglerfish", 0, 0, 0, 0, 98, 93, 88),
     ];
+
     let output: Vec<String> = fish
         .into_iter()
         .filter(|fish| fish_finder(fish, query))
-        .map(|fish| fish.to_string())
+        .map(|fish| fish.to_string(s))
         .collect();
-    return Ok(vec![
-        format!("{} {}", l("NoBurn"), output.join(&c1(" | "))),
-        p(
+
+    Ok(vec![
+        format!("{} {}", l("NoBurn"), output.join(&s.c1(" | "))),
+        s.p(
             "Fire | Range | Hosidius 5% | Hosidius 10% | (Gauntlets | Gauntlets + Hosidius 5% | Gauntlet + Hosidius 10%)",
         ),
-    ]);
+    ])
 }
 
 struct Fish {
@@ -56,27 +61,27 @@ impl Fish {
         }
     }
 
-    fn to_string(&self) -> String {
+    fn to_string(&self, s: &Source) -> String {
         format!(
             "{} {} {} {} {} {}",
-            c1(self.name),
-            c2(&if_not_available(self.fire)),
-            c2(&if_not_available(self.range)),
-            c2(&if_not_available(self.hosidius5)),
-            c2(&if_not_available(self.hosidius10)),
-            p(&format!(
+            s.c1(self.name),
+            s.c2(&if_not_available(self.fire, s)),
+            s.c2(&if_not_available(self.range, s)),
+            s.c2(&if_not_available(self.hosidius5, s)),
+            s.c2(&if_not_available(self.hosidius10, s)),
+            s.p(&format!(
                 "{} {} {}",
-                &if_not_available(self.gauntlet),
-                &if_not_available(self.gauntlet_hosidius5),
-                &if_not_available(self.gauntlet_hosidius10)
+                &if_not_available(self.gauntlet, s),
+                &if_not_available(self.gauntlet_hosidius5, s),
+                &if_not_available(self.gauntlet_hosidius10, s)
             )),
         )
     }
 }
 
-fn if_not_available(int: u32) -> String {
+fn if_not_available(int: u32, s: &Source) -> String {
     if int == 0 {
-        return c2("N/A");
+        return s.c2("N/A");
     }
 
     int.to_string()
