@@ -53,14 +53,14 @@ fn parse(input: Option<Option<Match>>) -> String {
     .to_string()
 }
 
-pub fn estimate(source: Source) -> Result<Vec<String>, ()> {
+pub fn estimate(s: Source) -> Result<Vec<String>, ()> {
     let prefix = l("Combat Estimation");
     let mut cmbest = CmbEst::new();
 
-    let flags = stats_parameters(&source.query);
+    let flags = stats_parameters(&s.query);
 
     let re = Regex::new(r"^(\d{1,2})([ASDRMPHasdrmph])$").unwrap();
-    strip_stats_parameters(&source.query)
+    strip_stats_parameters(&s.query)
         .split_whitespace()
         .for_each(|token| {
             let captures = match re.captures(token) {
@@ -94,7 +94,7 @@ pub fn estimate(source: Source) -> Result<Vec<String>, ()> {
     let stats = Stats {
         flags,
         hiscores,
-        source,
+        source: s,
     };
     let combat = stats.combat();
 
@@ -128,7 +128,7 @@ pub fn estimate(source: Source) -> Result<Vec<String>, ()> {
 
     let output = vec![
         prefix,
-        combat.to_string(),
+        combat.to_string(&stats.source),
         c1("Total Combat"),
         l(total_str),
         c1("To Next Level:"),

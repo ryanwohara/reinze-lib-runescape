@@ -177,17 +177,14 @@ impl Combat {
             style: style.to_string(),
         }
     }
-}
 
-impl Display for Combat {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}{}{}",
-            c1("Combat:"),
-            c2(&self.level.to_string()),
-            p(&self.style)
-        )
+    pub fn to_string(&self, s: &Source) -> String {
+        vec![
+            s.c1("Combat:"),
+            s.c2(&self.level.to_string()),
+            s.p(&self.style),
+        ]
+        .join("")
     }
 }
 
