@@ -51,7 +51,7 @@ pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
 
         let ge_json = &json.item;
 
-        let count = item.total.unwrap_or_else(|| 0);
+        let count = item.total.unwrap_or(0);
 
         if count == 0 {
             total_value += ge_json.current.price.num();
