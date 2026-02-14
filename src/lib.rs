@@ -113,7 +113,7 @@ pub extern "C" fn exported(
         "mp" | "money" | "moneyprinter" | "profit" | "printer" | "profitprinter" => {
             money::printer(query)
         }
-        "noburn" | "burn" => noburn::noburn(query),
+        "noburn" | "burn" => noburn::noburn(&source),
         "npc" => npc::lookup(query),
         "param" | "params" => params::params(query),
         "patch" => patch::patch(query),
