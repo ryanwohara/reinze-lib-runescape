@@ -1,10 +1,13 @@
-pub fn wiki(query: &str) -> Result<Vec<String>, ()> {
-    let mut output = Vec::new();
-    let mut url = String::new();
-    url.push_str("https://oldschool.runescape.wiki/w/Special:Search?search=");
-    url.push_str(&query.replace(" ", "+"));
+use common::source::Source;
 
-    output.push(url);
+pub fn query(s: &Source) -> Result<Vec<String>, ()> {
+    let link = vec![
+        "https://oldschool.runescape.wiki/w/Special:Search?search=",
+        &s.query.replace(" ", "+"),
+    ]
+    .join("");
 
-    Ok(output)
+    let output = vec![s.l("Wiki"), s.c2(link)].join(" ");
+
+    Ok(vec![output])
 }

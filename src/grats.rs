@@ -1,22 +1,23 @@
 extern crate common;
+
 use crate::common::{eval_query, skill as get_skill};
+use common::source::Source;
 use regex::Regex;
 
-pub fn get(query: &str, author: &str) -> Result<Vec<String>, ()> {
-    let mut split = query.split(" ");
+pub fn get(s: &Source) -> Result<Vec<String>, ()> {
+    let mut split = s.query.split_whitespace();
 
     let first_token = split.next().unwrap_or_default();
     let second_token = split.next().unwrap_or_default();
     let third_token = split.next().unwrap_or_default();
 
-    let mut nick = author.split("!").collect::<Vec<&str>>()[0];
+    let nick = &s.author.nick;
     let mut milestone = first_token;
     let mut skill_token = second_token;
 
     let err = Ok(vec!["Syntax: +congrats [nick] (level) (skill)".to_string()]);
 
     if third_token.len() > 0 {
-        nick = first_token;
         milestone = second_token;
         skill_token = third_token;
     } else if second_token.len() == 0 {

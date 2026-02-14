@@ -100,12 +100,12 @@ pub extern "C" fn exported(
         "colo" | "colosseum" => colosseum::lookup(source),
         "coll" | "collection" | "collectionlog" => collectionlog::lookup(source),
         "congratulations" | "congratulation" | "congrats" | "congratz" | "grats" | "gratz"
-        | "gz" => grats::get(query, author),
-        "experience" | "xperience" | "exp" | "xp" => xp::xp(query),
+        | "gz" => grats::get(&source),
+        "experience" | "xperience" | "exp" | "xp" => xp::lookup(&source),
         "fairy" => fairy::lookup(source),
-        "ge" => ge::ge(query),
+        "ge" => ge::lookup(&source),
         "grid" => gridmaster::lookup(source),
-        "level" | "lvl" => level::level(query),
+        "level" | "lvl" => level::lookup(&source),
         "league" | "leagues" => leagues::lookup(source),
         "lms" | "lmstanding" | "lmanstanding" | "lastmstanding" | "lastmanstanding" => {
             lms::lookup(source)
@@ -130,10 +130,10 @@ pub extern "C" fn exported(
         "pvparena" | "pvp" | "arena" => pvparena::lookup(source),
         "rift" | "rifts" => rifts::lookup(source),
         "rsn" => rsn::process(source),
-        "salvage" | "salvages" => salvage::lookup(query),
+        "salvage" | "salvages" => salvage::lookup(&source),
         "sw" | "swar" | "soulw" | "soulwar" | "soulwars" | "zeal" => soulwars::lookup(source),
         "togw" => tog::world(),
-        "wiki" => wiki::wiki(query),
+        "wiki" => wiki::query(&source),
         "help" => Ok(r"alchemy
 bolts
 bh[N]

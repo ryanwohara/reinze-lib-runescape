@@ -1,17 +1,18 @@
 use super::items::{Ge, GeItemPrice};
 use crate::common::{eval_query, parse_item_db};
-use common::{c1, c2, c3, c4, c5, commas, l, not_found, p};
+use common::source::Source;
+use common::{c3, c4, c5, commas, not_found};
 use serde_json;
 
 // Scan lib/item_db.json for up to 10 items that match the query
 // and hit the OSRS Grand Exchange API to get the price of each item
-pub fn ge(query: &str) -> Result<Vec<String>, ()> {
-    let item_db = match parse_item_db(query) {
+pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
+    let item_db = match parse_item_db(&s.query) {
         Ok(item_db) => item_db,
         Err(_) => return Err(()),
     };
 
-    let mut output = l("Grand Exchange");
+    let mut output = s.l("Grand Exchange");
     let mut found_items: Vec<String> = vec![];
     let mut total_value = 0.0;
 
@@ -57,10 +58,10 @@ pub fn ge(query: &str) -> Result<Vec<String>, ()> {
 
             found_items.push(format!(
                 "{}: {}{} {}",
-                c1(&item.name),
-                c2(&ge_json.current.price.str()),
-                c1("gp"),
-                price_change(&ge_json.today, count)
+                s.c1(&item.name),
+                s.c2(&ge_json.current.price.str()),
+                s.c1("gp"),
+                s.p(price_change(&ge_json.today, count))
             ));
         } else {
             let total = match eval_query(ge_json.current.price.str().replace(" ", "")) {
@@ -71,10 +72,10 @@ pub fn ge(query: &str) -> Result<Vec<String>, ()> {
 
             found_items.push(format!(
                 "{}: {}{} {}",
-                c1(&format!("{}x {}", commas(count as f64, "d"), item.name)),
-                c2(&commas(total, "d")),
-                c1("gp"),
-                price_change(&ge_json.today, count)
+                s.c1(&format!("{}x {}", commas(count as f64, "d"), item.name)),
+                s.c2(&commas(total, "d")),
+                s.c1("gp"),
+                s.p(price_change(&ge_json.today, count))
             ));
         }
     }
@@ -86,9 +87,9 @@ pub fn ge(query: &str) -> Result<Vec<String>, ()> {
     if item_count > 1 {
         output_vec.push(format!(
             "{} {}{}",
-            l("Total"),
-            c2(&commas(total_value, "d")),
-            c1("gp")
+            s.l("Total"),
+            s.c2(&commas(total_value, "d")),
+            s.c1("gp")
         ));
     }
 
@@ -115,5 +116,5 @@ fn price_change(today: &GeItemPrice, count: u64) -> String {
         output = format!("{}{}", c3(&price), c3("▼"));
     }
 
-    p(&output)
+    output
 }

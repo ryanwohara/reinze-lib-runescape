@@ -1,20 +1,21 @@
-use common::{c1, c2, l, not_found, p};
+use common::not_found;
+use common::source::Source;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
 
-pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
-    let prefix = l("Salvage");
-    let salvage: Salvage = query.parse()?;
+pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
+    let prefix = s.l("Salvage");
+    let salvage: Salvage = s.query.parse()?;
 
     let locations = salvage
         .locations()
         .iter()
-        .map(|location| c2(&location))
+        .map(|location| s.c2(&location))
         .collect();
 
-    let output1 = vec![prefix.clone(), salvage.details().to_string()].join(" ");
-    let output2 = vec![prefix, p("Locations"), not_found(locations)].join(" ");
+    let output1 = vec![prefix.clone(), salvage.details().to_string(s)].join(" ");
+    let output2 = vec![prefix, s.p("Locations"), not_found(locations)].join(" ");
 
     Ok(vec![output1, output2])
 }
@@ -81,21 +82,15 @@ impl Salvage {
 
     fn details(&self) -> SalvageDetails {
         match self {
-            Self::SmallShipwreck => {
-                SalvageDetails::from("Small Shipwreck", 15, 10.0, 4.5, 60,)
-            }
+            Self::SmallShipwreck => SalvageDetails::from("Small Shipwreck", 15, 10.0, 4.5, 60),
             Self::FishermansShipwreck => {
-                SalvageDetails::from("Fishermans Shipwreck", 26, 17.0, 9.0, 180, )
+                SalvageDetails::from("Fishermans Shipwreck", 26, 17.0, 9.0, 180)
             }
             Self::BarracudaShipwreck => {
-                SalvageDetails::from("Barracuda Shipwreck", 35, 31.0, 15.5, 180, )
+                SalvageDetails::from("Barracuda Shipwreck", 35, 31.0, 15.5, 180)
             }
-            Self::LargeShipwreck => {
-                SalvageDetails::from("Large Shipwreck", 53, 48.0, 24.0, 180)
-            }
-            Self::PirateShipwreck => {
-                SalvageDetails::from("Pirate Shipwreck", 64, 63.0, 31.5, 180)
-            }
+            Self::LargeShipwreck => SalvageDetails::from("Large Shipwreck", 53, 48.0, 24.0, 180),
+            Self::PirateShipwreck => SalvageDetails::from("Pirate Shipwreck", 64, 63.0, 31.5, 180),
             Self::MercenaryShipwreck => {
                 SalvageDetails::from("Mercenary Shipwreck", 73, 127.0, 63.5, 195)
             }
@@ -153,13 +148,7 @@ struct SalvageDetails {
 }
 
 impl SalvageDetails {
-    fn from<T>(
-        name: T,
-        level: u32,
-        salvaging_xp: f64,
-        sorting_xp: f64,
-        avg_lifespan: u32,
-    ) -> Self
+    fn from<T>(name: T, level: u32, salvaging_xp: f64, sorting_xp: f64, avg_lifespan: u32) -> Self
     where
         T: ToString,
     {
@@ -176,26 +165,20 @@ impl SalvageDetails {
         self.name.replace("_", " ")
     }
 
-    fn to_string(&self) -> String {
+    fn to_string(&self, s: &Source) -> String {
         vec![
-            p(&self.name()),
-            c1("Level:"),
-            c2(&self.level.to_string()),
-            c1("Salvaging XP:"),
-            c2(&self.salvaging_xp.to_string()),
-            c1("Sorting XP:"),
-            c2(&self.sorting_xp.to_string()),
-            c1("Total XP:"),
-            c2(&(self.salvaging_xp + self.sorting_xp).to_string()),
-            c1("Average Lifespan (sec):"),
-            c2(&self.avg_lifespan.to_string()),
+            s.p(&self.name()),
+            s.c1("Level:"),
+            s.c2(&self.level.to_string()),
+            s.c1("Salvaging XP:"),
+            s.c2(&self.salvaging_xp.to_string()),
+            s.c1("Sorting XP:"),
+            s.c2(&self.sorting_xp.to_string()),
+            s.c1("Total XP:"),
+            s.c2(&(self.salvaging_xp + self.sorting_xp).to_string()),
+            s.c1("Average Lifespan (sec):"),
+            s.c2(&self.avg_lifespan.to_string()),
         ]
         .join(" ")
-    }
-}
-
-impl fmt::Display for SalvageDetails {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_string())
     }
 }

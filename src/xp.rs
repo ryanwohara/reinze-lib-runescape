@@ -1,7 +1,10 @@
 use crate::common::level_to_xp;
-use common::{c1, c2, commas, l};
+use common::commas;
+use common::source::Source;
 
-pub fn xp(query: &str) -> Result<Vec<String>, ()> {
+pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
+    let query = &s.query;
+
     let split: Vec<&str> = query.split("-").collect();
 
     if split.len() > 2 || split.len() == 0 {
@@ -19,10 +22,10 @@ pub fn xp(query: &str) -> Result<Vec<String>, ()> {
 
         let output = vec![format!(
             "{} {}->{} = {} xp",
-            l("Level->XP"),
-            c1(&start.to_string()),
+            s.l("Level->XP"),
+            s.c1(&start.to_string()),
             end,
-            c2(&commas((level_to_xp(end) - level_to_xp(start)) as f64, "d").to_string())
+            s.c2(&commas((level_to_xp(end) - level_to_xp(start)) as f64, "d").to_string())
         )];
 
         return Ok(output);
@@ -34,9 +37,9 @@ pub fn xp(query: &str) -> Result<Vec<String>, ()> {
 
         let output = vec![format!(
             "{} {} = {} xp",
-            l("Level->XP"),
-            c1(&level.to_string()),
-            c2(&commas(level_to_xp(level as u32) as f64, "d"))
+            s.l("Level->XP"),
+            s.c1(&level.to_string()),
+            s.c2(&commas(level_to_xp(level as u32) as f64, "d"))
         )];
 
         return Ok(output);
