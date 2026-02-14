@@ -721,17 +721,17 @@ impl Display for HiscoreName {
 }
 
 pub fn process_stats_subsection(
-    source: Source,
+    s: Source,
     cmd_prefix: &str,
     mut categories: Vec<HiscoreName>,
 ) -> Result<Vec<String>, ()> {
-    let not_found = vec![vec![cmd_prefix, &source.c1("Stats not found")].join(" ")];
-    let flags = stats_parameters(&source.query);
-    let joined: String = strip_stats_parameters(&source.query)
+    let not_found = vec![vec![cmd_prefix, &s.c1("Stats not found")].join(" ")];
+    let flags = stats_parameters(&s.query);
+    let joined: String = strip_stats_parameters(&s.query)
         .split_whitespace()
         .collect::<Vec<&str>>()
         .join(" ");
-    let mut hiscores = match collect_hiscores(&joined, &source, &flags) {
+    let mut hiscores = match collect_hiscores(&joined, &s, &flags) {
         Ok(hiscores) => hiscores,
         Err(_) => return Ok(not_found),
     };
@@ -740,7 +740,7 @@ pub fn process_stats_subsection(
     let mut stats: Stats = Stats {
         flags,
         hiscores,
-        source,
+        source: s,
     };
 
     categories.retain(|category| {
@@ -757,9 +757,11 @@ pub fn process_stats_subsection(
         .iter()
         .map(|listing| match listing {
             Listing::SubEntry(subentry) => vec![
-                c1(&vec![&subentry.name.to_string(), ":"].join("")),
-                c2(&commas(subentry.xp as f64, "d")),
-                p(&commas(subentry.rank as f64, "d")),
+                stats
+                    .source
+                    .c1(&vec![&subentry.name.to_string(), ":"].join("")),
+                stats.source.c2(&commas(subentry.xp as f64, "d")),
+                stats.source.p(&commas(subentry.rank as f64, "d")),
             ]
             .join(" "),
             Listing::Entry(_) => "".to_string(),
