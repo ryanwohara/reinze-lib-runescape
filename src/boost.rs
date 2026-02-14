@@ -1,28 +1,31 @@
 use crate::common::skill;
-use common::{c1, c2, l, not_found, p};
+use common::not_found;
+use common::source::Source;
 
-pub fn boost(query: &str) -> Result<Vec<String>, ()> {
-    let prefix = l("Boost");
+pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
+    let query = &s.query;
+
+    let prefix = s.l("Boost");
     let skill = skill(query);
     let mut found_params: Vec<String> = vec![];
 
     for (action, boost) in get_modifiers(&skill) {
-        found_params.push(format!("{} {}", c1(&action), c2(&boost)));
+        found_params.push(vec![s.c1(&action), s.c2(&boost)].join(" "));
     }
 
     let output = format!(
         "{} {}{}",
         prefix,
-        format_skill(&skill),
+        format_skill(&skill, s),
         not_found(found_params)
     );
 
     Ok(vec![output])
 }
 
-fn format_skill(skill: &str) -> String {
+fn format_skill(skill: &str, s: &Source) -> String {
     if skill.len() > 0 {
-        format!("{} ", p(&skill))
+        format!("{} ", s.p(&skill))
     } else {
         "".to_string()
     }

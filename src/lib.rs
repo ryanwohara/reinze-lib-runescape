@@ -89,10 +89,10 @@ pub extern "C" fn exported(
     let source = Source::create(rsn_n, Author::create(author), command, query);
 
     match match command {
-        "alch" | "alchemy" => alch::lookup(query),
-        "bolt" | "bolts" => bolts::lookup(query),
+        "alch" | "alchemy" => alch::lookup(&source),
+        "bolt" | "bolts" => bolts::lookup(&source),
         "bh" | "bounty" | "bhunter" | "bountyhunter" => bh::lookup(source),
-        "boost" | "boosts" => boost::boost(query),
+        "boost" | "boosts" => boost::lookup(&source),
         "boss" | "bosses" | "kc" => bosses::lookup(source),
         "clue" | "clues" => clues::lookup(source),
         "combat" | "cmb" => stats::combat(source),

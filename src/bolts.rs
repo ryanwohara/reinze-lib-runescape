@@ -1,10 +1,12 @@
-use common::{c1, c2, l, p};
+use common::source::Source;
 
-pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
-    let prefix = l("Bolts");
+pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
+    let query = &s.query;
+
+    let prefix = s.l("Bolts");
 
     if query.len() == 0 {
-        return Ok(vec![format!("{} {}", prefix, c1("No query provided"))]);
+        return Ok(vec![vec![prefix, s.c1("No query provided")].join(" ")]);
     }
 
     for bolt in Bolt::all() {
@@ -19,11 +21,11 @@ pub fn lookup(query: &str) -> Result<Vec<String>, ()> {
                 .to_ascii_lowercase()
                 .contains(&query.to_ascii_lowercase())
         {
-            return Ok(vec![format!("{} {}", prefix, details.to_string(),)]);
+            return Ok(vec![vec![prefix, details.to_string(s)].join(" ")]);
         }
     }
 
-    Ok(vec![format!("{}: {}", prefix, c1("No results found"))])
+    Ok(vec![format!("{}: {}", prefix, s.c1("No results found"))])
 }
 
 enum Bolt {
@@ -126,7 +128,13 @@ impl BoltDetails {
         }
     }
 
-    fn to_string(&self) -> String {
-        vec![p(&self.bolt), c1(&self.name), c1("|"), c2(&self.effect)].join(" ")
+    fn to_string(&self, s: &Source) -> String {
+        vec![
+            s.p(&self.bolt),
+            s.c1(&self.name),
+            s.c1("|"),
+            s.c2(&self.effect),
+        ]
+        .join(" ")
     }
 }
