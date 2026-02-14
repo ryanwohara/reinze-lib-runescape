@@ -412,7 +412,7 @@ pub fn lookup(s: Source) -> Result<Vec<String>, ()> {
             })
             .collect::<Vec<(String, u32)>>();
 
-        let summary = vec![combat.to_string(), overall].join(" ");
+        let summary = vec![combat.to_string(s), overall].join(" ");
 
         match stats.flags.flag {
             MutuallyExclusiveFlag::Order | MutuallyExclusiveFlag::Sort => {
@@ -525,7 +525,7 @@ pub fn combat(s: Source) -> Result<Vec<String>, ()> {
 
     let output = vec![
         prefix,
-        combat.to_string(),
+        combat.to_string(s),
         s.c1("Total Combat"),
         s.l(&total_str),
         s.c1("To Next Level:"),
