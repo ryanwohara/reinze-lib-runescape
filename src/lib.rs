@@ -36,6 +36,7 @@ mod tog;
 mod wiki;
 mod xp;
 
+use ::common::PluginContext;
 use ::common::author::Author;
 use ::common::source::Source;
 use regex::Regex;
@@ -43,98 +44,85 @@ use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
 #[unsafe(no_mangle)]
-pub extern "C" fn exported(
-    cmd: *const c_char,
-    raw_query: *const c_char,
-    raw_author: *const c_char,
-) -> *mut c_char {
-    let nil = CString::new("").unwrap().into_raw(); // using unwrap() here is safe because we know the string is valid UTF-8
+pub extern "C" fn exported(context: *const PluginContext) -> *mut c_char {
+    unsafe {
+        let nil = CString::new("").unwrap().into_raw();
 
-    if cmd.is_null() || raw_query.is_null() || raw_author.is_null() {
-        return nil;
-    }
+        let mut command = to_str_or_default((*context).cmd);
+        let query = to_str_or_default((*context).param);
+        let author = to_str_or_default((*context).author);
+        let color = (*context).color;
 
-    let unsafe_cmd = unsafe { CStr::from_ptr(cmd) };
-    let unsafe_query = unsafe { CStr::from_ptr(raw_query) };
-    let unsafe_author = unsafe { CStr::from_ptr(raw_author) };
+        let re = Regex::new(r"^([a-zA-Z]+)(\d+)$").unwrap();
+        let cmd = command.to_string();
+        let re_match = match re.captures(&cmd) {
+            Some(captures) => vec![captures],
+            None => vec![],
+        };
 
-    let mut command = match unsafe_cmd.to_str() {
-        Ok(command) => command,
-        Err(_) => return nil,
-    };
+        let mut rsn_n = "0";
 
-    let query = match unsafe_query.to_str() {
-        Ok(query) => query,
-        Err(_) => return nil,
-    };
-
-    let author = match unsafe_author.to_str() {
-        Ok(author) => author,
-        Err(_) => return nil,
-    };
-
-    let re = Regex::new(r"^([a-zA-Z]+)(\d+)$").unwrap();
-    let re_match = match re.captures(command) {
-        Some(captures) => vec![captures],
-        None => vec![],
-    };
-
-    let mut rsn_n = "0";
-
-    if re_match.len() > 0 {
-        command = re_match[0].get(1).unwrap().as_str();
-        rsn_n = re_match[0].get(2).unwrap().as_str();
-    }
-
-    let source = Source::create(rsn_n, Author::create(author), command, query);
-
-    match match command {
-        "alch" | "alchemy" => alch::lookup(&source),
-        "bolt" | "bolts" => bolts::lookup(&source),
-        "bh" | "bounty" | "bhunter" | "bountyhunter" => bh::lookup(source),
-        "boost" | "boosts" => boost::lookup(&source),
-        "boss" | "bosses" | "kc" => bosses::lookup(source),
-        "clue" | "clues" => clues::lookup(source),
-        "combat" | "cmb" => stats::combat(source),
-        "combatest" | "cmbest" | "cmb-est" | "combat-est" => combat_est::estimate(source),
-        "colo" | "colosseum" => colosseum::lookup(source),
-        "coll" | "collection" | "collectionlog" => collectionlog::lookup(source),
-        "congratulations" | "congratulation" | "congrats" | "congratz" | "grats" | "gratz"
-        | "gz" => grats::get(&source),
-        "experience" | "xperience" | "exp" | "xp" => xp::lookup(&source),
-        "fairy" => fairy::lookup(source),
-        "ge" => ge::lookup(&source),
-        "grid" => gridmaster::lookup(source),
-        "level" | "lvl" => level::lookup(&source),
-        "league" | "leagues" => leagues::lookup(source),
-        "lms" | "lmstanding" | "lmanstanding" | "lastmstanding" | "lastmanstanding" => {
-            lms::lookup(source)
+        if re_match.len() > 0 {
+            command = re_match[0].get(1).unwrap().as_str().to_string();
+            rsn_n = re_match[0].get(2).unwrap().as_str();
         }
-        "mp" | "money" | "moneyprinter" | "profit" | "printer" | "profitprinter" => {
-            money::printer(&source)
-        }
-        "noburn" | "burn" => noburn::noburn(&source),
-        "npc" => npc::lookup(&source),
-        "param" | "params" => params::lookup(&source),
-        "patch" => patch::patch(&source),
-        "players" => players::lookup(&source),
-        "price" => prices::lookup(&source),
-        "overall" | "stats" | "total" | "attack" | "att" | "defence" | "def" | "strength"
-        | "str" | "hitpoints" | "hp" | "ranged" | "range" | "prayer" | "pray" | "magic"
-        | "mage" | "cooking" | "cook" | "woodcutting" | "wc" | "fletching" | "fletch"
-        | "fishing" | "fish" | "firemaking" | "fm" | "crafting" | "craft" | "smithing"
-        | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil" | "thieving"
-        | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft" | "rc" | "hunter"
-        | "hunt" | "construction" | "con" | "sail" | "sailing" => stats::lookup(source),
-        "payment" | "plant" | "plants" => plant::lookup(&source),
-        "pvparena" | "pvp" | "arena" => pvparena::lookup(source),
-        "rift" | "rifts" => rifts::lookup(source),
-        "rsn" => rsn::process(source),
-        "salvage" | "salvages" => salvage::lookup(&source),
-        "sw" | "swar" | "soulw" | "soulwar" | "soulwars" | "zeal" => soulwars::lookup(source),
-        "togw" => tog::world(),
-        "wiki" => wiki::query(&source),
-        "help" => Ok(r"alchemy
+
+        let source = Source::create(
+            rsn_n,
+            Author::create(author, color),
+            &command.to_string(),
+            &query,
+        );
+
+        match match command.as_str() {
+            "alch" | "alchemy" => alch::lookup(&source),
+            "bolt" | "bolts" => bolts::lookup(&source),
+            "bh" | "bounty" | "bhunter" | "bountyhunter" => bh::lookup(source),
+            "boost" | "boosts" => boost::lookup(&source),
+            "boss" | "bosses" | "kc" => bosses::lookup(source),
+            "clue" | "clues" => clues::lookup(source),
+            "combat" | "cmb" => stats::combat(source),
+            "combatest" | "cmbest" | "cmb-est" | "combat-est" => combat_est::estimate(source),
+            "colo" | "colosseum" => colosseum::lookup(source),
+            "coll" | "collection" | "collectionlog" => collectionlog::lookup(source),
+            "congratulations" | "congratulation" | "congrats" | "congratz" | "grats" | "gratz"
+            | "gz" => grats::get(&source),
+            "experience" | "xperience" | "exp" | "xp" => xp::lookup(&source),
+            "fairy" => fairy::lookup(source),
+            "ge" => ge::lookup(&source),
+            "grid" => gridmaster::lookup(source),
+            "level" | "lvl" => level::lookup(&source),
+            "league" | "leagues" => leagues::lookup(source),
+            "lms" | "lmstanding" | "lmanstanding" | "lastmstanding" | "lastmanstanding" => {
+                lms::lookup(source)
+            }
+            "mp" | "money" | "moneyprinter" | "profit" | "printer" | "profitprinter" => {
+                money::printer(&source)
+            }
+            "noburn" | "burn" => noburn::noburn(&source),
+            "npc" => npc::lookup(&source),
+            "param" | "params" => params::lookup(&source),
+            "patch" => patch::patch(&source),
+            "players" => players::lookup(&source),
+            "price" => prices::lookup(&source),
+            "overall" | "stats" | "total" | "attack" | "att" | "defence" | "def" | "strength"
+            | "str" | "hitpoints" | "hp" | "ranged" | "range" | "prayer" | "pray" | "magic"
+            | "mage" | "cooking" | "cook" | "woodcutting" | "wc" | "fletching" | "fletch"
+            | "fishing" | "fish" | "firemaking" | "fm" | "crafting" | "craft" | "smithing"
+            | "smith" | "mining" | "mine" | "herblore" | "herb" | "agility" | "agil"
+            | "thieving" | "thief" | "slayer" | "slay" | "farming" | "farm" | "runecraft"
+            | "rc" | "hunter" | "hunt" | "construction" | "con" | "sail" | "sailing" => {
+                stats::lookup(source)
+            }
+            "payment" | "plant" | "plants" => plant::lookup(&source),
+            "pvparena" | "pvp" | "arena" => pvparena::lookup(source),
+            "rift" | "rifts" => rifts::lookup(source),
+            "rsn" => rsn::process(source),
+            "salvage" | "salvages" => salvage::lookup(&source),
+            "sw" | "swar" | "soulw" | "soulwar" | "soulwars" | "zeal" => soulwars::lookup(source),
+            "togw" => tog::world(),
+            "wiki" => wiki::query(&source),
+            "help" => Ok(r"alchemy
 bolts
 bh[N]
 boost
@@ -167,10 +155,10 @@ sw[N]
 togw
 wiki
 xp"
-        .split("\n")
-        .map(|s| s.to_string())
-        .collect::<Vec<String>>()),
-        "" => Ok(r"alch(emy)?$
+            .split("\n")
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>()),
+            "" => Ok(r"alch(emy)?$
 bolts?
 b(ounty)?h(unter)?\d*
 boost
@@ -233,15 +221,21 @@ con(struction)?\d*$
 sail(ing)?\d*
 togw
 wiki"
-            .split("\n")
-            .map(|s| s.to_string())
-            .collect::<Vec<String>>()),
-        _ => Ok(vec![]),
-    } {
-        Ok(output) => match CString::new(output.join("\n")) {
-            Ok(output) => output.into_raw(),
+                .split("\n")
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>()),
+            _ => Ok(vec![]),
+        } {
+            Ok(output) => match CString::new(output.join("\n")) {
+                Ok(output) => output.into_raw(),
+                Err(_) => nil,
+            },
             Err(_) => nil,
-        },
-        Err(_) => nil,
+        }
     }
+}
+
+fn to_str_or_default(ptr: *const c_char) -> String {
+    let cstr = unsafe { CStr::from_ptr(ptr) };
+    cstr.to_str().unwrap_or_default().to_owned()
 }

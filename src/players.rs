@@ -4,7 +4,6 @@ extern crate select;
 use anyhow::Result;
 use common::commas;
 use common::source::Source;
-use format_num::NumberFormat;
 use regex::Regex;
 use serde::Deserialize;
 use serde::Serialize;
@@ -32,8 +31,6 @@ pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
         Ok(resp) => resp,
         Err(_) => return Err(()),
     };
-
-    let num = NumberFormat::new();
 
     // There are currently 81,203 OSRS players (68.88%) and 36,687 RS3 players (31.12%) online. (Total: 117,890) (Total Registered Accounts: 296,907,582)
     let string = format!(

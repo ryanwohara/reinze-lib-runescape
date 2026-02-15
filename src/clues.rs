@@ -3,7 +3,6 @@ use crate::common::HiscoreName::{
     ClueScrollAll, ClueScrollBeginner, ClueScrollEasy, ClueScrollElite, ClueScrollHard,
     ClueScrollMaster, ClueScrollMedium,
 };
-use common::l;
 use common::source::Source;
 
 pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
