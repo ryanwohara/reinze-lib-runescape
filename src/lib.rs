@@ -36,11 +36,11 @@ mod tog;
 mod wiki;
 mod xp;
 
-use ::common::PluginContext;
 use ::common::author::Author;
 use ::common::source::Source;
+use ::common::{PluginContext, to_str_or_default};
 use regex::Regex;
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 use std::os::raw::c_char;
 
 #[unsafe(no_mangle)]
@@ -233,9 +233,4 @@ wiki"
             Err(_) => nil,
         }
     }
-}
-
-fn to_str_or_default(ptr: *const c_char) -> String {
-    let cstr = unsafe { CStr::from_ptr(ptr) };
-    cstr.to_str().unwrap_or_default().to_owned()
 }
