@@ -11,23 +11,24 @@ pub fn get(s: &Source) -> Result<Vec<String>, ()> {
     let second_token = split.next().unwrap_or_default();
     let third_token = split.next().unwrap_or_default();
 
-    let nick = &s.author.nick;
-    let mut milestone = first_token;
-    let mut skill_token = second_token;
+    let mut nick = s.author.nick.to_string();
+    let mut milestone = first_token.to_string();
+    let mut skill_token = second_token.to_string();
 
     let err = Ok(vec!["Syntax: +congrats [nick] (level) (skill)".to_string()]);
 
-    if third_token.len() > 0 {
-        milestone = second_token;
-        skill_token = third_token;
+    if !third_token.is_empty() {
+        nick = first_token.to_string();
+        milestone = second_token.to_string();
+        skill_token = third_token.to_string();
     } else if second_token.is_empty() {
         return err;
     }
 
-    let mut skill_name = get_skill(skill_token);
+    let mut skill_name = get_skill(&skill_token);
 
     if skill_name.clone().is_empty() {
-        skill_name = rs3_skill(skill_token);
+        skill_name = rs3_skill(&skill_token);
         if skill_name.clone().is_empty() {
             return err;
         }
@@ -36,12 +37,12 @@ pub fn get(s: &Source) -> Result<Vec<String>, ()> {
     let skill = &skill_name;
 
     let re = Regex::new(r"^([\d.]+)[kmb]?$").unwrap();
-    _ = match re.captures(milestone) {
+    _ = match re.captures(&milestone) {
         Some(captures) => vec![captures],
         None => return err,
     };
 
-    let processed_milestone = eval_query(milestone.replace(",", ""))? as u32;
+    let processed_milestone = eval_query(&milestone.replace(",", ""))? as u32;
     let comma_milestone = common::commas(processed_milestone as f64, "d");
 
     let output = if skill == "Overall" {
