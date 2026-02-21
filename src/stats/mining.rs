@@ -1,6 +1,5 @@
 use crate::stats::mining::MiningMultipliers::ProspectorsKit;
 use crate::stats::skill::{Detail, Details, IntoString, Multipliers, Skill};
-use common::{c1, c2, p};
 use regex::Regex;
 use std::ops::Add;
 
@@ -239,11 +238,11 @@ pub struct MiningDetails {
 }
 
 impl IntoString for MiningDetails {
-    fn to_string(&self, xp_difference: f64) -> String {
+    fn to_string(&self, s: &crate::stats::skill::Source, xp_difference: f64) -> String {
         let mut vec = vec![format!(
             "{}: {}",
-            c1(self.name.as_str()),
-            c2(common::commas_from_string(
+            s.c1(self.name.as_str()),
+            s.c2(common::commas_from_string(
                 format!("{}", (xp_difference / self.xp).ceil()).as_str(),
                 "d"
             )
@@ -252,10 +251,10 @@ impl IntoString for MiningDetails {
 
         let details = ProspectorsKit.details();
 
-        vec.push(p(format!(
+        vec.push(s.p(format!(
             "{} {}",
-            c1(format!("{}:", details.name.as_str()).as_str()),
-            c2(common::commas_from_string(
+            s.c1(format!("{}:", details.name.as_str()).as_str()),
+            s.c2(common::commas_from_string(
                 format!("{}", (xp_difference / (self.xp * details.value)).ceil()).as_str(),
                 "d"
             )

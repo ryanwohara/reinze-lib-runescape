@@ -1,5 +1,4 @@
 use crate::stats::skill::{Detail, Details, IntoString, Multipliers, Skill};
-use common::{c1, c2, p};
 use regex::Regex;
 use std::ops::Add;
 
@@ -205,11 +204,11 @@ pub struct FiremakingDetails {
 }
 
 impl IntoString for FiremakingDetails {
-    fn to_string(&self, xp_difference: f64) -> String {
+    fn to_string(&self, s: &crate::stats::skill::Source, xp_difference: f64) -> String {
         let mut vec = vec![format!(
             "{}: {}",
-            c1(self.name.as_str()),
-            c2(common::commas_from_string(
+            s.c1(self.name.as_str()),
+            s.c2(common::commas_from_string(
                 format!("{}", (xp_difference / self.xp as f64).ceil()).as_str(),
                 "d"
             )
@@ -222,10 +221,10 @@ impl IntoString for FiremakingDetails {
                 _ => return,
             };
             let d = a.details();
-            vec.push(p(format!(
+            vec.push(s.p(format!(
                 "{} {}",
-                c1(format!("{}:", d.name.as_str()).as_str()),
-                c2(common::commas_from_string(
+                s.c1(format!("{}:", d.name.as_str()).as_str()),
+                s.c2(common::commas_from_string(
                     format!("{}", (xp_difference / (self.xp as f64 * d.value)).ceil()).as_str(),
                     "d"
                 )

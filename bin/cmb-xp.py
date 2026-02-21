@@ -457,11 +457,11 @@ impl fmt::Display for NpcMetadata {
 }
 
 impl IntoString for NpcMetadata {
-    fn to_string(&self, xp_difference: f64) -> String {
+    fn to_string(&self, s: &crate::stats::skill::Source, xp_difference: f64) -> String {
         format!(
             "{}: {}",
-            c1(self.name.as_str()),
-            c2(common::commas_from_string(
+            s.c1(self.name.as_str()),
+            s.c2(common::commas_from_string(
                 format!("{}", (xp_difference / self.combat_xp).ceil()).as_str(),
                 "d"
             )

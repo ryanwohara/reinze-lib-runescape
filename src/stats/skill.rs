@@ -18,6 +18,7 @@ use crate::stats::sailing::{Sailing, SailingDetails};
 use crate::stats::smithing::{Smithing, SmithingDetails, SmithingMultipliers};
 use crate::stats::thieving::{Thieving, ThievingDetails};
 use crate::stats::woodcutting::{Woodcutting, WoodcuttingDetails, WoodcuttingMultipliers};
+pub use common::source::Source;
 
 pub trait Skill {
     fn all() -> Vec<Self>
@@ -58,33 +59,33 @@ pub enum Details {
 }
 
 pub trait IntoString {
-    fn to_string(&self, xp_difference: f64) -> String;
+    fn to_string(&self, s: &crate::stats::skill::Source, xp_difference: f64) -> String;
 }
 
 impl Details {
-    pub fn to_string(&self, xp_difference: f64) -> String {
+    pub fn to_string(&self, s: &Source, xp_difference: f64) -> String {
         match self {
-            Details::Agility(agility) => agility.to_string(xp_difference),
-            Details::Construction(construction) => construction.to_string(xp_difference),
-            Details::Cooking(cooking) => cooking.to_string(xp_difference),
-            Details::Crafting(crafting) => crafting.to_string(xp_difference),
-            Details::Farming(farming) => farming.to_string(xp_difference),
-            Details::Firemaking(firemaking) => firemaking.to_string(xp_difference),
-            Details::Fishing(fishing) => fishing.to_string(xp_difference),
-            Details::Fletching(fletching) => fletching.to_string(xp_difference),
-            Details::Herblore(herblore) => herblore.to_string(xp_difference),
-            Details::Hunter(hunter) => hunter.to_string(xp_difference),
-            Details::Magic(magic) => magic.to_string(xp_difference),
-            Details::Mining(mining) => mining.to_string(xp_difference),
-            Details::Prayer(prayer) => prayer.to_string(xp_difference),
-            Details::Runecraft(runecraft) => runecraft.to_string(xp_difference),
-            Details::Sailing(sailing) => sailing.to_string(xp_difference),
-            Details::Smithing(smithing) => smithing.to_string(xp_difference),
-            Details::Thieving(thieving) => thieving.to_string(xp_difference),
-            Details::Woodcutting(woodcutting) => woodcutting.to_string(xp_difference),
-            Details::Npc(npc) => IntoString::to_string(npc, xp_difference),
-            Details::Hitpoints(npc) => npc.hp(xp_difference),
-            Details::Slayer(npc) => npc.slay(xp_difference),
+            Details::Agility(agility) => agility.to_string(s, xp_difference),
+            Details::Construction(construction) => construction.to_string(s, xp_difference),
+            Details::Cooking(cooking) => cooking.to_string(s, xp_difference),
+            Details::Crafting(crafting) => crafting.to_string(s, xp_difference),
+            Details::Farming(farming) => farming.to_string(s, xp_difference),
+            Details::Firemaking(firemaking) => firemaking.to_string(s, xp_difference),
+            Details::Fishing(fishing) => fishing.to_string(s, xp_difference),
+            Details::Fletching(fletching) => fletching.to_string(s, xp_difference),
+            Details::Herblore(herblore) => herblore.to_string(s, xp_difference),
+            Details::Hunter(hunter) => hunter.to_string(s, xp_difference),
+            Details::Magic(magic) => magic.to_string(s, xp_difference),
+            Details::Mining(mining) => mining.to_string(s, xp_difference),
+            Details::Prayer(prayer) => prayer.to_string(s, xp_difference),
+            Details::Runecraft(runecraft) => runecraft.to_string(s, xp_difference),
+            Details::Sailing(sailing) => sailing.to_string(s, xp_difference),
+            Details::Smithing(smithing) => smithing.to_string(s, xp_difference),
+            Details::Thieving(thieving) => thieving.to_string(s, xp_difference),
+            Details::Woodcutting(woodcutting) => woodcutting.to_string(s, xp_difference),
+            Details::Npc(npc) => IntoString::to_string(npc, s, xp_difference),
+            Details::Hitpoints(npc) => npc.hp(s, xp_difference),
+            Details::Slayer(npc) => npc.slay(s, xp_difference),
         }
     }
 

@@ -380,7 +380,7 @@ pub fn lookup(s: Source) -> Result<Vec<String>, ()> {
 
         let calc = details
             .iter()
-            .map(|detail| detail.to_string(xp_difference as f64))
+            .map(|detail| detail.to_string(s, xp_difference as f64))
             .collect::<Vec<String>>()
             .join(&s.c1(" | "));
 
