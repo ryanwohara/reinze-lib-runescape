@@ -1124,7 +1124,7 @@ where
 {
     let mut found_items: Vec<Mapping> = vec![];
 
-    let item_db = match get_item_db() {
+    let mut item_db = match get_item_db() {
         Ok(item_db) => item_db,
         Err(_) => return Err(()),
     };
@@ -1203,7 +1203,7 @@ pub fn replace_all(caps: &regex::Captures) -> String {
 pub fn parse_query(query: &str) -> (String, u64) {
     let err = (query.to_string(), 0);
 
-    let re = match Regex::new(r"^(\d+[kmb]?)\s+(.+)$") {
+    let re = match Regex::new(r"^([\d.]+[kmb]?)\s+(.+)$") {
         Ok(x) => x,
         Err(_) => return err,
     };

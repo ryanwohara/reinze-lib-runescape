@@ -37,7 +37,7 @@ pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
 
     // There are currently 81,203 OSRS players (68.88%) and 36,687 RS3 players (31.12%) online. (Total: 117,890) (Total Registered Accounts: 296,907,582)
     let string = format!(
-        "There are currently {}\x03 OSRS players ({}\x03%) and {}\x03 RS3 players ({}\x03%) online. (Total: {}\x03) (Total Registered Accounts: {}\x03)",
+        "There are currently {}\x03 OSRS players A({}\x03%) and {}\x03 RS3 players ({}\x03%) online. (Total: {}\x03) (Total Registered Accounts: {}\x03)",
         s.c2(commas(osrs_players, "d")),
         s.c2(commas(osrs_players / total_players * 100.0, ".2f")),
         s.c2(commas(rs3_players, "d")),
