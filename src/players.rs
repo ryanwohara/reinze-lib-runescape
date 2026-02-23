@@ -35,26 +35,6 @@ pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
         Err(_) => return Err(()),
     };
 
-    println!("total players: {}", total_players);
-    println!("total registered: {}", total_registered);
-    println!("rs3 players: {}", rs3_players);
-    println!("rs3 %: {}", rs3_players / total_players * 100.0);
-    println!("osrs players: {}", osrs_players);
-    println!("osrs %: {}", osrs_players / total_players * 100.0);
-
-    println!("total players: {}", commas(total_players, "d"));
-    println!("total registered: {}", commas(total_registered, "d"));
-    println!("rs3 players: {}", commas(rs3_players, "d"));
-    println!(
-        "rs3 %: {}",
-        commas(rs3_players / total_players * 100.0, ".2f")
-    );
-    println!("osrs players: {}", commas(osrs_players, "d"));
-    println!(
-        "osrs %: {}",
-        commas(osrs_players / total_players * 100.0, ".2f")
-    );
-
     // There are currently 81,203 OSRS players (68.88%) and 36,687 RS3 players (31.12%) online. (Total: 117,890) (Total Registered Accounts: 296,907,582)
     let string = format!(
         "There are currently {}\x03 OSRS players ({}\x03%) and {}\x03 RS3 players ({}\x03%) online. (Total: {}\x03) (Total Registered Accounts: {}\x03)",
