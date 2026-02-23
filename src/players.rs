@@ -7,6 +7,7 @@ use common::source::Source;
 use regex::Regex;
 use serde::Deserialize;
 use serde::Serialize;
+use tokio::runtime::Runtime;
 
 #[derive(Deserialize, Serialize, Debug)]
 struct TotalRsPlayers {
@@ -14,11 +15,13 @@ struct TotalRsPlayers {
 }
 
 pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
-    let total_players = match get_rs3_players() {
+    let rt = Runtime::new().unwrap();
+
+    let total_players = match get_rs3_players(&rt) {
         Ok(resp) => resp,
         Err(_) => return Err(()),
     };
-    let osrs_players = match get_osrs_players() {
+    let osrs_players = match get_osrs_players(&rt) {
         Ok(resp) => resp,
         Err(_) => return Err(()),
     };
@@ -27,20 +30,40 @@ pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
     // so we have to subtract the OSRS player count from the total to get the RS3 player count.
     let rs3_players = total_players - osrs_players;
 
-    let total_registered = match get_total_players() {
+    let total_registered = match get_total_players(&rt) {
         Ok(resp) => resp,
         Err(_) => return Err(()),
     };
 
+    println!("total players: {}", total_players);
+    println!("total registered: {}", total_registered);
+    println!("rs3 players: {}", rs3_players);
+    println!("rs3 %: {}", rs3_players / total_players * 100.0);
+    println!("osrs players: {}", osrs_players);
+    println!("osrs %: {}", osrs_players / total_players * 100.0);
+
+    println!("total players: {}", commas(total_players, "d"));
+    println!("total registered: {}", commas(total_registered, "d"));
+    println!("rs3 players: {}", commas(rs3_players, "d"));
+    println!(
+        "rs3 %: {}",
+        commas(rs3_players / total_players * 100.0, ".2f")
+    );
+    println!("osrs players: {}", commas(osrs_players, "d"));
+    println!(
+        "osrs %: {}",
+        commas(osrs_players / total_players * 100.0, ".2f")
+    );
+
     // There are currently 81,203 OSRS players (68.88%) and 36,687 RS3 players (31.12%) online. (Total: 117,890) (Total Registered Accounts: 296,907,582)
     let string = format!(
-        "There are currently {} OSRS players ({}%) and {} RS3 players ({}%) online. (Total: {}) (Total Registered Accounts: {})",
+        "There are currently {}\x03 OSRS players ({}\x03%) and {}\x03 RS3 players ({}\x03%) online. (Total: {}\x03) (Total Registered Accounts: {}\x03)",
         s.c2(commas(osrs_players, "d")),
         s.c2(commas(osrs_players / total_players * 100.0, ".2f")),
-        s.c2(commas(rs3_players, ",d")),
+        s.c2(commas(rs3_players, "d")),
         s.c2(commas(rs3_players / total_players * 100.0, ".2f")),
-        s.c2(commas(total_players, ",d")),
-        s.c2(commas(total_registered, ",d"))
+        s.c2(commas(total_players, "d")),
+        s.c2(commas(total_registered, "d"))
     );
 
     let output: Vec<String> = vec![string];
@@ -48,9 +71,7 @@ pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
     Ok(output)
 }
 
-fn get_rs3_players() -> Result<f64, ()> {
-    let rt = tokio::runtime::Runtime::new().unwrap();
-
+fn get_rs3_players(rt: &Runtime) -> Result<f64, ()> {
     // Fetch this weird jQuery callback thing. Looks like this:
     // jQuery36006339226594951519_1645569829067(127551);
     let resp = match rt.block_on(reqwest::get("https://www.runescape.com/player_count.js?varname=iPlayerCount&callback=jQuery36006339226594951519_1645569829067&_=1645569829068")) {
@@ -86,9 +107,7 @@ fn get_rs3_players() -> Result<f64, ()> {
     Ok(get_int(string))
 }
 
-fn get_osrs_players() -> Result<f64, ()> {
-    let rt = tokio::runtime::Runtime::new().unwrap();
-
+fn get_osrs_players(rt: &Runtime) -> Result<f64, ()> {
     // Fetch the entire OSRS website to parse out the player count
     let resp = match rt.block_on(reqwest::get("https://oldschool.runescape.com")) {
         Ok(resp) => resp,
@@ -116,15 +135,16 @@ fn get_osrs_players() -> Result<f64, ()> {
         }
     };
     let matched = re.captures(&string);
+    if matched.is_none() {
+        return Err(());
+    }
     let string = matched.unwrap().get(1).unwrap().as_str();
 
     // Strip commas and convert to a float
     Ok(get_int(string))
 }
 
-fn get_total_players() -> Result<f64, ()> {
-    let rt = tokio::runtime::Runtime::new().unwrap();
-
+fn get_total_players(rt: &Runtime) -> Result<f64, ()> {
     // Fetch some JSON from the Runescape website
     let resp = match rt.block_on(reqwest::get(
         "https://secure.runescape.com/m=account-creation-reports/rsusertotal.ws",
