@@ -10,6 +10,7 @@ pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
         Araxxor,
         Artio,
         BarrowsChests,
+        Brutus,
         Bryophyta,
         Callisto,
         Calvarion,
