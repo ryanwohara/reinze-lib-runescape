@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use super::items::{Ge, GeItemPrice};
 use crate::common::{eval_query, parse_item_db};
 use common::source::Source;
@@ -6,11 +7,8 @@ use serde_json;
 
 // Scan lib/item_db.json for up to 10 items that match the query
 // and hit the OSRS Grand Exchange API to get the price of each item
-pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
-    let item_db = match parse_item_db(&s.query) {
-        Ok(item_db) => item_db,
-        Err(_) => return Err(()),
-    };
+pub fn lookup(s: &Source) -> Result<Vec<String>> {
+    let item_db = parse_item_db(&s.query).map_err(|_| anyhow::anyhow!("failed to parse item database"))?;
 
     let mut output = s.l("Grand Exchange");
     let mut found_items: Vec<String> = vec![];
@@ -23,31 +21,16 @@ pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
             item.id
         );
 
-        let rt = tokio::runtime::Runtime::new().unwrap();
+        let rt = tokio::runtime::Runtime::new().expect("failed to create tokio runtime");
 
-        let response = match rt.block_on(reqwest::get(&url)) {
-            Ok(response) => response,
-            Err(e) => {
-                println!("Error getting response from OSRS API: {}", e);
-                return Err(());
-            }
-        };
+        let response = rt.block_on(reqwest::get(&url))
+            .context("failed to get response from OSRS API")?;
 
-        let j: String = match rt.block_on(response.text()) {
-            Ok(j) => j,
-            Err(e) => {
-                println!("Error parsing response from OSRS API into JSON: {}", e);
-                return Err(());
-            }
-        };
+        let j: String = rt.block_on(response.text())
+            .context("failed to parse response from OSRS API into text")?;
 
-        let json: Ge = match serde_json::from_str(&j) {
-            Ok(json) => json,
-            Err(e) => {
-                println!("Error parsing response from OSRS API into JSON: {}", e);
-                return Err(());
-            }
-        };
+        let json: Ge = serde_json::from_str(&j)
+            .context("failed to parse response from OSRS API into JSON")?;
 
         let ge_json = &json.item;
 

@@ -1,13 +1,15 @@
 use crate::common::{eval_query, parse_item_db};
 use crate::items::{Data, Mapping};
+use anyhow::{bail, Context, Result};
 use common::source::Source;
 use common::{commas, not_found};
+use log::error;
 use regex::Regex;
 use std::fs::read_to_string;
 
 const NATURE_RUNE_ID: u32 = 561;
 
-pub fn printer(s: &Source) -> Result<Vec<String>, ()> {
+pub fn printer(s: &Source) -> Result<Vec<String>> {
     let query = s.query.as_str();
 
     let limit_flag_re = Regex::new(r"-l ?(\d+[kmb])").unwrap();
@@ -30,10 +32,7 @@ pub fn printer(s: &Source) -> Result<Vec<String>, ()> {
         query
     };
 
-    let item_db = match parse_item_db(input) {
-        Ok(item_db) => item_db,
-        Err(_) => return Err(()),
-    };
+    let item_db = parse_item_db(input).context("failed to parse item db")?;
 
     let ge_filename = "lib/ge.json";
     let mut output = s.l("$ Alch Profit $");
@@ -42,16 +41,16 @@ pub fn printer(s: &Source) -> Result<Vec<String>, ()> {
     let ge_file_contents = match read_to_string(ge_filename) {
         Ok(file) => file,
         Err(e) => {
-            println!("Error opening ge.json: {}", e);
-            return Err(());
+            error!("Error opening ge.json: {}", e);
+            bail!("Error opening ge.json: {}", e);
         }
     };
 
     let ge_json = match serde_json::from_str::<Data>(&ge_file_contents) {
         Ok(json) => json,
         Err(e) => {
-            println!("Error parsing ge.json into JSON: {}", e);
-            return Err(());
+            error!("Error parsing ge.json into JSON: {}", e);
+            bail!("Error parsing ge.json into JSON: {}", e);
         }
     };
 
@@ -60,8 +59,8 @@ pub fn printer(s: &Source) -> Result<Vec<String>, ()> {
     let nature_rune = match ge_data.get(&NATURE_RUNE_ID) {
         Some(item) => item.high.unwrap_or(0) as i64,
         None => {
-            println!("Error getting item: {} (nature rune)", NATURE_RUNE_ID);
-            return Err(());
+            error!("Error getting item: {} (nature rune)", NATURE_RUNE_ID);
+            bail!("Error getting item: {} (nature rune)", NATURE_RUNE_ID);
         }
     };
 
@@ -69,7 +68,7 @@ pub fn printer(s: &Source) -> Result<Vec<String>, ()> {
         let item_metadata = match ge_data.get(&item.id) {
             Some(item) => item,
             None => {
-                println!("Error getting item: {}", item.id);
+                error!("Error getting item: {}", item.id);
                 continue;
             }
         };

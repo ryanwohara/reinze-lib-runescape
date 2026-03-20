@@ -1,8 +1,9 @@
+use anyhow::{Result, bail};
 use crate::common::level_to_xp;
 use common::commas;
 use common::source::Source;
 
-pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
+pub fn lookup(s: &Source) -> Result<Vec<String>> {
     let query = &s.query;
 
     let split: Vec<&str> = query.split("-").collect();
@@ -45,5 +46,5 @@ pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
         return Ok(output);
     }
 
-    Err(())
+    bail!("Unreachable: xp lookup logic exhausted without returning")
 }

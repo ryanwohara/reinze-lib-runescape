@@ -1,14 +1,15 @@
+use anyhow::{Result, bail};
 use crate::common::parse_item_db;
 use common::source::Source;
 use common::{commas, not_found};
 
-pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
+pub fn lookup(s: &Source) -> Result<Vec<String>> {
     let query = &s.query;
 
     // Scan lib/item_db.json for up to 10 items that match the query
     let item_db = match parse_item_db(query) {
         Ok(item_db) => item_db,
-        Err(_) => return Err(()),
+        Err(_) => bail!("Failed to parse item database for query: {}", query),
     };
 
     let mut output = s.l("Alch");

@@ -1,8 +1,9 @@
+use anyhow::Result;
 use common::source::Source;
 use common::{commas, remove_trailing_zeroes};
 use serde::{Deserialize, Serialize};
 
-pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
+pub fn lookup(s: &Source) -> Result<Vec<String>> {
     let prefix = s.l("Plant");
 
     if s.query.len() == 0 {

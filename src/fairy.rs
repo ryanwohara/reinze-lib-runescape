@@ -1,6 +1,7 @@
+use anyhow::Result;
 use common::source::Source;
 
-pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
+pub fn lookup(source: Source) -> Result<Vec<String>> {
     let prefix = source.l("Fairy Ring");
     let query = &source.query;
 

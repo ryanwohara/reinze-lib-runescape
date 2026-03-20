@@ -1,7 +1,9 @@
 use crate::items::Mapping;
 use crate::stats::{StatsFlags, stats_parameters, strip_stats_parameters};
+use anyhow::{bail, Context, Result};
 use common::{database, source::Source, *};
 use itertools::Itertools;
+use log::error;
 use meval::eval_str;
 use mysql::{prelude::*, *};
 use regex::Regex;
@@ -727,7 +729,7 @@ pub fn process_stats_subsection(
     s: Source,
     cmd_prefix: &str,
     mut categories: Vec<HiscoreName>,
-) -> Result<Vec<String>, ()> {
+) -> anyhow::Result<Vec<String>> {
     let prefix = s.l(cmd_prefix);
 
     let not_found = vec![vec![prefix.to_string(), s.c1("Stats not found")].join(" ")];
@@ -778,7 +780,7 @@ pub fn process_stats_subsection(
     Ok(vec![output])
 }
 
-pub fn collect_hiscores(input: &str, source: &Source, flags: &StatsFlags) -> Result<Listings, ()> {
+pub fn collect_hiscores(input: &str, source: &Source, flags: &StatsFlags) -> Result<Listings> {
     let nick = source.author.nick.to_string();
 
     let rsn = if input.is_empty() {
@@ -796,7 +798,7 @@ pub fn collect_hiscores(input: &str, source: &Source, flags: &StatsFlags) -> Res
     let client = reqwest::blocking::Client::builder()
         .connect_timeout(Duration::new(5, 0))
         .build()
-        .unwrap();
+        .context("failed to build HTTP client")?;
 
     let hiscores_str = match client
         .get(&vec![flags.account_type.link(), rsn].join(""))
@@ -811,18 +813,18 @@ pub fn collect_hiscores(input: &str, source: &Source, flags: &StatsFlags) -> Res
                     if *status == 200 {
                         string
                     } else {
-                        return Err(());
+                        bail!("hiscores returned status {}", status);
                     }
                 }
                 Err(e) => {
-                    println!("Error getting text: {}", e);
-                    return Err(());
+                    error!("{}", e);
+                    bail!("failed to get hiscores response text");
                 }
             }
         }
         Err(e) => {
-            println!("Error making HTTP request: {}", e);
-            return Err(());
+            error!("{}", e);
+            bail!("failed to make hiscores HTTP request");
         }
     };
 
@@ -1080,7 +1082,7 @@ pub fn get_rsn(source: &Source) -> core::result::Result<Vec<Row>, Error> {
     let mut conn = match database::connect() {
         Ok(conn) => conn,
         Err(e) => {
-            println!("Error connecting to database: {}", e);
+            error!("{}", e);
             return Err(e);
         }
     };
@@ -1095,42 +1097,29 @@ pub fn get_rsn(source: &Source) -> core::result::Result<Vec<Row>, Error> {
         Ok(Some(rsn)) => Ok(vec![rsn]),
         Ok(None) => Ok(vec![]),
         Err(e) => {
-            println!("Error getting rsn: {}", e);
+            error!("{}", e);
             Err(e)
         }
     }
 }
 
-pub fn get_item_db() -> Result<Vec<Mapping>, ()> {
+pub fn get_item_db() -> Result<Vec<Mapping>> {
     let mapping_filename = "lib/item_db.json";
 
-    let mapping_file_contents = match read_to_string(mapping_filename) {
-        Ok(file) => file,
-        Err(e) => {
-            println!("Error opening item_db.json: {}", e);
-            return Err(());
-        }
-    };
+    let mapping_file_contents = read_to_string(mapping_filename)
+        .context("failed to open item_db.json")?;
 
-    match serde_json::from_str::<Vec<Mapping>>(&mapping_file_contents) {
-        Ok(json) => Ok(json),
-        Err(e) => {
-            println!("Error parsing item_db.json into JSON: {}", e);
-            Err(())
-        }
-    }
+    serde_json::from_str::<Vec<Mapping>>(&mapping_file_contents)
+        .context("failed to parse item_db.json into JSON")
 }
 
-pub fn parse_item_db<T>(overall_query: T) -> Result<Vec<Mapping>, ()>
+pub fn parse_item_db<T>(overall_query: T) -> Result<Vec<Mapping>>
 where
     T: ToString,
 {
     let mut found_items: Vec<Mapping> = vec![];
 
-    let mut item_db = match get_item_db() {
-        Ok(item_db) => item_db,
-        Err(_) => return Err(()),
-    };
+    let item_db = get_item_db()?;
 
     for query in overall_query
         .to_string()
@@ -1144,13 +1133,8 @@ where
 
         let (query, count) = parse_query(query);
         let regex_string = format!(r"(?i){}", replace_item_abbreviations(&query));
-        let re = match Regex::new(&regex_string) {
-            Ok(re) => re,
-            Err(e) => {
-                println!("Error creating regex: {}", e);
-                return Err(());
-            }
-        };
+        let re = Regex::new(&regex_string)
+            .context("failed to create item search regex")?;
 
         for item in item_db.iter() {
             let matched = re.captures(&item.name);
@@ -1170,7 +1154,7 @@ where
         .collect())
 }
 
-pub fn eval_query<T>(q: T) -> std::result::Result<f64, ()>
+pub fn eval_query<T>(q: T) -> Result<f64>
 where
     T: ToString,
 {
@@ -1180,8 +1164,8 @@ where
     let processed = re_kmb.replace_all(&query, replace_all).to_string();
 
     eval_str(&processed).map_err(|e| {
-        println!("Error: {}", e);
-        ()
+        error!("{}", e);
+        anyhow::anyhow!("{}", e)
     })
 }
 

@@ -1,10 +1,11 @@
 extern crate common;
 
+use anyhow::Result;
 use crate::common::{eval_query, skill as get_skill};
 use common::source::Source;
 use regex::Regex;
 
-pub fn get(s: &Source) -> Result<Vec<String>, ()> {
+pub fn get(s: &Source) -> Result<Vec<String>> {
     let mut split = s.query.split_whitespace();
 
     let first_token = split.next().unwrap_or_default();
@@ -27,9 +28,9 @@ pub fn get(s: &Source) -> Result<Vec<String>, ()> {
 
     let mut skill_name = get_skill(&skill_token);
 
-    if skill_name.clone().is_empty() {
+    if skill_name.is_empty() {
         skill_name = rs3_skill(&skill_token);
-        if skill_name.clone().is_empty() {
+        if skill_name.is_empty() {
             return err;
         }
     }
@@ -42,7 +43,7 @@ pub fn get(s: &Source) -> Result<Vec<String>, ()> {
         None => return err,
     };
 
-    let processed_milestone = eval_query(&milestone.replace(",", ""))? as u32;
+    let processed_milestone = eval_query(&milestone.replace(",", "")).map_err(|e| anyhow::anyhow!("Failed to evaluate milestone: {}", e))? as u32;
     let comma_milestone = common::commas(processed_milestone as f64, "d");
 
     let output = if skill == "Overall" {

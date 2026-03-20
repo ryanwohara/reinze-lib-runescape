@@ -1,11 +1,12 @@
 use super::common::process_stats_subsection;
+use anyhow::Result;
 use crate::common::HiscoreName::{
     ClueScrollAll, ClueScrollBeginner, ClueScrollEasy, ClueScrollElite, ClueScrollHard,
     ClueScrollMaster, ClueScrollMedium,
 };
 use common::source::Source;
 
-pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
+pub fn lookup(source: Source) -> Result<Vec<String>> {
     let categories = vec![
         ClueScrollAll,
         ClueScrollBeginner,

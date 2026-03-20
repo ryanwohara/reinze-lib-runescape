@@ -1,8 +1,9 @@
+use anyhow::Result;
 use crate::common::{eval_query, xp_to_level};
 use common::commas;
 use common::source::Source;
 
-pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
+pub fn lookup(s: &Source) -> Result<Vec<String>> {
     let err = vec![
         vec![
             s.l("XP->Level"),

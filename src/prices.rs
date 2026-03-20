@@ -1,16 +1,15 @@
 use crate::common::parse_item_db;
 use crate::items::Data;
+use anyhow::{Context, Result, bail};
 use common::source::Source;
 use common::{commas, not_found};
+use log::error;
 use serde_json;
 use std::fs::read_to_string;
 
 // Scan lib/item_db.json for up to 10 items that match the query
-pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
-    let item_db = match parse_item_db(&s.query) {
-        Ok(item_db) => item_db,
-        Err(_) => return Err(()),
-    };
+pub fn lookup(s: &Source) -> Result<Vec<String>> {
+    let item_db = parse_item_db(&s.query).context("failed to parse item db")?;
 
     let ge_filename = "lib/ge.json";
     let mut output = s.l("Price");
@@ -20,16 +19,16 @@ pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
     let ge_file_contents = match read_to_string(ge_filename) {
         Ok(file) => file,
         Err(e) => {
-            println!("Error opening ge.json: {}", e);
-            return Err(());
+            error!("Error opening ge.json: {}", e);
+            bail!("Error opening ge.json: {}", e);
         }
     };
 
     let ge_json = match serde_json::from_str::<Data>(&ge_file_contents) {
         Ok(json) => json,
         Err(e) => {
-            println!("Error parsing ge.json into JSON: {}", e);
-            return Err(());
+            error!("Error parsing ge.json into JSON: {}", e);
+            bail!("Error parsing ge.json into JSON: {}", e);
         }
     };
 
@@ -39,7 +38,7 @@ pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
         let item_values = match ge_data.get(&item.id) {
             Some(item) => item,
             None => {
-                println!("Error getting item: {}", item.id);
+                error!("Error getting item: {}", item.id);
                 continue;
             }
         };

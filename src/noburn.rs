@@ -1,6 +1,7 @@
+use anyhow::Result;
 use common::source::Source;
 
-pub fn noburn(s: &Source) -> Result<Vec<String>, ()> {
+pub fn noburn(s: &Source) -> Result<Vec<String>> {
     let query = &s.query;
 
     let fish: Vec<Fish> = vec![

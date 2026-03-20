@@ -1,9 +1,10 @@
+use anyhow::Result;
 use common::not_found;
 use common::source::Source;
 use std::fmt;
 use std::str::FromStr;
 
-pub fn patch(s: &Source) -> Result<Vec<String>, ()> {
+pub fn patch(s: &Source) -> Result<Vec<String>> {
     let prefix = s.l("Patch");
     let patch: Patch = s.query.parse().unwrap_or(Patch::None);
 

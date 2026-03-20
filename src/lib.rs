@@ -39,6 +39,7 @@ mod xp;
 use ::common::author::Author;
 use ::common::source::Source;
 use ::common::{PluginContext, to_str_or_default};
+use log::error;
 use regex::Regex;
 use std::ffi::CString;
 use std::os::raw::c_char;
@@ -47,6 +48,10 @@ use std::os::raw::c_char;
 pub extern "C" fn exported(context: *const PluginContext) -> *mut c_char {
     unsafe {
         let nil = CString::new("").unwrap().into_raw();
+
+        if context.is_null() {
+            return nil;
+        }
 
         let mut command = to_str_or_default((*context).cmd);
         let query = to_str_or_default((*context).param);
@@ -230,7 +235,10 @@ wiki"
                 Ok(output) => output.into_raw(),
                 Err(_) => nil,
             },
-            Err(_) => nil,
+            Err(e) => {
+                error!("Command '{}' failed: {:?}", command, e);
+                nil
+            }
         }
     }
 }

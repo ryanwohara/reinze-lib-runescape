@@ -18,6 +18,7 @@ mod smithing;
 mod thieving;
 mod woodcutting;
 
+use anyhow::Result;
 use super::common::{
     Entry, HiscoreName, Listing, Listings, Stats, collect_hiscores, eval_query, level_to_xp, skill,
     skills, xp_to_level,
@@ -270,7 +271,7 @@ fn prefix(skill_name: &str, flags: &StatsFlags, s: &Source) -> String {
     .replace("  ", " ")
 }
 
-pub fn lookup(s: Source) -> Result<Vec<String>, ()> {
+pub fn lookup(s: Source) -> Result<Vec<String>> {
     let (skill_id, skill_name) = prepare(&s.command);
 
     let flags = stats_parameters(&s.query);
@@ -463,7 +464,7 @@ fn tier(points: u32) -> String {
     .to_string()
 }
 
-pub fn combat(s: Source) -> Result<Vec<String>, ()> {
+pub fn combat(s: Source) -> Result<Vec<String>> {
     let prefix = s.l("Combat");
 
     let not_found: Vec<String> =

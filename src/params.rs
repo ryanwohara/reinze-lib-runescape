@@ -1,11 +1,13 @@
 extern crate ini;
 
 use crate::common::skill as common_skill;
+use anyhow::Result;
 use common::source::Source;
 use common::{c1, c2, capitalize, l, not_found};
 use ini::Ini;
+use log::error;
 
-pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
+pub fn lookup(s: &Source) -> Result<Vec<String>> {
     let prefix = l("Params").to_string();
 
     let (skill, param) = match s.query.split_once(" ") {
@@ -26,8 +28,8 @@ pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
     }
 
     let database = Ini::load_from_file("lib/Database.ini").map_err(|e| {
-        println!("Error loading Database.ini: {}", e);
-        ()
+        error!("Error loading Database.ini: {}", e);
+        anyhow::anyhow!("Error loading Database.ini: {}", e)
     })?;
 
     let prefix = l(&capitalize(&skill)).to_string();

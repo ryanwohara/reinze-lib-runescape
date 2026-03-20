@@ -1,3 +1,4 @@
+use anyhow::Result;
 use crate::npc::data::{Npc, NpcMetadata};
 use crate::stats::skill::Skill;
 use common::commas;
@@ -5,7 +6,7 @@ use common::source::Source;
 
 pub mod data;
 
-pub fn lookup(s: &Source) -> Result<Vec<String>, ()> {
+pub fn lookup(s: &Source) -> Result<Vec<String>> {
     let result = Npc::lookup(&s.query);
     let prefix = s.l("NPC");
     let not_found = vec![prefix.as_str(), s.c1("Not found").as_str()].join(" ");

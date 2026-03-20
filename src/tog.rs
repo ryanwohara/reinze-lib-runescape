@@ -1,3 +1,4 @@
+use anyhow::{Result, bail};
 use common::{c1, c2, l};
 use serde::Deserialize;
 
@@ -9,15 +10,15 @@ struct WorldInfo {
     stream_order: String,
 }
 
-pub fn world() -> Result<Vec<String>, ()> {
+pub fn world() -> Result<Vec<String>> {
     let url = "https://togcrowdsourcing.com/worldinfo";
 
     let worlds: Vec<WorldInfo> = match reqwest::blocking::get(url) {
         Ok(response) => match response.json() {
             Ok(json) => json,
-            _ => return Err(()),
+            Err(e) => bail!("Failed to parse ToG world info JSON: {}", e),
         },
-        _ => return Err(()),
+        Err(e) => bail!("Failed to fetch ToG world info: {}", e),
     };
 
     let mut matching: Vec<u32> = worlds

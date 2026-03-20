@@ -1,3 +1,4 @@
+use anyhow::Result;
 use crate::common::HiscoreName::{Attack, Defence, Hitpoints, Magic, Prayer, Ranged, Strength};
 use crate::common::{Listing, Listings, Stats, eval_query};
 use crate::stats::{stats_parameters, strip_stats_parameters};
@@ -53,7 +54,7 @@ fn parse(input: Option<Option<Match>>) -> String {
     .to_string()
 }
 
-pub fn estimate(s: Source) -> Result<Vec<String>, ()> {
+pub fn estimate(s: Source) -> Result<Vec<String>> {
     let prefix = l("Combat Estimation");
     let mut cmbest = CmbEst::new();
 

@@ -1,8 +1,9 @@
 use super::common::process_stats_subsection;
+use anyhow::Result;
 use crate::common::HiscoreName::LMS;
 use common::source::Source;
 
-pub fn lookup(source: Source) -> Result<Vec<String>, ()> {
+pub fn lookup(source: Source) -> Result<Vec<String>> {
     let categories = vec![LMS];
 
     process_stats_subsection(source, "Last Man Standing", categories)
