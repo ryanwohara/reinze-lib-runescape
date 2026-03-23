@@ -9,7 +9,7 @@ edition = "2024"
 anyhow = "1.0.100"
 common = { git = "https://github.com/ryanwohara/reinze-lib-common.git", branch = "main", package = "reinze-lib-common" }
 meval = { git = "https://github.com/ryanwohara/meval-rs.git", branch = "main" }
-mysql = "27.0.0"
+mysql = "28.0.0"
 regex = "1.12.3"
 reqwest = { version = "0.13.1", features = ["json", "blocking"] }
 rust-ini = "0.21.3"
