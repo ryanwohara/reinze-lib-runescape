@@ -841,6 +841,7 @@ pub fn parse_hiscores_raw(csv: &str) -> Listings {
 pub fn collect_hiscores(input: &str, source: &Source, flags: &StatsFlags) -> Result<Listings> {
     let rsn = resolve_rsn(input, source);
     let csv = fetch_hiscores_raw(&rsn, flags)?;
+    let _ = common::snapshot::save_snapshot("osrs", flags.account_type.mode(), &rsn, &csv);
     Ok(parse_hiscores_raw(&csv))
 }
 
