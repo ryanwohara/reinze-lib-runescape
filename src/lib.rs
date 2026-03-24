@@ -33,6 +33,7 @@ mod salvage;
 mod soulwars;
 mod stats;
 mod tog;
+mod track;
 mod wiki;
 mod xp;
 
@@ -126,6 +127,9 @@ pub extern "C" fn exported(context: *const PluginContext) -> *mut c_char {
             "salvage" | "salvages" => salvage::lookup(&source),
             "sw" | "swar" | "soulw" | "soulwar" | "soulwars" | "zeal" => soulwars::lookup(source),
             "togw" => tog::world(),
+            "track" => track::lookup(source),
+            "tracksnapshot" => track::snapshot_all(),
+            "timers" => Ok(vec!["tracksnapshot:6h".to_string()]),
             "wiki" => wiki::query(&source),
             "help" => Ok(r"alchemy
 bolts
@@ -158,6 +162,7 @@ salvage
 stats[N]
 sw[N]
 togw
+track[N]
 wiki
 xp"
             .split("\n")
@@ -225,6 +230,7 @@ hunt(er)?
 con(struction)?\d*$
 sail(ing)?\d*
 togw
+track\d*
 wiki"
                 .split("\n")
                 .map(|s| s.to_string())

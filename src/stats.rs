@@ -38,6 +38,21 @@ pub struct StatsFlags {
     pub search: String,
 }
 
+impl Default for StatsFlags {
+    fn default() -> Self {
+        Self {
+            filter_by: FilterBy::None,
+            filter_at: 0,
+            prefix: Prefix::None,
+            account_type: AccountType::Default,
+            flag: MutuallyExclusiveFlag::None,
+            start: 0,
+            end: 0,
+            search: "".to_string(),
+        }
+    }
+}
+
 impl StatsFlags {
     pub fn filter(&self, input: &u32) -> bool {
         (input > &0)
@@ -151,6 +166,21 @@ impl AccountType {
         match name {
             Some(name) => Some(name.to_string()),
             _ => None,
+        }
+    }
+
+    pub fn mode(&self) -> &str {
+        match self {
+            Self::Default => "main",
+            Self::Iron => "iron",
+            Self::Ultimate => "ultimate",
+            Self::Hardcore => "hardcore",
+            Self::Deadman => "deadman",
+            Self::Leagues => "seasonal",
+            Self::Tournament => "tournament",
+            Self::OneDefence => "1def",
+            Self::Skiller => "skiller",
+            Self::FreshStart => "freshstart",
         }
     }
 }

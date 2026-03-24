@@ -780,10 +780,9 @@ pub fn process_stats_subsection(
     Ok(vec![output])
 }
 
-pub fn collect_hiscores(input: &str, source: &Source, flags: &StatsFlags) -> Result<Listings> {
+pub fn resolve_rsn(input: &str, source: &Source) -> String {
     let nick = source.author.nick.to_string();
-
-    let rsn = if input.is_empty() {
+    if input.is_empty() {
         get_rsn(source)
             .ok()
             .and_then(|db_rsn| db_rsn.first().map(|db_rsn| from_row(db_rsn.to_owned())))
@@ -793,15 +792,17 @@ pub fn collect_hiscores(input: &str, source: &Source, flags: &StatsFlags) -> Res
     }
     .split_whitespace()
     .collect::<Vec<&str>>()
-    .join("_");
+    .join("_")
+}
 
+pub fn fetch_hiscores_raw(rsn: &str, flags: &StatsFlags) -> Result<String> {
     let client = reqwest::blocking::Client::builder()
         .connect_timeout(Duration::new(5, 0))
         .build()
         .context("failed to build HTTP client")?;
 
-    let hiscores_str = match client
-        .get(&vec![flags.account_type.link(), rsn].join(""))
+    match client
+        .get(&vec![flags.account_type.link(), rsn.to_string()].join(""))
         .header(USER_AGENT, "Reinze.com")
         .send()
     {
@@ -811,7 +812,7 @@ pub fn collect_hiscores(input: &str, source: &Source, flags: &StatsFlags) -> Res
             match text {
                 Ok(string) => {
                     if *status == 200 {
-                        string
+                        Ok(string)
                     } else {
                         bail!("hiscores returned status {}", status);
                     }
@@ -826,16 +827,21 @@ pub fn collect_hiscores(input: &str, source: &Source, flags: &StatsFlags) -> Res
             error!("{}", e);
             bail!("failed to make hiscores HTTP request");
         }
-    };
+    }
+}
 
-    let result = hiscores_str
-        .split('\n')
+pub fn parse_hiscores_raw(csv: &str) -> Listings {
+    csv.split('\n')
         .collect::<Vec<&str>>()
         .iter()
         .enumerate()
-        .collect::<Listings>();
+        .collect::<Listings>()
+}
 
-    Ok(result)
+pub fn collect_hiscores(input: &str, source: &Source, flags: &StatsFlags) -> Result<Listings> {
+    let rsn = resolve_rsn(input, source);
+    let csv = fetch_hiscores_raw(&rsn, flags)?;
+    Ok(parse_hiscores_raw(&csv))
 }
 
 #[derive(Clone, Debug)]
