@@ -1,6 +1,6 @@
 use crate::items::Mapping;
 use crate::stats::{StatsFlags, stats_parameters, strip_stats_parameters};
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use common::{database, source::Source, *};
 use itertools::Itertools;
 use log::error;
@@ -1112,8 +1112,8 @@ pub fn get_rsn(source: &Source) -> core::result::Result<Vec<Row>, Error> {
 pub fn get_item_db() -> Result<Vec<Mapping>> {
     let mapping_filename = "lib/item_db.json";
 
-    let mapping_file_contents = read_to_string(mapping_filename)
-        .context("failed to open item_db.json")?;
+    let mapping_file_contents =
+        read_to_string(mapping_filename).context("failed to open item_db.json")?;
 
     serde_json::from_str::<Vec<Mapping>>(&mapping_file_contents)
         .context("failed to parse item_db.json into JSON")
@@ -1139,8 +1139,7 @@ where
 
         let (query, count) = parse_query(query);
         let regex_string = format!(r"(?i){}", replace_item_abbreviations(&query));
-        let re = Regex::new(&regex_string)
-            .context("failed to create item search regex")?;
+        let re = Regex::new(&regex_string).context("failed to create item search regex")?;
 
         for item in item_db.iter() {
             let matched = re.captures(&item.name);

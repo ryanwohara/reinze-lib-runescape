@@ -251,16 +251,18 @@ impl IntoString for MiningDetails {
 
         let details = ProspectorsKit.details();
 
-        vec.push(s.p(format!(
-            "{} {}",
-            s.c1(format!("{}:", details.name.as_str()).as_str()),
-            s.c2(common::commas_from_string(
-                format!("{}", (xp_difference / (self.xp * details.value)).ceil()).as_str(),
-                "d"
+        vec.push(
+            s.p(format!(
+                "{} {}",
+                s.c1(format!("{}:", details.name.as_str()).as_str()),
+                s.c2(common::commas_from_string(
+                    format!("{}", (xp_difference / (self.xp * details.value)).ceil()).as_str(),
+                    "d"
+                )
+                .as_str())
             )
-            .as_str())
-        )
-        .as_str()));
+            .as_str()),
+        );
 
         vec.join(" ")
     }

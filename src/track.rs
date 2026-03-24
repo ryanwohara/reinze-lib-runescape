@@ -4,9 +4,9 @@ use common::source::Source;
 use log::error;
 
 use crate::common::{
-    fetch_hiscores_raw, parse_hiscores_raw, resolve_rsn, HiscoreName, Listing, Listings,
+    HiscoreName, Listing, Listings, fetch_hiscores_raw, parse_hiscores_raw, resolve_rsn,
 };
-use crate::stats::{stats_parameters, strip_stats_parameters, StatsFlags};
+use crate::stats::{StatsFlags, stats_parameters, strip_stats_parameters};
 
 pub struct Change {
     pub name: HiscoreName,
@@ -27,16 +27,12 @@ pub fn diff_listings(old: &Listings, new: &Listings) -> Vec<Change> {
         }
 
         if let Some(old_listing) = old.skill(&name.to_string()) {
-            let (old_level, new_level, old_xp, new_xp, is_skill) =
-                match (new_listing, &old_listing) {
-                    (Listing::Entry(n), Listing::Entry(o)) => {
-                        (o.level, n.level, o.xp, n.xp, true)
-                    }
-                    (Listing::SubEntry(n), Listing::SubEntry(o)) => {
-                        (o.xp, n.xp, o.xp, n.xp, false)
-                    }
-                    _ => continue,
-                };
+            let (old_level, new_level, old_xp, new_xp, is_skill) = match (new_listing, &old_listing)
+            {
+                (Listing::Entry(n), Listing::Entry(o)) => (o.level, n.level, o.xp, n.xp, true),
+                (Listing::SubEntry(n), Listing::SubEntry(o)) => (o.xp, n.xp, o.xp, n.xp, false),
+                _ => continue,
+            };
 
             if old_xp != new_xp || old_level != new_level {
                 changes.push(Change {
@@ -94,7 +90,12 @@ fn format_single_change(c: &Change, source: &Source) -> String {
     }
 }
 
-pub fn format_changes(changes: &[Change], source: &Source, rsn: &str, duration_str: &str) -> Vec<String> {
+pub fn format_changes(
+    changes: &[Change],
+    source: &Source,
+    rsn: &str,
+    duration_str: &str,
+) -> Vec<String> {
     let display_rsn = rsn.replace("_", " ");
 
     if changes.is_empty() {
@@ -192,5 +193,9 @@ pub fn snapshot_all() -> Result<Vec<String>> {
         }
     }
 
-    Ok(vec![format!("Snapshotted {}/{} players", count, rsns.len())])
+    Ok(vec![format!(
+        "Snapshotted {}/{} players",
+        count,
+        rsns.len()
+    )])
 }

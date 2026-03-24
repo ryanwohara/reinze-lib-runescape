@@ -1,6 +1,6 @@
 use super::common::process_stats_subsection;
-use anyhow::Result;
 use crate::common::HiscoreName::Leagues;
+use anyhow::Result;
 use common::source::Source;
 
 pub fn lookup(mut source: Source) -> Result<Vec<String>> {

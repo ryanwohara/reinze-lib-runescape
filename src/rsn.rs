@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use common::source::Source;
 use common::{database, not_found};
 use log::error;
@@ -129,7 +129,10 @@ fn delete(source: Source) -> Result<Vec<String>> {
             format!("{}{}", source.c1("Deleted rsn #"), source.c2(rsn_n))
         )]),
         Err(e) => {
-            error!("Database query failed: Error deleting rsn #{} for {}: {}", rsn_n, author, e);
+            error!(
+                "Database query failed: Error deleting rsn #{} for {}: {}",
+                rsn_n, author, e
+            );
             bail!("Database query failed: {}", e);
         }
     }
@@ -168,7 +171,10 @@ fn show(source: Source) -> Result<Vec<String>> {
             )
         )]),
         Err(e) => {
-            error!("Database query failed: Error getting rsn #{} for {}: {}", rsn_n, author, e);
+            error!(
+                "Database query failed: Error getting rsn #{} for {}: {}",
+                rsn_n, author, e
+            );
             bail!("Database query failed: {}", e);
         }
     }

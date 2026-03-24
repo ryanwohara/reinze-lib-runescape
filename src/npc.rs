@@ -1,6 +1,6 @@
-use anyhow::Result;
 use crate::npc::data::{Npc, NpcMetadata};
 use crate::stats::skill::Skill;
+use anyhow::Result;
 use common::commas;
 use common::source::Source;
 

@@ -7,7 +7,10 @@ use std::str::FromStr;
 
 pub fn lookup(s: &Source) -> Result<Vec<String>> {
     let prefix = s.l("Salvage");
-    let salvage: Salvage = s.query.parse().map_err(|_| anyhow::anyhow!("Salvage not found for query: {}", s.query))?;
+    let salvage: Salvage = s
+        .query
+        .parse()
+        .map_err(|_| anyhow::anyhow!("Salvage not found for query: {}", s.query))?;
 
     let locations = salvage
         .locations()

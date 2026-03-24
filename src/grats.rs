@@ -1,7 +1,7 @@
 extern crate common;
 
-use anyhow::Result;
 use crate::common::{eval_query, skill as get_skill};
+use anyhow::Result;
 use common::source::Source;
 use regex::Regex;
 
@@ -43,7 +43,9 @@ pub fn get(s: &Source) -> Result<Vec<String>> {
         None => return err,
     };
 
-    let processed_milestone = eval_query(&milestone.replace(",", "")).map_err(|e| anyhow::anyhow!("Failed to evaluate milestone: {}", e))? as u32;
+    let processed_milestone = eval_query(&milestone.replace(",", ""))
+        .map_err(|e| anyhow::anyhow!("Failed to evaluate milestone: {}", e))?
+        as u32;
     let comma_milestone = common::commas(processed_milestone as f64, "d");
 
     let output = if skill == "Overall" {

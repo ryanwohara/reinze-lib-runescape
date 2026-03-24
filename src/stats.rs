@@ -18,12 +18,12 @@ mod smithing;
 mod thieving;
 mod woodcutting;
 
-use anyhow::Result;
 use super::common::{
     Entry, HiscoreName, Listing, Listings, Stats, collect_hiscores, eval_query, level_to_xp, skill,
     skills, xp_to_level,
 };
 use crate::stats::skill::details_by_skill_id;
+use anyhow::Result;
 use common::{commas, source::Source};
 use regex::Regex;
 

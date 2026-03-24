@@ -1,6 +1,6 @@
 use super::common::process_stats_subsection;
-use anyhow::Result;
 use crate::common::HiscoreName::PvpArena;
+use anyhow::Result;
 use common::l;
 use common::source::Source;
 

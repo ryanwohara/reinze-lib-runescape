@@ -48,7 +48,8 @@ fn get_rs3_players(rt: &Runtime) -> Result<f64> {
     let resp = rt.block_on(reqwest::get("https://www.runescape.com/player_count.js?varname=iPlayerCount&callback=jQuery36006339226594951519_1645569829067&_=1645569829068"))
         .context("HTTP request failed")?;
 
-    let mut string = rt.block_on(resp.text())
+    let mut string = rt
+        .block_on(resp.text())
         .context("failed to read response text")?;
 
     // Remove the last two characters
@@ -56,7 +57,9 @@ fn get_rs3_players(rt: &Runtime) -> Result<f64> {
     string.pop();
 
     // Remove the first two characters
-    let string = string.split("(").nth(1)
+    let string = string
+        .split("(")
+        .nth(1)
         .context("unexpected RS3 player count format")?;
 
     // Strip commas and convert to a float
@@ -65,17 +68,20 @@ fn get_rs3_players(rt: &Runtime) -> Result<f64> {
 
 fn get_osrs_players(rt: &Runtime) -> Result<f64> {
     // Fetch the entire OSRS website to parse out the player count
-    let resp = rt.block_on(reqwest::get("https://oldschool.runescape.com"))
+    let resp = rt
+        .block_on(reqwest::get("https://oldschool.runescape.com"))
         .context("HTTP request failed")?;
 
-    let string = rt.block_on(resp.text())
+    let string = rt
+        .block_on(resp.text())
         .context("failed to read response text")?;
 
-    let re = Regex::new(
-        r"<p class='player-count'>There are currently ([\d,]+) people playing!</p>",
-    ).unwrap();
+    let re =
+        Regex::new(r"<p class='player-count'>There are currently ([\d,]+) people playing!</p>")
+            .unwrap();
 
-    let string = re.captures(&string)
+    let string = re
+        .captures(&string)
         .context("player count not found in OSRS page")?
         .get(1)
         .context("capture group 1 missing")?
@@ -87,12 +93,14 @@ fn get_osrs_players(rt: &Runtime) -> Result<f64> {
 
 fn get_total_players(rt: &Runtime) -> Result<f64> {
     // Fetch some JSON from the Runescape website
-    let resp = rt.block_on(reqwest::get(
-        "https://secure.runescape.com/m=account-creation-reports/rsusertotal.ws",
-    ))
-    .context("HTTP request failed")?;
+    let resp = rt
+        .block_on(reqwest::get(
+            "https://secure.runescape.com/m=account-creation-reports/rsusertotal.ws",
+        ))
+        .context("HTTP request failed")?;
 
-    let totaljson: TotalRsPlayers = rt.block_on(resp.json::<TotalRsPlayers>())
+    let totaljson: TotalRsPlayers = rt
+        .block_on(resp.json::<TotalRsPlayers>())
         .context("failed to parse JSON response")?;
 
     Ok(totaljson.accounts)

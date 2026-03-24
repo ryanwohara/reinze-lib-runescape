@@ -67,9 +67,9 @@ impl Skill for Sailing {
             Self::JubblyMerlin,
             Self::GwenithMerlin,
         ]
-            .iter()
-            .map(|x| x.details())
-            .collect()
+        .iter()
+        .map(|x| x.details())
+        .collect()
     }
 
     fn details(&self) -> Details {
@@ -183,7 +183,7 @@ impl IntoString for SailingDetails {
                 format!("{}", (xp_difference / self.xp).ceil()).as_str(),
                 "d"
             )
-                .as_str())
+            .as_str())
         )
     }
 }

@@ -1,9 +1,9 @@
 use super::common::process_stats_subsection;
-use anyhow::Result;
 use crate::common::HiscoreName::{
     ClueScrollAll, ClueScrollBeginner, ClueScrollEasy, ClueScrollElite, ClueScrollHard,
     ClueScrollMaster, ClueScrollMedium,
 };
+use anyhow::Result;
 use common::source::Source;
 
 pub fn lookup(source: Source) -> Result<Vec<String>> {
