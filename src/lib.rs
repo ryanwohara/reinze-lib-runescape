@@ -57,6 +57,7 @@ pub extern "C" fn exported(context: *const PluginContext) -> *mut c_char {
         let mut command = to_str_or_default((*context).cmd);
         let query = to_str_or_default((*context).param);
         let author = to_str_or_default((*context).author);
+        let channel = to_str_or_default((*context).channel);
         let color = (*context).color;
 
         let re = Regex::new(r"^([a-zA-Z]+)(\d+)$").unwrap();
@@ -78,7 +79,8 @@ pub extern "C" fn exported(context: *const PluginContext) -> *mut c_char {
             Author::create(author, color),
             &command.to_string(),
             &query,
-        );
+        )
+        .with_channel(channel);
 
         match match command.as_str() {
             "alch" | "alchemy" => alch::lookup(&source),

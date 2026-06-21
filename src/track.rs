@@ -90,6 +90,47 @@ fn format_single_change(c: &Change, source: &Source) -> String {
     }
 }
 
+/// Maximum byte length of a single emitted IRC line. Kept below the bot's
+/// 400-byte send-splitter (see `process_message` in rust-reinze) so that lines
+/// are never blind-chopped mid-segment, which would orphan a fragment like
+/// `1031→1205 (+174)` onto its own prefix-less line.
+const MAX_LINE_LEN: usize = 400;
+
+/// Greedily pack pre-formatted `parts` into lines that each start with `prefix`
+/// and join their segments with `sep`, keeping every line's byte length at or
+/// below `max_len`. Each returned line is self-contained (carries the prefix),
+/// so a split never produces a meaningless fragment. A single part that cannot
+/// fit even on its own line is emitted anyway rather than dropped.
+fn pack_lines(prefix: &str, parts: &[String], sep: &str, max_len: usize) -> Vec<String> {
+    let mut lines: Vec<String> = Vec::new();
+    let mut current = String::new();
+    let mut has_part = false;
+
+    for part in parts {
+        // Bytes a fresh line costs for this part: prefix + " " + part.
+        // Bytes appending to the current line costs: sep + part.
+        let append_cost = sep.len() + part.len();
+        if has_part && current.len() + append_cost > max_len {
+            lines.push(std::mem::take(&mut current));
+            has_part = false;
+        }
+
+        if has_part {
+            current.push_str(sep);
+            current.push_str(part);
+        } else {
+            current = format!("{} {}", prefix, part);
+            has_part = true;
+        }
+    }
+
+    if has_part {
+        lines.push(current);
+    }
+
+    lines
+}
+
 pub fn format_changes(
     changes: &[Change],
     source: &Source,
@@ -98,14 +139,15 @@ pub fn format_changes(
 ) -> Vec<String> {
     let display_rsn = rsn.replace("_", " ");
 
+    let prefix = format!(
+        "{} {} {}:",
+        source.l("Track"),
+        source.p(&display_rsn),
+        source.c2(&format!("({})", duration_str))
+    );
+
     if changes.is_empty() {
-        return vec![format!(
-            "{} {} {}: {}",
-            source.l("Track"),
-            source.p(&display_rsn),
-            source.c2(&format!("({})", duration_str)),
-            source.c1("No changes")
-        )];
+        return vec![format!("{} {}", prefix, source.c1("No changes"))];
     }
 
     let skill_parts: Vec<String> = changes
@@ -123,13 +165,7 @@ pub fn format_changes(
     let mut parts = skill_parts;
     parts.extend(activity_parts);
 
-    vec![format!(
-        "{} {} {}: {}",
-        source.l("Track"),
-        source.p(&display_rsn),
-        source.c2(&format!("({})", duration_str)),
-        parts.join(&source.c2(" | "))
-    )]
+    pack_lines(&prefix, &parts, &source.c2(" | "), MAX_LINE_LEN)
 }
 
 pub fn lookup(source: Source) -> Result<Vec<String>> {
@@ -218,4 +254,70 @@ pub fn snapshot_all() -> Result<Vec<String>> {
         count,
         rsns.len()
     )])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parts(n: usize, each: &str) -> Vec<String> {
+        (0..n).map(|_| each.to_string()).collect()
+    }
+
+    #[test]
+    fn single_line_when_everything_fits() {
+        let lines = pack_lines("[Track] (dra) (1d):", &parts(3, "Attack +1k"), " | ", 400);
+        assert_eq!(lines.len(), 1);
+        assert_eq!(lines[0], "[Track] (dra) (1d): Attack +1k | Attack +1k | Attack +1k");
+    }
+
+    #[test]
+    fn every_line_carries_the_prefix() {
+        let prefix = "[Track] (dra) (1d):";
+        // Force several lines with a tight budget.
+        let lines = pack_lines(prefix, &parts(10, "Brutus 1031->1205 (+174)"), " | ", 60);
+        assert!(lines.len() > 1, "expected multiple lines");
+        for line in &lines {
+            assert!(
+                line.starts_with(prefix),
+                "line is self-contained: {line:?}"
+            );
+            assert!(line.len() <= 60, "line within budget: {line:?}");
+        }
+    }
+
+    #[test]
+    fn no_segment_is_orphaned_or_dropped() {
+        let prefix = "P:";
+        let input = vec![
+            "Overall +303k".to_string(),
+            "Attack +31k".to_string(),
+            "Brutus 1031->1205 (+174)".to_string(),
+        ];
+        let lines = pack_lines(prefix, &input, " | ", 24);
+        // Reconstruct the segments from the emitted lines and confirm none were
+        // lost or split mid-segment (the original blind-split bug).
+        let mut seen: Vec<String> = Vec::new();
+        for line in &lines {
+            let body = line.strip_prefix(&format!("{prefix} ")).expect("prefixed");
+            for seg in body.split(" | ") {
+                seen.push(seg.to_string());
+            }
+        }
+        assert_eq!(seen, input);
+    }
+
+    #[test]
+    fn empty_parts_yields_no_lines() {
+        let lines = pack_lines("P:", &[], " | ", 400);
+        assert!(lines.is_empty());
+    }
+
+    #[test]
+    fn oversized_single_part_is_kept_not_dropped() {
+        let big = "x".repeat(100);
+        let lines = pack_lines("P:", &[big.clone()], " | ", 20);
+        assert_eq!(lines.len(), 1);
+        assert!(lines[0].contains(&big));
+    }
 }
