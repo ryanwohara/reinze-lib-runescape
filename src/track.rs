@@ -181,10 +181,7 @@ pub fn lookup(source: Source) -> Result<Vec<String>> {
                 return Ok(vec![format!(
                     "{} {}",
                     source.l("Track"),
-                    source.c1(&format!(
-                        "No snapshot found for {}",
-                        rsn.replace("_", " ")
-                    ))
+                    source.c1(&format!("No snapshot found for {}", rsn.replace("_", " ")))
                 )]);
             }
         }
@@ -267,7 +264,10 @@ mod tests {
     fn single_line_when_everything_fits() {
         let lines = pack_lines("[Track] (dra) (1d):", &parts(3, "Attack +1k"), " | ", 400);
         assert_eq!(lines.len(), 1);
-        assert_eq!(lines[0], "[Track] (dra) (1d): Attack +1k | Attack +1k | Attack +1k");
+        assert_eq!(
+            lines[0],
+            "[Track] (dra) (1d): Attack +1k | Attack +1k | Attack +1k"
+        );
     }
 
     #[test]
@@ -277,10 +277,7 @@ mod tests {
         let lines = pack_lines(prefix, &parts(10, "Brutus 1031->1205 (+174)"), " | ", 60);
         assert!(lines.len() > 1, "expected multiple lines");
         for line in &lines {
-            assert!(
-                line.starts_with(prefix),
-                "line is self-contained: {line:?}"
-            );
+            assert!(line.starts_with(prefix), "line is self-contained: {line:?}");
             assert!(line.len() <= 60, "line within budget: {line:?}");
         }
     }
