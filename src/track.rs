@@ -131,18 +131,10 @@ fn pack_lines(prefix: &str, parts: &[String], sep: &str, max_len: usize) -> Vec<
     lines
 }
 
-pub fn format_changes(
-    changes: &[Change],
-    source: &Source,
-    rsn: &str,
-    duration_str: &str,
-) -> Vec<String> {
-    let display_rsn = rsn.replace("_", " ");
-
+pub fn format_changes(changes: &[Change], source: &Source, duration_str: &str) -> Vec<String> {
     let prefix = format!(
-        "{} {} {}:",
+        "{} {}:",
         source.l("Track"),
-        source.p(&display_rsn),
         source.c2(&format!("({})", duration_str))
     );
 
@@ -210,9 +202,9 @@ pub fn lookup(source: Source) -> Result<Vec<String>> {
                 )]);
             }
         };
-        match snapshot::get_snapshot("osrs", mode, &rsn, hours)? {
-            Some(data) => (data, flags.search.clone()),
-            None => {
+        match snapshot::get_snapshot("osrs", mode, &rsn, hours) {
+            Ok(Some(data)) => (data, flags.search.clone()),
+            Ok(None) => {
                 return Ok(vec![format!(
                     "{} {}",
                     source.l("Track"),
@@ -223,12 +215,19 @@ pub fn lookup(source: Source) -> Result<Vec<String>> {
                     ))
                 )]);
             }
+            Err(e) => {
+                return Ok(vec![format!(
+                    "{} {}",
+                    source.l("Track"),
+                    source.c1(&format!("Snapshot lookup failed: {}", e))
+                )]);
+            }
         }
     };
 
     let old_listings = parse_hiscores_raw(&old_raw);
     let changes = diff_listings(&old_listings, &live_listings);
-    Ok(format_changes(&changes, &source, &rsn, &duration_str))
+    Ok(format_changes(&changes, &source, &duration_str))
 }
 
 /// Called by the bot timer system every 6h.
