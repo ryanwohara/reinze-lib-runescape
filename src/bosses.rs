@@ -40,6 +40,7 @@ pub fn lookup(source: Source) -> Result<Vec<String>> {
         KrilTsutsaroth,
         LunarChests,
         Mimic,
+        MaggotKing,
         Nex,
         Nightmare,
         PhosanisNightmare,
