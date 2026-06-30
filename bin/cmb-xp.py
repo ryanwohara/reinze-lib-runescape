@@ -147,7 +147,7 @@ for link in links:
 fh = open("./src/npc/data.rs", "w")
 
 fh.write("""use crate::stats::skill::{Details, IntoString, Skill};
-use common::{c1, c2};
+use common::source::Source;
 use std::fmt;
 
 """)
@@ -290,11 +290,11 @@ pub struct NpcMetadata {
 }
 
 impl NpcMetadata {
-    pub fn hp(&self, xp_difference: f64) -> String {
+    pub fn hp(&self, s: &Source, xp_difference: f64) -> String {
         format!(
             "{}: {}",
-            c1(self.name.as_str()),
-            c2(common::commas_from_string(
+            s.c1(self.name.as_str()),
+            s.c2(common::commas_from_string(
                 format!("{}", (xp_difference / self.hitpoints_xp).ceil()).as_str(),
                 "d"
             )
@@ -302,11 +302,11 @@ impl NpcMetadata {
         )
     }
     
-    pub fn slay(&self, xp_difference: f64) -> String {
+    pub fn slay(&self, s: &Source, xp_difference: f64) -> String {
         format!(
             "{}: {}",
-            c1(self.name.as_str()),
-            c2(common::commas_from_string(
+            s.c1(self.name.as_str()),
+            s.c2(common::commas_from_string(
                 format!("{}", (xp_difference / self.slayer_xp).ceil()).as_str(),
                 "d"
             )
