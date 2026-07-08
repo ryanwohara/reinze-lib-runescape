@@ -26,13 +26,19 @@ pub fn get(s: &Source) -> Result<Vec<String>> {
         return err;
     }
 
-    let mut skill_name = get_skill(&skill_token);
+    let skill_name = match combat_skill(&skill_token) {
+        Some(name) => name.to_string(),
+        None => {
+            let mut resolved = get_skill(&skill_token);
+            if resolved.is_empty() {
+                resolved = rs3_skill(&skill_token);
+            }
+            resolved
+        }
+    };
 
     if skill_name.is_empty() {
-        skill_name = rs3_skill(&skill_token);
-        if skill_name.is_empty() {
-            return err;
-        }
+        return err;
     }
 
     let skill = &skill_name;
@@ -47,6 +53,10 @@ pub fn get(s: &Source) -> Result<Vec<String>> {
         .map_err(|e| anyhow::anyhow!("Failed to evaluate milestone: {}", e))?
         as u32;
     let comma_milestone = common::commas(processed_milestone as f64, "d");
+
+    if skill_name == "Combat" && !(4..=126).contains(&processed_milestone) {
+        return Ok(vec!["Combat level must be between 4 and 126".to_string()]);
+    }
 
     let output = if skill == "Overall" {
         format!(
@@ -158,5 +168,90 @@ fn rs3_skill(s: &str) -> String {
         "divination" | "div" => "Divination".to_string(),
         "summoning" | "sum" | "summon" => "Summoning".to_string(),
         _ => String::new(),
+    }
+}
+
+/// Recognises the combat-level triggers for +gz. Case-insensitive.
+fn combat_skill(token: &str) -> Option<&'static str> {
+    match token.to_lowercase().as_str() {
+        "combat" | "cmb" | "cmbt" => Some("Combat"),
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use common::author::Author;
+    use common::ColorResult;
+    use std::os::raw::c_char;
+
+    extern "C" fn stub_color(_host: *const c_char, _colors: *const c_char) -> ColorResult {
+        ColorResult::default()
+    }
+
+    fn source_with(query: &str) -> Source {
+        Source::create(
+            "0",
+            Author::create("nick!ident@host", stub_color),
+            "gz",
+            query,
+        )
+    }
+
+    #[test]
+    fn combat_skill_recognises_triggers() {
+        assert_eq!(combat_skill("combat"), Some("Combat"));
+        assert_eq!(combat_skill("cmb"), Some("Combat"));
+        assert_eq!(combat_skill("cmbt"), Some("Combat"));
+        assert_eq!(combat_skill("CMB"), Some("Combat"));
+        assert_eq!(combat_skill("Combat"), Some("Combat"));
+    }
+
+    #[test]
+    fn combat_skill_rejects_non_combat() {
+        assert_eq!(combat_skill("attack"), None);
+        assert_eq!(combat_skill("overall"), None);
+        assert_eq!(combat_skill(""), None);
+    }
+
+    #[test]
+    fn gz_combat_low_level() {
+        let out = get(&source_with("4 combat")).unwrap();
+        assert!(out[0].contains("4 Combat"), "got: {}", out[0]);
+    }
+
+    #[test]
+    fn gz_combat_max_level() {
+        let out = get(&source_with("126 cmb")).unwrap();
+        assert!(out[0].contains("126 Combat"), "got: {}", out[0]);
+        assert!(out[0].contains("true Runescaper"), "got: {}", out[0]);
+    }
+
+    #[test]
+    fn gz_combat_mid_tier_uses_ladder() {
+        // 70 lands in the "<85" CHAMPION bracket — proves a combat level flows
+        // through the reused ladder labelled "Combat", not just the end tiers.
+        let out = get(&source_with("70 combat")).unwrap();
+        assert!(out[0].contains("70 Combat"), "got: {}", out[0]);
+        assert!(out[0].contains("CHAMPION"), "got: {}", out[0]);
+    }
+
+    #[test]
+    fn gz_combat_below_range_errors() {
+        let out = get(&source_with("3 cmb")).unwrap();
+        assert_eq!(out[0], "Combat level must be between 4 and 126");
+    }
+
+    #[test]
+    fn gz_combat_above_range_errors() {
+        let out = get(&source_with("127 cmbt")).unwrap();
+        assert_eq!(out[0], "Combat level must be between 4 and 126");
+    }
+
+    #[test]
+    fn gz_non_combat_skill_unaffected() {
+        let out = get(&source_with("99 attack")).unwrap();
+        assert!(out[0].contains("99 Attack"), "got: {}", out[0]);
     }
 }
