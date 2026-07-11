@@ -4,7 +4,8 @@ use common::source::Source;
 use log::error;
 
 use crate::common::{
-    HiscoreName, Listing, Listings, fetch_hiscores_raw, parse_hiscores_raw, resolve_rsn,
+    HiscoreName, Listing, Listings, fetch_hiscores_raw, parse_hiscores_raw, parse_snapshot_data,
+    resolve_rsn, to_snapshot_data,
 };
 use crate::stats::{StatsFlags, stats_parameters, strip_stats_parameters};
 
@@ -213,7 +214,7 @@ pub fn lookup(source: Source) -> Result<Vec<String>> {
 
     // Record the current snapshot for future comparisons (also bootstraps the
     // first-ever lookup for a player, which has no baseline yet).
-    let _ = snapshot::save_snapshot("osrs", mode, &rsn, &live_raw);
+    let _ = snapshot::save_snapshot("osrs", mode, &rsn, &to_snapshot_data(&live_raw));
 
     let (old_raw, duration_str) = match baseline {
         Some(b) => b,
@@ -235,7 +236,19 @@ pub fn lookup(source: Source) -> Result<Vec<String>> {
         }
     };
 
-    let old_listings = parse_hiscores_raw(&old_raw);
+    let old_listings = match parse_snapshot_data(&old_raw) {
+        Ok(listings) => listings,
+        Err(e) => {
+            return Ok(vec![format!(
+                "{} {}",
+                source.l("Track"),
+                source.c1(&format!(
+                    "Can't compare against the {} snapshot: {}",
+                    duration_str, e
+                ))
+            )]);
+        }
+    };
     let changes = diff_listings(&old_listings, &live_listings);
     Ok(format_changes(&changes, &source, &duration_str))
 }
@@ -249,7 +262,7 @@ pub fn snapshot_all() -> Result<Vec<String>> {
     for rsn in &rsns {
         match fetch_hiscores_raw(rsn, &flags) {
             Ok(raw) => {
-                let _ = snapshot::save_snapshot("osrs", "main", rsn, &raw);
+                let _ = snapshot::save_snapshot("osrs", "main", rsn, &to_snapshot_data(&raw));
                 count += 1;
             }
             Err(e) => {

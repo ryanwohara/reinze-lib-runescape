@@ -841,10 +841,96 @@ pub fn parse_hiscores_raw(csv: &str) -> Listings {
         .collect::<Listings>()
 }
 
+/// Parse one hiscores CSV line: `rank,level,xp` for skills, `rank,score`
+/// for activities (distinguished by field count).
+fn parse_hiscore_line(name: HiscoreName, line: &str) -> Listing {
+    let split = line.split(",").collect::<Vec<&str>>();
+
+    match split.len() {
+        ..=2 => Listing::SubEntry(SubEntry {
+            name,
+            rank: split.first().unwrap_or(&"0").parse().unwrap_or(0),
+            xp: split.get(1).unwrap_or(&"0").parse().unwrap_or(0),
+        }),
+        _ => Listing::Entry(Entry {
+            name,
+            rank: split[0].parse().unwrap_or(0),
+            level: split[1].parse().unwrap_or(0),
+            xp: split[2].parse().unwrap_or(0),
+        }),
+    }
+}
+
+/// First-line marker for self-describing snapshot data: the header records
+/// the hiscores name layout at capture time, so the snapshot still aligns
+/// correctly after Jagex inserts a new hiscore entry (which shifts every
+/// later line and would corrupt a purely positional parse).
+const SNAPSHOT_NAMES_PREFIX: &str = "!names:";
+
+/// Wrap a raw hiscores CSV for storage as a snapshot. Only records a name
+/// header when the response matches the compiled layout — a mismatch means
+/// we don't actually know which line is which, so the raw CSV is stored
+/// unlabeled and rejected at read time rather than mislabeled.
+pub fn to_snapshot_data(csv: &str) -> String {
+    let names = HiscoreName::all();
+    if csv.lines().count() != names.len() {
+        return csv.to_string();
+    }
+
+    let header = names.iter().map(|n| n.to_string()).join("|");
+    format!("{SNAPSHOT_NAMES_PREFIX}{header}\n{csv}")
+}
+
+/// Parse stored snapshot data. Self-describing snapshots align by the names
+/// recorded at capture time; legacy raw-CSV snapshots parse positionally but
+/// only when their line count still matches the current layout — otherwise
+/// the alignment is unknowable and an error is returned instead of a
+/// silently-shifted diff.
+pub fn parse_snapshot_data(data: &str) -> Result<Listings> {
+    if let Some(rest) = data.strip_prefix(SNAPSHOT_NAMES_PREFIX) {
+        let (header, csv) = rest.split_once('\n').unwrap_or((rest, ""));
+        let all = HiscoreName::all();
+        let names: Vec<HiscoreName> = header
+            .split('|')
+            .map(|s| {
+                all.iter()
+                    .find(|n| n.to_string() == s)
+                    .copied()
+                    .unwrap_or(HiscoreName::None)
+            })
+            .collect();
+
+        let listings = csv
+            .lines()
+            .enumerate()
+            .map(|(i, line)| parse_hiscore_line(*names.get(i).unwrap_or(&HiscoreName::None), line))
+            .collect::<Vec<Listing>>();
+
+        return Ok(Listings::new(listings));
+    }
+
+    let expected = HiscoreName::all().len();
+    let count = data.lines().count();
+    if count != expected {
+        bail!(
+            "snapshot has {} entries but the current hiscores have {}; it predates a hiscores layout change",
+            count,
+            expected
+        );
+    }
+
+    Ok(parse_hiscores_raw(data))
+}
+
 pub fn collect_hiscores(input: &str, source: &Source, flags: &StatsFlags) -> Result<Listings> {
     let rsn = resolve_rsn(input, source);
     let csv = fetch_hiscores_raw(&rsn, flags)?;
-    let _ = common::snapshot::save_snapshot("osrs", flags.account_type.mode(), &rsn, &csv);
+    let _ = common::snapshot::save_snapshot(
+        "osrs",
+        flags.account_type.mode(),
+        &rsn,
+        &to_snapshot_data(&csv),
+    );
     Ok(parse_hiscores_raw(&csv))
 }
 
@@ -1030,23 +1116,8 @@ impl<'a> FromIterator<(usize, &'a &'a str)> for Listings {
                 .get(i)
                 .unwrap_or(&HiscoreName::None)
                 .to_owned();
-            let split = index.1.split(",").collect::<Vec<&str>>();
 
-            let listing = match split.len() {
-                ..=2 => Listing::SubEntry(SubEntry {
-                    name,
-                    rank: split.get(0).unwrap_or(&"0").parse().unwrap_or(0),
-                    xp: split.get(1).unwrap_or(&"0").parse().unwrap_or(0),
-                }),
-                _ => Listing::Entry(Entry {
-                    name,
-                    rank: split[0].parse().unwrap_or(0),
-                    level: split[1].parse().unwrap_or(0),
-                    xp: split[2].parse().unwrap_or(0),
-                }),
-            };
-
-            listings.push(listing);
+            listings.push(parse_hiscore_line(name, index.1));
         }
 
         Self(listings)
@@ -1454,6 +1525,93 @@ mod tests {
         assert_eq!(skill("con"), "Construction");
         assert_eq!(skill("sail"), "Sailing");
         assert_eq!(skill("invalid"), "");
+    }
+
+    /// Build a plausible hiscores CSV for the given name layout: skills get
+    /// `rank,level,xp` lines, activities get `rank,score`, with the value
+    /// keyed to the line index so misalignment is detectable.
+    fn fake_csv(names: &[HiscoreName]) -> String {
+        names
+            .iter()
+            .enumerate()
+            .map(|(i, _)| {
+                if i < skills().len() {
+                    format!("1,50,{}", i * 10)
+                } else {
+                    format!("1,{}", i * 10)
+                }
+            })
+            .join("\n")
+    }
+
+    #[test]
+    fn snapshot_legacy_layout_mismatch_is_rejected() {
+        // A snapshot from before a new hiscore entry existed has one fewer
+        // line; positional parsing would misattribute every later entry.
+        let old_names: Vec<HiscoreName> = HiscoreName::all()
+            .into_iter()
+            .filter(|n| *n != HiscoreName::DoomofMokhaiotl)
+            .collect();
+        let err = parse_snapshot_data(&fake_csv(&old_names)).unwrap_err();
+        assert!(err.to_string().contains("layout change"), "{err}");
+    }
+
+    #[test]
+    fn snapshot_legacy_matching_layout_parses_positionally() {
+        let csv = fake_csv(&HiscoreName::all());
+        let listings = parse_snapshot_data(&csv).unwrap();
+        let idx = HiscoreName::Vardorvis.index().unwrap();
+        assert_eq!(listings.skill("Vardorvis").unwrap().xp() as usize, idx * 10);
+    }
+
+    #[test]
+    fn snapshot_names_header_survives_layout_change() {
+        // Snapshot captured before an entry that sorts ahead of Vardorvis
+        // existed: every later line sits at a different index than today.
+        let old_names: Vec<HiscoreName> = HiscoreName::all()
+            .into_iter()
+            .filter(|n| *n != HiscoreName::DoomofMokhaiotl)
+            .collect();
+        let header = old_names.iter().map(|n| n.to_string()).join("|");
+        let data = format!(
+            "{}{}\n{}",
+            SNAPSHOT_NAMES_PREFIX,
+            header,
+            fake_csv(&old_names)
+        );
+
+        let listings = parse_snapshot_data(&data).unwrap();
+
+        let old_idx = old_names
+            .iter()
+            .position(|n| *n == HiscoreName::Vardorvis)
+            .unwrap();
+        assert_ne!(old_idx, HiscoreName::Vardorvis.index().unwrap());
+        assert_eq!(
+            listings.skill("Vardorvis").unwrap().xp() as usize,
+            old_idx * 10
+        );
+    }
+
+    #[test]
+    fn snapshot_roundtrip_preserves_values() {
+        // Live responses end with a trailing newline; make sure wrapping and
+        // re-parsing agrees with the plain positional parse.
+        let csv = fake_csv(&HiscoreName::all()) + "\n";
+        let data = to_snapshot_data(&csv);
+        assert!(data.starts_with(SNAPSHOT_NAMES_PREFIX));
+
+        let listings = parse_snapshot_data(&data).unwrap();
+        let last = HiscoreName::all().len() - 1;
+        assert_eq!(listings.skill("Zulrah").unwrap().xp() as usize, last * 10);
+    }
+
+    #[test]
+    fn snapshot_data_with_unexpected_line_count_stays_raw() {
+        // If the live response doesn't match the compiled layout, don't
+        // record a name header we can't vouch for.
+        let csv = "1,2\n3,4\n";
+        assert_eq!(to_snapshot_data(csv), csv);
     }
 
     #[test]
