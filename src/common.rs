@@ -132,6 +132,18 @@ pub fn xp_to_level(xp: u32) -> u32 {
     126
 }
 
+/// Shorten an XP amount for display: 174 -> "174", 1500 -> "1.5k",
+/// 2_100_000 -> "2.1m".
+pub fn short_xp(n: f64) -> String {
+    if n >= 1_000_000.0 {
+        format!("{:.1}m", n / 1_000_000.0)
+    } else if n >= 1_000.0 {
+        format!("{:.1}k", n / 1_000.0)
+    } else {
+        format!("{}", n)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Combat {
     pub level: f64,
@@ -1650,6 +1662,13 @@ mod tests {
             .map(|x| x.to_string())
             .collect::<Vec<String>>()
         );
+    }
+
+    #[test]
+    fn short_xp_formats_plain_thousands_and_millions() {
+        assert_eq!(short_xp(174.0), "174");
+        assert_eq!(short_xp(1_500.0), "1.5k");
+        assert_eq!(short_xp(2_100_000.0), "2.1m");
     }
 
     #[test]

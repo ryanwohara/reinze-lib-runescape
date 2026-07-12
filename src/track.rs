@@ -5,7 +5,7 @@ use log::error;
 
 use crate::common::{
     HiscoreName, Listing, Listings, fetch_hiscores_raw, parse_hiscores_raw, parse_snapshot_data,
-    resolve_rsn, to_snapshot_data,
+    resolve_rsn, short_xp, to_snapshot_data,
 };
 use crate::stats::{StatsFlags, stats_parameters, strip_stats_parameters};
 
@@ -51,16 +51,6 @@ pub fn diff_listings(old: &Listings, new: &Listings) -> Vec<Change> {
     changes
 }
 
-fn format_xp_delta(delta: u32) -> String {
-    if delta >= 1_000_000 {
-        format!("{:.1}m", delta as f64 / 1_000_000.0)
-    } else if delta >= 1_000 {
-        format!("{:.1}k", delta as f64 / 1_000.0)
-    } else {
-        format!("{}", delta)
-    }
-}
-
 fn format_single_change(c: &Change, source: &Source) -> String {
     if c.is_skill {
         let xp_delta = c.new_xp.saturating_sub(c.old_xp);
@@ -70,13 +60,13 @@ fn format_single_change(c: &Change, source: &Source) -> String {
                 source.c1(&c.name.to_string()),
                 c.old_level,
                 c.new_level,
-                format_xp_delta(xp_delta)
+                short_xp(xp_delta as f64)
             )
         } else {
             format!(
                 "{} +{} XP",
                 source.c1(&c.name.to_string()),
-                format_xp_delta(xp_delta)
+                short_xp(xp_delta as f64)
             )
         }
     } else {

@@ -32,6 +32,7 @@ mod rsn;
 mod salvage;
 mod soulwars;
 mod stats;
+mod task;
 mod tog;
 mod track;
 mod wiki;
@@ -128,6 +129,7 @@ pub extern "C" fn exported(context: *const PluginContext) -> *mut c_char {
             "rsn" => rsn::process(source),
             "salvage" | "salvages" => salvage::lookup(&source),
             "sw" | "swar" | "soulw" | "soulwar" | "soulwars" | "zeal" => soulwars::lookup(source),
+            "task" => task::lookup(source),
             "togw" => tog::world(),
             "track" => track::lookup(source),
             "tracksnapshot" => track::snapshot_all(),
