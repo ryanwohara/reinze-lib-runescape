@@ -165,6 +165,7 @@ rsn[N]
 salvage
 stats[N]
 sw[N]
+task[N]
 togw
 track[N]
 wiki
@@ -207,6 +208,7 @@ zeal\d*
 e?xp(erience)?
 salvages?
 stats
+task\d*
 overall
 total
 att(ack)?
