@@ -47,6 +47,76 @@ use regex::Regex;
 use std::ffi::CString;
 use std::os::raw::c_char;
 
+/// One regex per command the bot should route to this plugin. A command
+/// matching two of these is dispatched twice, so patterns that prefix
+/// another command (herb/herbi, con/colo) are anchored with `$`.
+const TRIGGERS: &str = r"alch(emy)?$
+bolts?
+b(ounty)?h(unter)?\d*
+boost
+boss\d*
+fairy
+kc\d*
+clues?\d*
+co?mb(at)?\d*$
+co?mb(at)?-?est
+colo(sseum)?\d*$
+coll(ection(log)?)?\d*
+((con)?grat[sz]?(ulations?)?|gz)
+^ge
+^grid
+herbi(boar)?\d*$
+l(ast)?m(an)?s(tanding)?\d*
+level
+leagues?\d*
+lvl
+mp|money|moneyprinter|profit|printer|profitprinter
+(no)?burn
+npc
+params?
+patch
+payment|plants?
+players
+price
+(pvparena|pvp|arena)\d*
+rifts?\d*
+rsn\d*
+s(oul)?w(ar)?s?\d*
+zeal\d*
+e?xp(erience)?
+salvages?
+stats
+task\d*
+overall
+total
+att(ack)?
+def(ence)?
+str(ength)?
+h(it)?p(oints)?
+ranged?
+pray(er)?
+mag(e|ic)
+cook(ing)?
+w(ood)?c(utting)?
+fletch(ing)?
+fish(ing)?
+f(ire)?m(aking)?
+craft(ing)?
+smith(ing)?
+min(e|ing)
+herb(lore)?\d*$
+agil(ity)?
+thie(f|ving)
+slay(er)?
+farm(ing)?
+r(une)?c(raft)?
+hunt(er)?
+con(struction)?\d*$
+sail(ing)?\d*
+togw
+track\d*
+wiki";
+
 #[unsafe(no_mangle)]
 pub extern "C" fn exported(context: *const PluginContext) -> *mut c_char {
     unsafe {
@@ -176,73 +246,8 @@ xp"
             .split("\n")
             .map(|s| s.to_string())
             .collect::<Vec<String>>()),
-            "" => Ok(r"alch(emy)?$
-bolts?
-b(ounty)?h(unter)?\d*
-boost
-boss\d*
-fairy
-kc\d*
-clues?\d*
-co?mb(at)?\d*$
-co?mb(at)?-?est
-colo(sseum)?\d*$
-coll(ection(log)?)?\d*
-((con)?grat[sz]?(ulations?)?|gz)
-^ge
-^grid
-herbi(boar)?\d*
-l(ast)?m(an)?s(tanding)?\d*
-level
-leagues?\d*
-lvl
-mp|money|moneyprinter|profit|printer|profitprinter
-(no)?burn
-npc
-params?
-patch
-payment|plants?
-players
-price
-(pvparena|pvp|arena)\d*
-rifts?\d*
-rsn\d*
-s(oul)?w(ar)?s?\d*
-zeal\d*
-e?xp(erience)?
-salvages?
-stats
-task\d*
-overall
-total
-att(ack)?
-def(ence)?
-str(ength)?
-h(it)?p(oints)?
-ranged?
-pray(er)?
-mag(e|ic)
-cook(ing)?
-w(ood)?c(utting)?
-fletch(ing)?
-fish(ing)?
-f(ire)?m(aking)?
-craft(ing)?
-smith(ing)?
-min(e|ing)
-herb(lore)?
-agil(ity)?
-thie(f|ving)
-slay(er)?
-farm(ing)?
-r(une)?c(raft)?
-hunt(er)?
-con(struction)?\d*$
-sail(ing)?\d*
-togw
-track\d*
-wiki"
-                .split("\n")
+            "" => Ok(TRIGGERS
+                .lines()
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>()),
             _ => Ok(vec![]),
@@ -255,6 +260,47 @@ wiki"
                 error!("Command '{}' failed: {:?}", command, e);
                 nil
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn triggers_matching(command: &str) -> Vec<&'static str> {
+        TRIGGERS
+            .lines()
+            .filter(|pattern| Regex::new(pattern).unwrap().is_match(command))
+            .collect()
+    }
+
+    /// Every trigger a command matches costs it another dispatch, so a command
+    /// that matches two triggers answers twice.
+    #[test]
+    fn commands_are_not_dispatched_twice() {
+        for command in [
+            "herb",
+            "herblore",
+            "herb2",
+            "herbi",
+            "herbiboar",
+            "herbi2",
+            "con",
+            "construction",
+            "colo",
+            "colosseum",
+            "task",
+            "track",
+            "stats",
+            "npc",
+        ] {
+            let matched = triggers_matching(command);
+            assert_eq!(
+                matched.len(),
+                1,
+                "'{command}' should fire one trigger, fired {matched:?}"
+            );
         }
     }
 }
