@@ -19,8 +19,8 @@ mod thieving;
 mod woodcutting;
 
 use super::common::{
-    Entry, HiscoreName, Listing, Listings, Stats, collect_hiscores, eval_query, level_to_xp, skill,
-    skills, xp_to_level,
+    Entry, HiscoreName, Listing, Listings, MAX_SKILL_LEVEL, MAX_SKILL_XP, Stats, collect_hiscores,
+    eval_query, level_to_xp, skill, skills, xp_to_level,
 };
 use crate::stats::skill::details_by_skill_id;
 use anyhow::Result;
@@ -287,6 +287,80 @@ fn prepare(command: &str) -> (usize, String) {
     (skill_id, skill_name)
 }
 
+/// What a skill is working towards. Past level 126 there is no next level, so
+/// the remaining milestone is the 200m XP cap - and at the cap there is nothing
+/// left to work towards at all.
+#[derive(Debug, PartialEq)]
+pub enum Goal {
+    /// (level, XP remaining, % of the way through the current level)
+    NextLevel(u32, u32, u32),
+    /// (XP remaining to 200m, % of the way from level 126 to 200m)
+    MaxXp(u32, u32),
+    /// Sitting on 200m XP.
+    Maxed,
+}
+
+impl Goal {
+    /// XP still to earn before the goal is met.
+    fn remaining(&self) -> u32 {
+        match self {
+            Goal::NextLevel(_, remaining, _) => *remaining,
+            Goal::MaxXp(remaining, _) => *remaining,
+            Goal::Maxed => 0,
+        }
+    }
+}
+
+/// How far `xp` sits between `from` and `to`, as a rounded percentage.
+fn percent(from: u32, xp: u32, to: u32) -> u32 {
+    if to <= from {
+        return 100;
+    }
+
+    let progress = xp.saturating_sub(from) as f64 / (to - from) as f64;
+    (progress * 100.0).round().min(100.0) as u32
+}
+
+fn goal(xp: u32, actual_level: u32, next_level: u32) -> Goal {
+    if next_level > MAX_SKILL_LEVEL {
+        // No level exists above 126, so the last milestone is the XP cap.
+        if xp >= MAX_SKILL_XP {
+            return Goal::Maxed;
+        }
+
+        return Goal::MaxXp(
+            MAX_SKILL_XP - xp,
+            percent(level_to_xp(MAX_SKILL_LEVEL), xp, MAX_SKILL_XP),
+        );
+    }
+
+    let next_level_xp = level_to_xp(next_level);
+
+    Goal::NextLevel(
+        next_level,
+        next_level_xp.saturating_sub(xp),
+        percent(level_to_xp(actual_level), xp, next_level_xp),
+    )
+}
+
+fn goal_string(goal: &Goal, s: &Source) -> String {
+    match goal {
+        Goal::Maxed => vec![s.c1("200m XP"), s.p("100%")].join(" "),
+        Goal::MaxXp(remaining, percentage) => vec![
+            s.c1("XP to 200m"),
+            s.c2(&commas(*remaining as f64, "d")),
+            s.p(&format!("{}%", percentage)),
+        ]
+        .join(" "),
+        Goal::NextLevel(level, remaining, percentage) => vec![
+            s.c1(&format!("XP to {}", level)),
+            s.c2(&commas(*remaining as f64, "d")),
+            s.p(&format!("{}%", percentage)),
+        ]
+        .join(" "),
+    }
+}
+
 fn prefix(skill_name: &str, flags: &StatsFlags, s: &Source) -> String {
     vec![
         s.l(&skill_name),
@@ -361,10 +435,10 @@ pub fn lookup(s: Source) -> Result<Vec<String>> {
         }
         let listing = listing.unwrap();
 
-        let next_level = listing.next_level(&stats.flags);
-        let next_level_xp = level_to_xp(next_level);
-        let xp_difference = next_level_xp - listing.xp();
         let actual_level = listing.actual_level();
+        let next_level = listing.next_level(&stats.flags);
+        let goal = goal(listing.xp(), actual_level, next_level);
+        let xp_difference = goal.remaining();
 
         let actual_level_string = if actual_level > listing.level() {
             s.p(&actual_level.to_string())
@@ -372,18 +446,7 @@ pub fn lookup(s: Source) -> Result<Vec<String>> {
             "".to_string()
         };
 
-        let goal = vec![
-            s.c1(&format!("XP to {}", next_level)),
-            s.c2(&commas(xp_difference as f64, "d")),
-            s.p(&format!("{}%", {
-                let current_level_xp = level_to_xp(actual_level);
-                let total_level_gap = next_level_xp - current_level_xp;
-                let percentage = (1.0 - (xp_difference as f64 / total_level_gap as f64)) * 100.0;
-
-                percentage.round()
-            })),
-        ]
-        .join(" ");
+        let goal_string = goal_string(&goal, s);
 
         let level_string = vec![
             prefix,
@@ -400,22 +463,29 @@ pub fn lookup(s: Source) -> Result<Vec<String>> {
         let mut result = vec![
             level_string.trim(),
             xp_string.trim(),
-            goal.trim(),
+            goal_string.trim(),
             rank_string.trim(),
         ];
         result.retain(|x| x.len() > 0);
 
         let output = result.join(&s.c1(" | "));
 
-        let details = details_by_skill_id(skill_id as u32, &stats.flags.search);
+        // At 200m XP there is no XP left to earn, so the calculator line has
+        // nothing to say.
+        let calc = if goal == Goal::Maxed {
+            String::new()
+        } else {
+            details_by_skill_id(skill_id as u32, &stats.flags.search)
+                .iter()
+                .map(|detail| detail.to_string(s, xp_difference as f64))
+                .collect::<Vec<String>>()
+                .join(&s.c1(" | "))
+        };
 
-        let calc = details
-            .iter()
-            .map(|detail| detail.to_string(s, xp_difference as f64))
-            .collect::<Vec<String>>()
-            .join(&s.c1(" | "));
+        let mut lines = vec![output, calc];
+        lines.retain(|line| !line.trim().is_empty());
 
-        Ok(vec![output, calc])
+        Ok(lines)
     } else {
         // Overall lookup
 
@@ -476,6 +546,88 @@ pub fn lookup(s: Source) -> Result<Vec<String>> {
         let output = vec![prefix, summary, message].join(" ");
 
         Ok(vec![output])
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ::common::ColorResult;
+    use ::common::author::Author;
+    use std::os::raw::c_char;
+
+    extern "C" fn stub_color(_host: *const c_char, _colors: *const c_char) -> ColorResult {
+        ColorResult::default()
+    }
+
+    fn stub_source() -> Source {
+        Source::create(
+            "0",
+            Author::create("nick!ident@host", stub_color),
+            "attack",
+            "",
+        )
+    }
+
+    #[test]
+    fn goal_below_the_cap_targets_the_next_level() {
+        let xp = level_to_xp(70);
+        assert_eq!(
+            goal(xp, 70, 71),
+            Goal::NextLevel(71, level_to_xp(71) - xp, 0)
+        );
+    }
+
+    #[test]
+    fn goal_percentage_measures_progress_through_the_current_level() {
+        let start = level_to_xp(70);
+        let gap = level_to_xp(71) - start;
+        assert_eq!(goal(start + gap / 2, 70, 71), Goal::NextLevel(71, gap - gap / 2, 50));
+    }
+
+    #[test]
+    fn goal_at_level_126_targets_200m_not_level_127() {
+        let xp = level_to_xp(MAX_SKILL_LEVEL);
+        assert_eq!(goal(xp, 126, 127), Goal::MaxXp(MAX_SKILL_XP - xp, 0));
+    }
+
+    #[test]
+    fn goal_at_level_126_measures_progress_towards_200m() {
+        let start = level_to_xp(MAX_SKILL_LEVEL);
+        let gap = MAX_SKILL_XP - start;
+        assert_eq!(goal(start + gap / 2, 126, 127), Goal::MaxXp(gap - gap / 2, 50));
+    }
+
+    #[test]
+    fn goal_at_200m_xp_is_maxed() {
+        assert_eq!(goal(MAX_SKILL_XP, 126, 127), Goal::Maxed);
+    }
+
+    #[test]
+    fn maxed_goal_has_nothing_left_to_earn() {
+        assert_eq!(Goal::Maxed.remaining(), 0);
+    }
+
+    #[test]
+    fn goal_never_underflows_when_the_target_is_already_passed() {
+        // Reachable via an explicit `#` target below the player's level.
+        assert_eq!(goal(level_to_xp(99), 99, 50), Goal::NextLevel(50, 0, 100));
+    }
+
+    #[test]
+    fn renders_200m_as_the_target_at_level_126() {
+        let rendered = goal_string(&Goal::MaxXp(11_115_260, 40), &stub_source());
+        assert!(rendered.contains("XP to 200m"), "got: {rendered}");
+        assert!(rendered.contains("11,115,260"), "got: {rendered}");
+        assert!(rendered.contains("40%"), "got: {rendered}");
+    }
+
+    #[test]
+    fn renders_100_percent_of_200m_when_maxed() {
+        let rendered = goal_string(&Goal::Maxed, &stub_source());
+        assert!(rendered.contains("200m XP"), "got: {rendered}");
+        assert!(rendered.contains("100%"), "got: {rendered}");
+        assert!(!rendered.contains("XP to"), "no target left: {rendered}");
     }
 }
 

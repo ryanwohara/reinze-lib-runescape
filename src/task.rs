@@ -2,13 +2,12 @@ use anyhow::Result;
 use common::source::Source;
 use regex::Regex;
 
-use crate::common::{fetch_hiscores_raw, parse_hiscores_raw, resolve_rsn, short_xp, xp_to_level};
+use crate::common::{
+    MAX_SKILL_XP, fetch_hiscores_raw, parse_hiscores_raw, resolve_rsn, short_xp, xp_to_level,
+};
 use crate::npc::data::{Npc, NpcMetadata};
 use crate::stats::StatsFlags;
 use crate::stats::skill::Skill;
-
-/// Maximum XP a skill can hold; projections clamp here.
-const MAX_SKILL_XP: u32 = 200_000_000;
 
 #[derive(Debug, PartialEq)]
 pub struct TaskQuery {

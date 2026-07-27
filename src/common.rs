@@ -99,6 +99,14 @@ pub fn skill_by_id(skill: u32) -> String {
     s.pop().unwrap_or("Overall".to_string())
 }
 
+/// Highest level a skill can reach. 126 is the last level the XP curve defines
+/// a threshold for; there is no level 127.
+pub const MAX_SKILL_LEVEL: u32 = 126;
+
+/// XP cap for a single skill. Level 126 arrives at 188,884,740 XP, so the last
+/// stretch of a skill is XP-based rather than level-based.
+pub const MAX_SKILL_XP: u32 = 200_000_000;
+
 // Converts a level to experience
 pub fn level_to_xp(level: u32) -> u32 {
     let mut xp = 0.0;
