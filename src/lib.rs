@@ -52,7 +52,7 @@ use std::os::raw::c_char;
 /// another command (herb/herbi, con/colo) are anchored with `$`.
 const TRIGGERS: &str = r"alch(emy)?$
 bolts?
-b(ounty)?h(unter)?\d*
+^(b(ounty)?h(unter)?|bounty)\d*$
 boost
 boss\d*
 fairy
@@ -279,9 +279,6 @@ mod tests {
     /// that matches two triggers answers twice. Commands whose names contain a
     /// shorter command ("herbi" holds "herb", "construction" holds "str") are
     /// the ones that collide, so they all belong in this list.
-    ///
-    /// `bounty` is deliberately absent: it has an arm but no trigger, so it is
-    /// never dispatched at all.
     #[test]
     fn commands_are_not_dispatched_twice() {
         for command in [
@@ -290,6 +287,9 @@ mod tests {
             "bolt",
             "bolts",
             "bh",
+            "bh2",
+            "bounty",
+            "bounty2",
             "bhunter",
             "bountyhunter",
             "boost",
