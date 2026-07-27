@@ -14,6 +14,7 @@ mod fairy;
 mod ge;
 mod grats;
 mod gridmaster;
+mod herbi;
 mod items;
 mod leagues;
 mod level;
@@ -100,6 +101,7 @@ pub extern "C" fn exported(context: *const PluginContext) -> *mut c_char {
             "fairy" => fairy::lookup(source),
             "ge" => ge::lookup(&source),
             "grid" => gridmaster::lookup(source),
+            "herbi" | "herbiboar" => herbi::lookup(source),
             "level" | "lvl" => level::lookup(&source),
             "league" | "leagues" => leagues::lookup(source),
             "lms" | "lmstanding" | "lmanstanding" | "lastmstanding" | "lastmanstanding" => {
@@ -148,6 +150,7 @@ congrats
 fairy
 ge
 grid[N]
+herbi[N]
 kc[N]
 level
 leagues[N]
@@ -188,6 +191,7 @@ coll(ection(log)?)?\d*
 ((con)?grat[sz]?(ulations?)?|gz)
 ^ge
 ^grid
+herbi(boar)?\d*
 l(ast)?m(an)?s(tanding)?\d*
 level
 leagues?\d*

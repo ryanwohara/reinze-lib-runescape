@@ -302,7 +302,7 @@ pub enum Goal {
 
 impl Goal {
     /// XP still to earn before the goal is met.
-    fn remaining(&self) -> u32 {
+    pub(crate) fn remaining(&self) -> u32 {
         match self {
             Goal::NextLevel(_, remaining, _) => *remaining,
             Goal::MaxXp(remaining, _) => *remaining,
@@ -314,7 +314,7 @@ impl Goal {
 /// The levels to display: the level the hiscores report (the real in-game one,
 /// which stops at 99), plus the XP-derived virtual level when it has run past
 /// it. Unranked skills report no level at all, so the XP-derived one stands in.
-fn level_display(reported: u32, actual: u32) -> (u32, Option<u32>) {
+pub(crate) fn level_display(reported: u32, actual: u32) -> (u32, Option<u32>) {
     let reported = if reported > 0 { reported } else { actual };
 
     (reported, (actual > reported).then_some(actual))
@@ -330,7 +330,7 @@ fn percent(from: u32, xp: u32, to: u32) -> u32 {
     (progress * 100.0).round().min(100.0) as u32
 }
 
-fn goal(xp: u32, actual_level: u32, next_level: u32) -> Goal {
+pub(crate) fn goal(xp: u32, actual_level: u32, next_level: u32) -> Goal {
     if next_level > MAX_SKILL_LEVEL {
         // No level exists above 126, so the last milestone is the XP cap.
         if xp >= MAX_SKILL_XP {
@@ -352,7 +352,7 @@ fn goal(xp: u32, actual_level: u32, next_level: u32) -> Goal {
     )
 }
 
-fn goal_string(goal: &Goal, s: &Source) -> String {
+pub(crate) fn goal_string(goal: &Goal, s: &Source) -> String {
     match goal {
         Goal::Maxed => vec![s.c1("200m XP"), s.p("100%")].join(" "),
         Goal::MaxXp(remaining, percentage) => vec![
