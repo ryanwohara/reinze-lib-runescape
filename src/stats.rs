@@ -440,19 +440,12 @@ pub fn lookup(s: Source) -> Result<Vec<String>> {
         let goal = goal(listing.xp(), actual_level, next_level);
         let xp_difference = goal.remaining();
 
-        let actual_level_string = if actual_level > listing.level() {
-            s.p(&actual_level.to_string())
-        } else {
-            "".to_string()
-        };
-
         let goal_string = goal_string(&goal, s);
 
         let level_string = vec![
             prefix,
             s.c1("Level"),
-            s.c2(&commas(listing.actual_level() as f64, "d")),
-            actual_level_string,
+            s.c2(&commas(actual_level as f64, "d")),
         ]
         .join(" ");
 
@@ -582,7 +575,10 @@ mod tests {
     fn goal_percentage_measures_progress_through_the_current_level() {
         let start = level_to_xp(70);
         let gap = level_to_xp(71) - start;
-        assert_eq!(goal(start + gap / 2, 70, 71), Goal::NextLevel(71, gap - gap / 2, 50));
+        assert_eq!(
+            goal(start + gap / 2, 70, 71),
+            Goal::NextLevel(71, gap - gap / 2, 50)
+        );
     }
 
     #[test]
@@ -595,7 +591,10 @@ mod tests {
     fn goal_at_level_126_measures_progress_towards_200m() {
         let start = level_to_xp(MAX_SKILL_LEVEL);
         let gap = MAX_SKILL_XP - start;
-        assert_eq!(goal(start + gap / 2, 126, 127), Goal::MaxXp(gap - gap / 2, 50));
+        assert_eq!(
+            goal(start + gap / 2, 126, 127),
+            Goal::MaxXp(gap - gap / 2, 50)
+        );
     }
 
     #[test]
