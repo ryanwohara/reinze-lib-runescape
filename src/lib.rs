@@ -65,7 +65,7 @@ coll(ection(log)?)?\d*
 ((con)?grat[sz]?(ulations?)?|gz)
 ^ge
 ^grid
-herbi(boar)?\d*$
+^herbi(boar)?\d*$
 l(ast)?m(an)?s(tanding)?\d*
 level
 leagues?\d*
@@ -91,7 +91,7 @@ overall
 total
 att(ack)?
 def(ence)?
-str(ength)?
+^str(ength)?\d*$
 h(it)?p(oints)?
 ranged?
 pray(er)?
@@ -101,16 +101,16 @@ w(ood)?c(utting)?
 fletch(ing)?
 fish(ing)?
 f(ire)?m(aking)?
-craft(ing)?
+^craft(ing)?\d*$
 smith(ing)?
 min(e|ing)
-herb(lore)?\d*$
+^herb(lore)?\d*$
 agil(ity)?
 thie(f|ving)
 slay(er)?
 farm(ing)?
 r(une)?c(raft)?
-hunt(er)?
+^hunt(er)?\d*$
 con(struction)?\d*$
 sail(ing)?\d*
 togw
@@ -276,24 +276,136 @@ mod tests {
     }
 
     /// Every trigger a command matches costs it another dispatch, so a command
-    /// that matches two triggers answers twice.
+    /// that matches two triggers answers twice. Commands whose names contain a
+    /// shorter command ("herbi" holds "herb", "construction" holds "str") are
+    /// the ones that collide, so they all belong in this list.
+    ///
+    /// `bounty` is deliberately absent: it has an arm but no trigger, so it is
+    /// never dispatched at all.
     #[test]
     fn commands_are_not_dispatched_twice() {
         for command in [
-            "herb",
-            "herblore",
-            "herb2",
+            "alch",
+            "alchemy",
+            "bolt",
+            "bolts",
+            "bh",
+            "bhunter",
+            "bountyhunter",
+            "boost",
+            "boosts",
+            "boss",
+            "bosses",
+            "kc",
+            "clue",
+            "clues",
+            "combat",
+            "cmb",
+            "combatest",
+            "cmbest",
+            "cmb-est",
+            "combat-est",
+            "colo",
+            "colosseum",
+            "coll",
+            "collection",
+            "collectionlog",
+            "congrats",
+            "gz",
+            "experience",
+            "exp",
+            "xp",
+            "fairy",
+            "ge",
+            "grid",
             "herbi",
             "herbiboar",
             "herbi2",
-            "con",
-            "construction",
-            "colo",
-            "colosseum",
-            "task",
-            "track",
-            "stats",
+            "level",
+            "lvl",
+            "league",
+            "leagues",
+            "lms",
+            "lastmanstanding",
+            "money",
+            "profit",
+            "noburn",
+            "burn",
             "npc",
+            "param",
+            "params",
+            "patch",
+            "players",
+            "price",
+            "overall",
+            "stats",
+            "total",
+            "attack",
+            "att",
+            "defence",
+            "def",
+            "strength",
+            "str",
+            "hitpoints",
+            "hp",
+            "ranged",
+            "range",
+            "prayer",
+            "pray",
+            "magic",
+            "mage",
+            "cooking",
+            "cook",
+            "woodcutting",
+            "wc",
+            "fletching",
+            "fletch",
+            "fishing",
+            "fish",
+            "firemaking",
+            "fm",
+            "crafting",
+            "craft",
+            "smithing",
+            "smith",
+            "mining",
+            "mine",
+            "herblore",
+            "herb",
+            "herb2",
+            "agility",
+            "agil",
+            "thieving",
+            "thief",
+            "slayer",
+            "slay",
+            "farming",
+            "farm",
+            "runecraft",
+            "rc",
+            "hunter",
+            "hunt",
+            "construction",
+            "con",
+            "sail",
+            "sailing",
+            "plant",
+            "plants",
+            "pvparena",
+            "pvp",
+            "arena",
+            "rift",
+            "rifts",
+            "rsn",
+            "salvage",
+            "salvages",
+            "sw",
+            "soulwars",
+            "zeal",
+            "task",
+            "togw",
+            "track",
+            "wiki",
         ] {
             let matched = triggers_matching(command);
             assert_eq!(
