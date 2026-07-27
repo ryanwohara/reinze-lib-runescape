@@ -311,6 +311,15 @@ impl Goal {
     }
 }
 
+/// The levels to display: the level the hiscores report (the real in-game one,
+/// which stops at 99), plus the XP-derived virtual level when it has run past
+/// it. Unranked skills report no level at all, so the XP-derived one stands in.
+fn level_display(reported: u32, actual: u32) -> (u32, Option<u32>) {
+    let reported = if reported > 0 { reported } else { actual };
+
+    (reported, (actual > reported).then_some(actual))
+}
+
 /// How far `xp` sits between `from` and `to`, as a rounded percentage.
 fn percent(from: u32, xp: u32, to: u32) -> u32 {
     if to <= from {
@@ -442,10 +451,13 @@ pub fn lookup(s: Source) -> Result<Vec<String>> {
 
         let goal_string = goal_string(&goal, s);
 
+        let (reported_level, virtual_level) = level_display(listing.level(), actual_level);
+
         let level_string = vec![
             prefix,
             s.c1("Level"),
-            s.c2(&commas(actual_level as f64, "d")),
+            s.c2(&commas(reported_level as f64, "d")),
+            virtual_level.map_or(String::new(), |level| s.p(&level.to_string())),
         ]
         .join(" ");
 
@@ -560,6 +572,23 @@ mod tests {
             "attack",
             "",
         )
+    }
+
+    #[test]
+    fn level_display_shows_the_virtual_level_beside_the_reported_one() {
+        assert_eq!(level_display(99, 113), (99, Some(113)));
+        assert_eq!(level_display(99, 126), (99, Some(126)));
+    }
+
+    #[test]
+    fn level_display_omits_the_parenthetical_below_99() {
+        assert_eq!(level_display(70, 70), (70, None));
+    }
+
+    #[test]
+    fn level_display_falls_back_to_xp_when_the_skill_is_unranked() {
+        // Unranked skills come back as `-1,-1,-1`, so no level is reported.
+        assert_eq!(level_display(0, 1), (1, None));
     }
 
     #[test]
