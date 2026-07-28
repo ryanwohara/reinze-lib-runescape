@@ -5,6 +5,8 @@ use anyhow::Result;
 use common::source::Source;
 use regex::Regex;
 
+mod tiers;
+
 pub fn get(s: &Source) -> Result<Vec<String>> {
     let mut split = s.query.split_whitespace();
 

@@ -10,6 +10,7 @@ anyhow = "1.0"
 common = { path = "../reinze-lib-common", package = "reinze-lib-common" }
 meval = { git = "https://github.com/ryanwohara/meval-rs.git", branch = "main" }
 mysql = "28"
+rand = "0.9"
 regex = "1.12"
 reqwest = { version = "0.13", features = ["json", "blocking"] }
 rust-ini = "0.21"
