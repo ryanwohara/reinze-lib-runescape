@@ -674,4 +674,136 @@ mod tests {
         assert_eq!(overall_xp_tier(max_total_xp()).emoji, "🌌");
         assert_eq!(overall_xp_tier(max_total_xp() + 1).emoji, "❌");
     }
+
+    /// Every tier reachable through any ladder, gathered by walking the lookup
+    /// functions across their full input ranges. Deduplicated by emoji + first
+    /// variant so shared tiers (IMPOSSIBLE) are only checked once.
+    fn all_tiers() -> Vec<&'static Tier> {
+        let mut seen: Vec<&'static Tier> = Vec::new();
+
+        let mut push = |t: &'static Tier| {
+            if !seen
+                .iter()
+                .any(|s| s.emoji == t.emoji && s.variants.first() == t.variants.first())
+            {
+                seen.push(t);
+            }
+        };
+
+        for level in 0..=200u32 {
+            push(level_tier(level));
+        }
+        for xp in [
+            0u64,
+            99_999,
+            100_000,
+            499_999,
+            500_000,
+            999_999,
+            1_000_000,
+            2_499_999,
+            2_500_000,
+            4_999_999,
+            5_000_000,
+            XP_92 - 1,
+            XP_92,
+            9_999_999,
+            10_000_000,
+            XP_99 - 1,
+            XP_99,
+            XP_99 + 1,
+            19_999_999,
+            20_000_000,
+            49_999_999,
+            50_000_000,
+            99_999_999,
+            100_000_000,
+            XP_120 - 1,
+            XP_120,
+            XP_MAX - 1,
+            XP_MAX,
+            XP_MAX + 1,
+        ] {
+            push(xp_tier(xp));
+        }
+        for total in [
+            0u64, 749, 750, 1_249, 1_250, 1_599, 1_600, 1_899, 1_900, 2_099, 2_100, 2_299, 2_300,
+            2_375, 2_376,
+        ] {
+            push(overall_level_tier(total));
+        }
+        for total in [
+            0u64,
+            99_999_999,
+            100_000_000,
+            499_999_999,
+            500_000_000,
+            999_999_999,
+            1_000_000_000,
+            1_999_999_999,
+            2_000_000_000,
+            3_499_999_999,
+            3_500_000_000,
+            max_total_xp() - 1,
+            max_total_xp(),
+            max_total_xp() + 1,
+        ] {
+            push(overall_xp_tier(total));
+        }
+
+        seen
+    }
+
+    #[test]
+    fn every_variant_has_exactly_one_placeholder() {
+        for tier in all_tiers() {
+            for variant in tier.variants {
+                assert_eq!(
+                    variant.matches("{}").count(),
+                    1,
+                    "tier {} variant {:?} must contain exactly one {{}}",
+                    tier.emoji,
+                    variant
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn every_tier_has_variants() {
+        for tier in all_tiers() {
+            assert!(
+                !tier.variants.is_empty(),
+                "tier {} has no variants",
+                tier.emoji
+            );
+            assert!(
+                !tier.emoji.is_empty(),
+                "tier with variants {:?} has no emoji",
+                tier.variants
+            );
+        }
+    }
+
+    #[test]
+    fn variants_within_a_tier_are_distinct() {
+        for tier in all_tiers() {
+            for (i, a) in tier.variants.iter().enumerate() {
+                for b in tier.variants.iter().skip(i + 1) {
+                    assert_ne!(a, b, "tier {} repeats a variant", tier.emoji);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn all_ladders_are_covered() {
+        // 15 level + 16 XP + 8 Overall-level + 7 Overall-XP tiers, minus the
+        // IMPOSSIBLE tier counted once instead of twice.
+        assert!(
+            all_tiers().len() >= 40,
+            "expected at least 40 distinct tiers, found {}",
+            all_tiers().len()
+        );
+    }
 }
