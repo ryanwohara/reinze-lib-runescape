@@ -1,8 +1,10 @@
 extern crate common;
 
 use crate::common::{eval_query, skill as get_skill};
+use crate::grats::tiers::Tier;
 use anyhow::Result;
 use common::source::Source;
+use rand::Rng;
 use regex::Regex;
 
 mod tiers;
@@ -163,6 +165,34 @@ pub fn get(s: &Source) -> Result<Vec<String>> {
     Ok(vec![output])
 }
 
+/// Splices `value` into the variant's single `{}`, colouring prose with c1 and
+/// the value with c2. The value is wrapped as one unit so its digits and skill
+/// name are never separated by a colour control byte. Nick and emoji stay
+/// uncoloured — the former so client nick-highlighting still fires.
+fn render_variant(s: &Source, emoji: &str, variant: &str, nick: &str, value: &str) -> String {
+    let (head, tail) = variant.split_once("{}").unwrap_or((variant, ""));
+
+    let mut out = format!("{}: {} ", nick, emoji);
+
+    if !head.is_empty() {
+        out.push_str(&s.c1(head));
+    }
+    out.push_str(&s.c2(value));
+    if !tail.is_empty() {
+        out.push_str(&s.c1(tail));
+    }
+
+    out
+}
+
+/// Picks one of the tier's variants at random and renders it. Randomness is
+/// isolated here so the tier tables and render_variant stay deterministic.
+fn render(s: &Source, tier: &Tier, nick: &str, value: &str) -> String {
+    let index = rand::rng().random_range(0..tier.variants.len());
+
+    render_variant(s, tier.emoji, tier.variants[index], nick, value)
+}
+
 fn rs3_skill(s: &str) -> String {
     match s.to_lowercase().as_str() {
         "archaeology" | "arch" => "Archaeology".to_string(),
@@ -199,6 +229,55 @@ mod tests {
             "gz",
             query,
         )
+    }
+
+    #[test]
+    fn render_variant_splices_value_into_placeholder() {
+        let s = source_with("");
+        let out = render_variant(&s, "🏆", "Grats on {}! You are a CHAMPION!", "bob", "70 Attack");
+
+        assert!(out.starts_with("bob: 🏆 "), "got: {}", out);
+        // The value must survive as one contiguous run — no control byte splitting
+        // "70" from "Attack".
+        assert!(out.contains("70 Attack"), "got: {}", out);
+        assert!(out.contains("Grats on "), "got: {}", out);
+        assert!(out.contains("! You are a CHAMPION!"), "got: {}", out);
+    }
+
+    #[test]
+    fn render_variant_handles_leading_placeholder() {
+        let s = source_with("");
+        let out = render_variant(&s, "💎", "{}. That is rare air.", "bob", "92 Mining");
+
+        assert!(out.starts_with("bob: 💎 "), "got: {}", out);
+        assert!(out.contains("92 Mining"), "got: {}", out);
+        assert!(out.contains(". That is rare air."), "got: {}", out);
+        // No empty colour-wrapped prose segment before the value.
+        assert!(!out.contains("\u{3}\u{3}"), "got: {:?}", out);
+    }
+
+    #[test]
+    fn render_variant_handles_trailing_placeholder() {
+        let s = source_with("");
+        let out = render_variant(&s, "❌", "Absolutely not, {}", "bob", "999 Attack");
+
+        assert!(out.contains("Absolutely not, "), "got: {}", out);
+        assert!(out.contains("999 Attack"), "got: {}", out);
+        assert!(!out.ends_with("\u{3}"), "got: {:?}", out);
+    }
+
+    #[test]
+    fn render_picks_a_variant_from_the_tier() {
+        let s = source_with("");
+        let tier = tiers::level_tier(70);
+
+        // Call enough times that a broken index would almost certainly panic or
+        // produce something off-tier.
+        for _ in 0..50 {
+            let out = render(&s, tier, "bob", "70 Attack");
+            assert!(out.starts_with("bob: 🏆 "), "got: {}", out);
+            assert!(out.contains("70 Attack"), "got: {}", out);
+        }
     }
 
     #[test]
