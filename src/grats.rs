@@ -48,121 +48,40 @@ pub fn get(s: &Source) -> Result<Vec<String>> {
     let skill = &skill_name;
 
     let re = Regex::new(r"^([\d.]+)[kmb]?$").unwrap();
-    _ = match re.captures(&milestone) {
-        Some(captures) => vec![captures],
-        None => return err,
-    };
+    if !re.is_match(&milestone) {
+        return err;
+    }
 
-    let processed_milestone = eval_query(&milestone.replace(",", ""))
+    let milestone_value = eval_query(&milestone.replace(",", ""))
         .map_err(|e| anyhow::anyhow!("Failed to evaluate milestone: {}", e))?
-        as u32;
-    let comma_milestone = common::commas(processed_milestone as f64, "d");
+        as u64;
+    let comma_milestone = common::commas(milestone_value as f64, "d");
 
-    if skill_name == "Combat" && !(4..=126).contains(&processed_milestone) {
+    if skill_name == "Combat" && !(4..=126).contains(&milestone_value) {
         return Ok(vec!["Combat level must be between 4 and 126".to_string()]);
     }
 
-    let output = if skill == "Overall" {
-        format!(
-            "{0}: Congratulations on {1} {2}! Pretty impressive!",
-            nick, comma_milestone, skill
-        )
-    } else if processed_milestone < 40 {
-        format!(
-            "{0}: grats on {1} {2}! Keep up the good work.",
-            nick, comma_milestone, skill
-        )
-    } else if processed_milestone < 55 {
-        format!(
-            "{0}: getting somewhere! Grats on {1} {2}!",
-            nick, comma_milestone, skill
-        )
-    } else if processed_milestone < 70 {
-        format!(
-            "{0}: awesome! Congratulations on {1} {2}!",
-            nick, comma_milestone, skill
-        )
-    } else if processed_milestone < 85 {
-        format!(
-            "{0}: you are a CHAMPION! Congratulations on {1} {2}!",
-            nick, comma_milestone, skill
-        )
-    } else if processed_milestone < 95 {
-        format!(
-            "{0}: you are one of the elite! Congratulations on {1} {2}!!",
-            nick, comma_milestone, skill
-        )
-    } else if processed_milestone < 99 {
-        format!(
-            "{0}: I am not worthy! Congratulations on {1} {2}!!!!",
-            nick, comma_milestone, skill
-        )
-    } else if processed_milestone > 98 && processed_milestone <= 150 {
-        format!(
-            "{0}: \\o/ CONGRATULATIONS ON {1} {2}! You are a true Runescaper!",
-            nick, comma_milestone, skill
-        )
-    // We'll just assume it's XP
-    } else if processed_milestone <= 1000000 {
-        format!(
-            "{0}: Congratulations on {1} {2} xp! Pretty impressive!",
-            nick, comma_milestone, skill
-        )
-    } else if processed_milestone <= 2500000 {
-        format!(
-            "{0}: Hey congratulations on {1} {2} xp! Moving on up!",
-            nick, comma_milestone, skill
-        )
-    } else if processed_milestone <= 5000000 {
-        format!(
-            "{0}: Congrats on {1} {2} xp! Almost halfway to 92!",
-            nick, comma_milestone, skill
-        )
-    } else if processed_milestone <= 7500000 {
-        format!(
-            "{0}: More than halfway there! Keep on trucking! Congratulations for {1} {2} xp!",
-            nick, comma_milestone, skill
-        )
-    } else if processed_milestone <= 10000000 {
-        format!(
-            "{0}: ALMOST TO 99! Congratulations for reaching {1} {2} xp! *jealous*",
-            nick, comma_milestone, skill
-        )
-    } else if processed_milestone <= 15000000 {
-        format!(
-            "{0}: IMPRESSIVE WORK! You must really love {2}. Congrats on {1} {2} xp.",
-            nick, comma_milestone, skill
-        )
-    } else if processed_milestone <= 20000000 {
-        format!(
-            "{0}: WOW congratulations on {1} {2} xp! Go get yourself a snack. You earned it.",
-            nick, comma_milestone, skill
-        )
-    } else if processed_milestone <= 50000000 {
-        format!(
-            "{0}: I\"m jealous of your {1} {2} xp! Congrats though!",
-            nick, comma_milestone, skill
-        )
-    } else if processed_milestone <= 100000000 {
-        format!(
-            "{0}: You might be insane! Incredible congratulations on {1} xp! Everyone else is super jelly of your {2} skillz.",
-            nick, comma_milestone, skill
-        )
-    } else if processed_milestone < 200000000 {
-        format!(
-            "{0}: I have no more words for you. I am Hulk green with envy. Go train {1} more you beast. (Okay, congrats on {2} xp!)",
-            nick, skill, comma_milestone
-        )
-    } else if processed_milestone == 200000000 {
-        format!(
-            "{0}: Okay, you win. You are on the highscores forever. Endless congratulations on maxing {1}. Go get some sunshine and a nice snack to celebrate!",
-            nick, skill
-        )
+    // Overall carries two ladders — total level below the derived maximum,
+    // total XP above it. Everything else switches from levels to XP at 150.
+    let (tier, is_xp) = if skill == "Overall" {
+        if milestone_value <= tiers::max_total_level() {
+            (tiers::overall_level_tier(milestone_value), false)
+        } else {
+            (tiers::overall_xp_tier(milestone_value), true)
+        }
+    } else if milestone_value <= 150 {
+        (tiers::level_tier(milestone_value as u32), false)
     } else {
-        format!("{0}: That is not even a thing, get out of here.", nick)
+        (tiers::xp_tier(milestone_value), true)
     };
 
-    Ok(vec![output])
+    let value = if is_xp {
+        format!("{} {} xp", comma_milestone, skill)
+    } else {
+        format!("{} {}", comma_milestone, skill)
+    };
+
+    Ok(vec![render(s, tier, &nick, &value)])
 }
 
 /// Splices `value` into the variant's single `{}`, colouring prose with c1 and
@@ -306,16 +225,83 @@ mod tests {
     fn gz_combat_max_level() {
         let out = get(&source_with("126 cmb")).unwrap();
         assert!(out[0].contains("126 Combat"), "got: {}", out[0]);
-        assert!(out[0].contains("true Runescaper"), "got: {}", out[0]);
+        assert!(out[0].contains("🌌"), "got: {}", out[0]);
     }
 
     #[test]
     fn gz_combat_mid_tier_uses_ladder() {
-        // 70 lands in the "<85" CHAMPION bracket — proves a combat level flows
-        // through the reused ladder labelled "Combat", not just the end tiers.
+        // 70 lands in the 70-79 tier — proves a combat level flows through the
+        // reused level ladder labelled "Combat", not just the end tiers.
         let out = get(&source_with("70 combat")).unwrap();
         assert!(out[0].contains("70 Combat"), "got: {}", out[0]);
-        assert!(out[0].contains("CHAMPION"), "got: {}", out[0]);
+        assert!(out[0].contains("🏆"), "got: {}", out[0]);
+    }
+
+    #[test]
+    fn gz_level_uses_the_level_ladder_emoji() {
+        let out = get(&source_with("70 attack")).unwrap();
+        assert!(out[0].contains("🏆"), "got: {}", out[0]);
+        assert!(out[0].contains("70 Attack"), "got: {}", out[0]);
+    }
+
+    #[test]
+    fn gz_exact_99_xp_gets_the_cape_tier() {
+        let out = get(&source_with("13034431 slayer")).unwrap();
+        assert!(out[0].contains("🎓"), "got: {}", out[0]);
+        assert!(out[0].contains("13,034,431 Slayer xp"), "got: {}", out[0]);
+    }
+
+    #[test]
+    fn gz_level_99_gets_the_cape_tier() {
+        let out = get(&source_with("99 attack")).unwrap();
+        assert!(out[0].contains("🎓"), "got: {}", out[0]);
+        // A level, so no "xp" suffix.
+        assert!(!out[0].contains(" xp"), "got: {}", out[0]);
+    }
+
+    #[test]
+    fn gz_200m_is_maxed_not_impossible() {
+        let out = get(&source_with("200m runecraft")).unwrap();
+        assert!(out[0].contains("🌌"), "got: {}", out[0]);
+        assert!(out[0].contains("200,000,000 Runecraft xp"), "got: {}", out[0]);
+    }
+
+    #[test]
+    fn gz_above_200m_is_rejected() {
+        let out = get(&source_with("250m runecraft")).unwrap();
+        assert!(out[0].contains("❌"), "got: {}", out[0]);
+    }
+
+    #[test]
+    fn gz_overall_routes_to_the_total_level_ladder() {
+        let out = get(&source_with("2376 overall")).unwrap();
+        assert!(out[0].contains("🌌"), "got: {}", out[0]);
+        assert!(out[0].contains("2,376 Overall"), "got: {}", out[0]);
+        assert!(!out[0].contains(" xp"), "got: {}", out[0]);
+    }
+
+    #[test]
+    fn gz_overall_routes_to_the_total_xp_ladder_above_max_level() {
+        // 2377 is one past max total level, so it must be read as XP.
+        let out = get(&source_with("2377 overall")).unwrap();
+        assert!(out[0].contains("2,377 Overall xp"), "got: {}", out[0]);
+    }
+
+    #[test]
+    fn gz_overall_max_xp_no_longer_overflows() {
+        // 4.8b exceeds u32::MAX — this returned "not even a thing" before the
+        // u64 migration.
+        let out = get(&source_with("4800m overall")).unwrap();
+        assert!(out[0].contains("🌌"), "got: {}", out[0]);
+        assert!(!out[0].contains("❌"), "got: {}", out[0]);
+    }
+
+    #[test]
+    fn gz_combat_still_resolves_before_overall() {
+        // common::skill() maps "combat"/"cmb" to "Overall". combat_skill() must
+        // win, or this becomes an Overall grats at total level 99.
+        let out = get(&source_with("99 cmb")).unwrap();
+        assert!(out[0].contains("99 Combat"), "got: {}", out[0]);
     }
 
     #[test]
