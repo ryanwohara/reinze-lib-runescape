@@ -48,6 +48,13 @@ caller's stored RSN — or IRC nick — when none is given.
 - `-combat-est (99a 90s 70d 10h 1p 1r 1m ...)` — Estimate a combat level from
   manually supplied skill levels; output mirrors `-combat` (aliases `-combatest`,
   `-cmbest`, `-cmb-est`).
+- `-herbi[N] [#goal] [^level] [RSN]` — How many herbiboars stand between a
+  player's Hunter level and their next level or `#goal`, plus the XP per catch
+  and the estimated time and gp along the way (alias `-herbiboar`). XP per catch
+  scales with Hunter level (1,770 at 74 → 2,461 at 99) and is re-rated as you
+  level. Requires 80 Hunter, or 74 with a super hunter potion. `^level` computes
+  from a hypothetical level or raw XP instead of a hiscores lookup; time and gp
+  are estimates (~60 catches and ~400k gp per hour with a herb sack).
 
 ### Bosses & Minigames
 

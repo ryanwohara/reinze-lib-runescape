@@ -2,7 +2,7 @@ use crate::common::HiscoreName::{Attack, Defence, Hitpoints, Magic, Prayer, Rang
 use crate::common::{Listing, Listings, Stats, eval_query};
 use crate::stats::{stats_parameters, strip_stats_parameters};
 use anyhow::Result;
-use common::{c1, c2, commas, l, p, source::Source};
+use common::{commas, source::Source};
 use regex::{Match, Regex};
 
 struct CmbEst {
@@ -55,7 +55,7 @@ fn parse(input: Option<Option<Match>>) -> String {
 }
 
 pub fn estimate(s: Source) -> Result<Vec<String>> {
-    let prefix = l("Combat Estimation");
+    let prefix = s.l("Combat Estimation");
     let mut cmbest = CmbEst::new();
 
     let flags = stats_parameters(&s.query);
@@ -100,19 +100,29 @@ pub fn estimate(s: Source) -> Result<Vec<String>> {
     let combat = stats.combat();
 
     let total_level: u32 = stats.hiscores.iter().map(|listing| listing.level()).sum();
-    let total_lvl_str = vec![c1("Levels:"), c2(&commas(total_level as f64, "d"))].join(" ");
+    let total_lvl_str = vec![
+        stats.source.c1("Levels:"),
+        stats.source.c2(&commas(total_level as f64, "d")),
+    ]
+    .join(" ");
 
     let total_xp: u32 = stats.hiscores.iter().map(|listing| listing.xp()).sum();
-    let total_xp_str = vec![c1("XP:"), c2(&commas(total_xp as f64, "d"))].join(" ");
-    let total_str = &vec![total_lvl_str, total_xp_str].join(&c1(" | "));
+    let total_xp_str = vec![
+        stats.source.c1("XP:"),
+        stats.source.c2(&commas(total_xp as f64, "d")),
+    ]
+    .join(" ");
+    let total_str = &vec![total_lvl_str, total_xp_str].join(&stats.source.c1(" | "));
 
     let summary = &stats
         .hiscores
         .iter()
         .map(|listing| {
             vec![
-                c1(&vec![&listing.name().to_string(), ":"].join("")),
-                c2(&listing.level().to_string()),
+                stats
+                    .source
+                    .c1(&vec![&listing.name().to_string(), ":"].join("")),
+                stats.source.c2(&listing.level().to_string()),
             ]
             .join("")
         })
@@ -123,21 +133,72 @@ pub fn estimate(s: Source) -> Result<Vec<String>> {
     calculations.retain(|(_string, int)| int > &0u32);
     let calc = &calculations
         .iter()
-        .map(|(string, int)| vec![c1(&vec![string, ":"].join("")), c2(&int.to_string())].join(""))
+        .map(|(string, int)| {
+            vec![
+                stats.source.c1(&vec![string, ":"].join("")),
+                stats.source.c2(&int.to_string()),
+            ]
+            .join("")
+        })
         .collect::<Vec<String>>()
         .join(" ");
 
     let output = vec![
         prefix,
         combat.to_string(&stats.source),
-        c1("Total Combat"),
-        l(total_str),
-        c1("To Next Level:"),
-        p(calc),
-        c1("Current Levels:"),
-        p(summary),
+        stats.source.c1("Total Combat"),
+        stats.source.l(total_str),
+        stats.source.c1("To Next Level:"),
+        stats.source.p(calc),
+        stats.source.c1("Current Levels:"),
+        stats.source.p(summary),
     ]
     .join(" ");
 
     Ok(vec![output])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use common::ColorResult;
+    use common::author::Author;
+    use std::ffi::CString;
+    use std::os::raw::c_char;
+
+    /// Returns distinctive colors so a hard-coded default is easy to spot.
+    /// `Author::colors` takes ownership of both pointers and frees them, so
+    /// these must be freshly allocated on every call.
+    extern "C" fn stub_color(_host: *const c_char, _colors: *const c_char) -> ColorResult {
+        ColorResult {
+            c1: CString::new("07").unwrap().into_raw(),
+            c2: CString::new("13").unwrap().into_raw(),
+        }
+    }
+
+    fn source_with(query: &str) -> Source {
+        Source::create(
+            "0",
+            Author::create("nick!ident@host", stub_color),
+            "cmb-est",
+            query,
+        )
+    }
+
+    #[test]
+    fn cmb_est_output_uses_the_callers_colors() {
+        let out = estimate(source_with("99a 99s 90d 70h 43p 1r 1m")).unwrap();
+        let text = &out[0];
+
+        assert!(text.contains("\x0307"), "expected caller c1 (07) in: {text:?}");
+        assert!(text.contains("\x0313"), "expected caller c2 (13) in: {text:?}");
+        assert!(
+            !text.contains("\x0314"),
+            "hard-coded default c1 (14) leaked into: {text:?}"
+        );
+        assert!(
+            !text.contains("\x0304"),
+            "hard-coded default c2 (04) leaked into: {text:?}"
+        );
+    }
 }
