@@ -1,3 +1,5 @@
+use crate::common::skills;
+
 /// One rung of a congratulation ladder: a badge and the interchangeable
 /// messages that go with it. Each variant carries exactly one `{}` marking
 /// where the coloured value is spliced in.
@@ -336,6 +338,189 @@ pub fn xp_tier(xp: u64) -> &'static Tier {
     }
 }
 
+/// Max total level, derived from the skill list rather than hardcoded so it
+/// self-corrects when a skill is added. skills() includes "Overall" itself.
+pub fn max_total_level() -> u64 {
+    (skills().len() as u64 - 1) * 99
+}
+
+/// Max total XP, derived the same way: every skill capped at 200m.
+pub fn max_total_xp() -> u64 {
+    (skills().len() as u64 - 1) * 200_000_000
+}
+
+const O_SUB_750: Tier = Tier {
+    emoji: "🌱",
+    variants: &[
+        "Grats on {}! The account is taking shape.",
+        "{} — early days, but it's moving.",
+        "Nice, {}! Plenty of skills left to touch.",
+    ],
+};
+
+const O_SUB_1250: Tier = Tier {
+    emoji: "🐣",
+    variants: &[
+        "Congrats on {}! Filling out nicely.",
+        "{}. A proper account is forming.",
+        "Grats on {}! Good spread of skills.",
+    ],
+};
+
+const O_SUB_1600: Tier = Tier {
+    emoji: "⛏️",
+    variants: &[
+        "Congratulations on {}! Solid all-rounder.",
+        "{} — no more skipping the hard skills.",
+        "Grats on {}. Well-rounded and climbing.",
+    ],
+};
+
+const O_SUB_1900: Tier = Tier {
+    emoji: "💪",
+    variants: &[
+        "Grats on {}! That is serious account building.",
+        "{}. Most accounts never get here.",
+        "Congrats on {}! The hard part starts now.",
+    ],
+};
+
+const O_SUB_2100: Tier = Tier {
+    emoji: "🔥",
+    variants: &[
+        "Congratulations on {}! Maxing is on the table.",
+        "{} — the finish line is visible from here.",
+        "Grats on {}. Only the painful ones left.",
+    ],
+};
+
+const O_SUB_2300: Tier = Tier {
+    emoji: "🏆",
+    variants: &[
+        "Grats on {}! So close to max.",
+        "{}. A handful of 99s from the top.",
+        "Congratulations on {}! Nearly there.",
+    ],
+};
+
+const O_SUB_MAX: Tier = Tier {
+    emoji: "💎",
+    variants: &[
+        "Congratulations on {}! Agonisingly close to max.",
+        "{} — one or two skills from the cape.",
+        "Grats on {}. Finish it!",
+    ],
+};
+
+const O_MAXED: Tier = Tier {
+    emoji: "🌌",
+    variants: &[
+        "\\o/ {} — MAX TOTAL. Every single 99. Legendary.",
+        "{}. You maxed. Go get some sunshine and a nice snack to celebrate!",
+        "CONGRATULATIONS on {}! Nothing left. Absolute legend.",
+    ],
+};
+
+const OX_SUB_100M: Tier = Tier {
+    emoji: "🌱",
+    variants: &[
+        "Grats on {}! The total is climbing.",
+        "{} — every skill adds up.",
+        "Nice work on {}!",
+    ],
+};
+
+const OX_SUB_500M: Tier = Tier {
+    emoji: "📈",
+    variants: &[
+        "Congratulations on {}! Serious total.",
+        "{}. That is a lot of hours.",
+        "Grats on {}! Well into the hundreds of millions.",
+    ],
+};
+
+const OX_SUB_1B: Tier = Tier {
+    emoji: "💎",
+    variants: &[
+        "Congrats on {}! Approaching the billion.",
+        "{} — the billion is in sight.",
+        "Grats on {}. Genuinely impressive total.",
+    ],
+};
+
+const OX_SUB_2B: Tier = Tier {
+    emoji: "👑",
+    variants: &[
+        "A BILLION. Congratulations on {}!",
+        "{}. Ten digits of experience. Wild.",
+        "Grats on {}! Billionaire status.",
+    ],
+};
+
+const OX_SUB_3_5B: Tier = Tier {
+    emoji: "🧙",
+    variants: &[
+        "Congratulations on {}! This is beyond dedication.",
+        "{} — I do not know what to say any more.",
+        "Grats on {}. Truly absurd numbers.",
+    ],
+};
+
+const OX_SUB_MAX: Tier = Tier {
+    emoji: "🛸",
+    variants: &[
+        "Congratulations on {}! The ceiling is close.",
+        "{}. Almost every skill at 200m. Terrifying.",
+        "Grats on {}! Nearly the theoretical maximum.",
+    ],
+};
+
+const OX_MAXED: Tier = Tier {
+    emoji: "🌌",
+    variants: &[
+        "\\o/ {} — MAX XP. 200m in everything. There is nothing left.",
+        "{}. The literal ceiling of the game. Go outside.",
+        "CONGRATULATIONS on {}! You have completed RuneScape.",
+    ],
+};
+
+/// Overall total-level ladder, used when the milestone is at or below
+/// max_total_level().
+pub fn overall_level_tier(total: u64) -> &'static Tier {
+    if total >= max_total_level() {
+        return &O_MAXED;
+    }
+
+    match total {
+        0..750 => &O_SUB_750,
+        750..1_250 => &O_SUB_1250,
+        1_250..1_600 => &O_SUB_1600,
+        1_600..1_900 => &O_SUB_1900,
+        1_900..2_100 => &O_SUB_2100,
+        2_100..2_300 => &O_SUB_2300,
+        _ => &O_SUB_MAX,
+    }
+}
+
+/// Overall total-XP ladder, used when the milestone exceeds max_total_level().
+pub fn overall_xp_tier(total: u64) -> &'static Tier {
+    if total > max_total_xp() {
+        return &IMPOSSIBLE;
+    }
+    if total == max_total_xp() {
+        return &OX_MAXED;
+    }
+
+    match total {
+        0..100_000_000 => &OX_SUB_100M,
+        100_000_000..500_000_000 => &OX_SUB_500M,
+        500_000_000..1_000_000_000 => &OX_SUB_1B,
+        1_000_000_000..2_000_000_000 => &OX_SUB_2B,
+        2_000_000_000..3_500_000_000 => &OX_SUB_3_5B,
+        _ => &OX_SUB_MAX,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -438,5 +623,55 @@ mod tests {
         assert_eq!(xp_tier(XP_MAX + 1).emoji, "❌");
         // u64, not u32 — this must not saturate or wrap.
         assert_eq!(xp_tier(4_600_000_000).emoji, "❌");
+    }
+
+    #[test]
+    fn overall_maxima_are_derived_from_the_skill_list() {
+        // 24 skills today (Attack through Sailing); skills() also contains
+        // "Overall" itself, hence the -1. These must not be hardcoded literals
+        // in the implementation — they self-correct when Jagex adds a skill.
+        assert_eq!(max_total_level(), 2376);
+        assert_eq!(max_total_xp(), 4_800_000_000);
+    }
+
+    #[test]
+    fn overall_level_tier_boundaries() {
+        assert_eq!(overall_level_tier(0).emoji, "🌱");
+        assert_eq!(overall_level_tier(749).emoji, "🌱");
+        assert_eq!(overall_level_tier(750).emoji, "🐣");
+        assert_eq!(overall_level_tier(1_249).emoji, "🐣");
+        assert_eq!(overall_level_tier(1_250).emoji, "⛏️");
+        assert_eq!(overall_level_tier(1_599).emoji, "⛏️");
+        assert_eq!(overall_level_tier(1_600).emoji, "💪");
+        assert_eq!(overall_level_tier(1_899).emoji, "💪");
+        assert_eq!(overall_level_tier(1_900).emoji, "🔥");
+        assert_eq!(overall_level_tier(2_099).emoji, "🔥");
+        assert_eq!(overall_level_tier(2_100).emoji, "🏆");
+        assert_eq!(overall_level_tier(2_299).emoji, "🏆");
+        assert_eq!(overall_level_tier(2_300).emoji, "💎");
+        assert_eq!(overall_level_tier(2_375).emoji, "💎");
+        assert_eq!(overall_level_tier(2_376).emoji, "🌌");
+    }
+
+    #[test]
+    fn overall_xp_tier_boundaries() {
+        assert_eq!(overall_xp_tier(0).emoji, "🌱");
+        assert_eq!(overall_xp_tier(99_999_999).emoji, "🌱");
+        assert_eq!(overall_xp_tier(100_000_000).emoji, "📈");
+        assert_eq!(overall_xp_tier(499_999_999).emoji, "📈");
+        assert_eq!(overall_xp_tier(500_000_000).emoji, "💎");
+        assert_eq!(overall_xp_tier(999_999_999).emoji, "💎");
+        assert_eq!(overall_xp_tier(1_000_000_000).emoji, "👑");
+        assert_eq!(overall_xp_tier(1_999_999_999).emoji, "👑");
+        assert_eq!(overall_xp_tier(2_000_000_000).emoji, "🧙");
+        assert_eq!(overall_xp_tier(3_499_999_999).emoji, "🧙");
+        assert_eq!(overall_xp_tier(3_500_000_000).emoji, "🛸");
+    }
+
+    #[test]
+    fn overall_xp_tier_max_and_beyond() {
+        assert_eq!(overall_xp_tier(max_total_xp() - 1).emoji, "🛸");
+        assert_eq!(overall_xp_tier(max_total_xp()).emoji, "🌌");
+        assert_eq!(overall_xp_tier(max_total_xp() + 1).emoji, "❌");
     }
 }
