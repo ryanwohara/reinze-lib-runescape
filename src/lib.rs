@@ -202,7 +202,7 @@ pub extern "C" fn exported(context: *const PluginContext) -> *mut c_char {
             "salvage" | "salvages" => salvage::lookup(&source),
             "sw" | "swar" | "soulw" | "soulwar" | "soulwars" | "zeal" => soulwars::lookup(source),
             "task" => task::lookup(source),
-            "togw" => tog::world(),
+            "togw" => tog::world(&source),
             "track" => track::lookup(source),
             "tracksnapshot" => track::snapshot_all(),
             "timers" => Ok(vec!["tracksnapshot:6h".to_string()]),

@@ -1,5 +1,5 @@
 use anyhow::{Result, bail};
-use common::{c1, c2, l};
+use common::source::Source;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -10,7 +10,7 @@ struct WorldInfo {
     stream_order: String,
 }
 
-pub fn world() -> Result<Vec<String>> {
+pub fn world(s: &Source) -> Result<Vec<String>> {
     let url = "https://togcrowdsourcing.com/worldinfo";
 
     let worlds: Vec<WorldInfo> = match reqwest::blocking::get(url) {
@@ -31,14 +31,14 @@ pub fn world() -> Result<Vec<String>> {
 
     let sorted = matching
         .iter()
-        .map(|m| c2(&m.to_string()))
+        .map(|m| s.c2(&m.to_string()))
         .collect::<Vec<String>>()
-        .join(vec![&c1(","), " "].join("").as_str());
+        .join(vec![&s.c1(","), " "].join("").as_str());
 
     let output = vec![
-        l("ToG Worlds"),
+        s.l("ToG Worlds"),
         sorted,
-        c1("|| https://togcrowdsourcing.com"),
+        s.c1("|| https://togcrowdsourcing.com"),
     ]
     .join(" ");
 
