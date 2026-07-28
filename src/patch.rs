@@ -1,5 +1,4 @@
 use anyhow::Result;
-use common::not_found;
 use common::source::Source;
 use std::fmt;
 use std::str::FromStr;
@@ -18,7 +17,7 @@ pub fn patch(s: &Source) -> Result<Vec<String>> {
         "{} {}{}",
         prefix,
         format_patch(&patch.to_string(), s),
-        not_found(locations)
+        s.not_found(locations)
     );
 
     Ok(vec![output])

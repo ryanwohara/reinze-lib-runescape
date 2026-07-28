@@ -1,5 +1,4 @@
 use anyhow::Result;
-use common::not_found;
 use common::source::Source;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -19,7 +18,7 @@ pub fn lookup(s: &Source) -> Result<Vec<String>> {
         .collect();
 
     let output1 = vec![prefix.clone(), salvage.details().to_string(s)].join(" ");
-    let output2 = vec![prefix, s.p("Locations"), not_found(locations)].join(" ");
+    let output2 = vec![prefix, s.p("Locations"), s.not_found(locations)].join(" ");
 
     Ok(vec![output1, output2])
 }

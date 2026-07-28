@@ -1,7 +1,7 @@
 use crate::common::parse_item_db;
 use anyhow::{Result, bail};
 use common::source::Source;
-use common::{commas, not_found};
+use common::commas;
 
 pub fn lookup(s: &Source) -> Result<Vec<String>> {
     let query = &s.query;
@@ -57,7 +57,7 @@ pub fn lookup(s: &Source) -> Result<Vec<String>> {
         }
     }
 
-    output = vec![output, not_found(found_items)].join(" ");
+    output = vec![output, s.not_found(found_items)].join(" ");
 
     Ok(vec![output])
 }

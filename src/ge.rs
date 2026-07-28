@@ -2,7 +2,7 @@ use super::items::{Ge, GeItemPrice};
 use crate::common::{eval_query, parse_item_db};
 use anyhow::{Context, Result};
 use common::source::Source;
-use common::{c3, c4, c5, commas, not_found};
+use common::{c3, c4, c5, commas};
 use serde_json;
 
 // Scan lib/item_db.json for up to 10 items that match the query
@@ -67,7 +67,7 @@ pub fn lookup(s: &Source) -> Result<Vec<String>> {
     }
 
     let item_count = found_items.len();
-    output = format!("{} {}", output, not_found(found_items));
+    output = format!("{} {}", output, s.not_found(found_items));
 
     let mut output_vec = vec![output];
     if item_count > 1 {

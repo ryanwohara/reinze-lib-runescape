@@ -798,7 +798,7 @@ pub fn process_stats_subsection(
         })
         .collect::<Vec<String>>();
 
-    let output = vec![prefix, unranked(results)].join(" ");
+    let output = vec![prefix, stats.source.unranked(results)].join(" ");
 
     Ok(vec![output])
 }
@@ -1157,26 +1157,6 @@ pub struct Entry {
     pub rank: u32,
     pub level: u32,
     pub xp: u32,
-}
-
-impl Display for Entry {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}{} {}{} {}{}",
-            c1("Lvl:"),
-            c2(&commas(self.level as f64, "d")),
-            c1("XP:"),
-            c2(&commas(self.xp as f64, "d")),
-            c1("Rank:"),
-            c2(if self.rank == 0 {
-                "N/A".to_string()
-            } else {
-                commas(self.rank as f64, "d")
-            }
-            .as_str())
-        )
-    }
 }
 
 pub fn get_rsn(source: &Source) -> core::result::Result<Vec<Row>, Error> {

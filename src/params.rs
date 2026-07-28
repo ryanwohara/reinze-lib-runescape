@@ -3,7 +3,7 @@ extern crate ini;
 use crate::common::skill as common_skill;
 use anyhow::Result;
 use common::source::Source;
-use common::{capitalize, not_found};
+use common::capitalize;
 use ini::Ini;
 use log::error;
 
@@ -56,7 +56,7 @@ pub fn lookup(s: &Source) -> Result<Vec<String>> {
             )
         })
         .collect();
-    Ok(vec![format!("{} {}", prefix, not_found(found_params))])
+    Ok(vec![format!("{} {}", prefix, s.not_found(found_params))])
 }
 
 #[cfg(test)]

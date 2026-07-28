@@ -1,6 +1,5 @@
 use crate::common::skill;
 use anyhow::Result;
-use common::not_found;
 use common::source::Source;
 
 pub fn lookup(s: &Source) -> Result<Vec<String>> {
@@ -18,7 +17,7 @@ pub fn lookup(s: &Source) -> Result<Vec<String>> {
         "{} {}{}",
         prefix,
         format_skill(&skill, s),
-        not_found(found_params)
+        s.not_found(found_params)
     );
 
     Ok(vec![output])

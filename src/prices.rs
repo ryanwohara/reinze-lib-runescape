@@ -2,7 +2,7 @@ use crate::common::parse_item_db;
 use crate::items::Data;
 use anyhow::{Context, Result, bail};
 use common::source::Source;
-use common::{commas, not_found};
+use common::commas;
 use log::error;
 use serde_json;
 use std::fs::read_to_string;
@@ -83,7 +83,7 @@ pub fn lookup(s: &Source) -> Result<Vec<String>> {
     }
 
     let item_count = found_items.len();
-    output = format!("{} {}", output, not_found(found_items));
+    output = format!("{} {}", output, s.not_found(found_items));
 
     let mut output_vec: Vec<String> = vec![output];
     if item_count > 1 {

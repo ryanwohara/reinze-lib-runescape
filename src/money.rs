@@ -2,7 +2,7 @@ use crate::common::{eval_query, parse_item_db};
 use crate::items::{Data, Mapping};
 use anyhow::{Context, Result, bail};
 use common::source::Source;
-use common::{commas, not_found};
+use common::commas;
 use log::error;
 use regex::Regex;
 use std::fs::read_to_string;
@@ -114,7 +114,7 @@ pub fn printer(s: &Source) -> Result<Vec<String>> {
         iterator <= 15
     });
 
-    output = vec![output, not_found(sorted_items)].join(" ");
+    output = vec![output, s.not_found(sorted_items)].join(" ");
 
     let output_vec: Vec<String> = vec![output];
 
