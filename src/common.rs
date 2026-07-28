@@ -1,4 +1,4 @@
-use crate::items::Mapping;
+use crate::items::{Data, Mapping, Price};
 use crate::stats::{StatsFlags, stats_parameters, strip_stats_parameters};
 use anyhow::{Context, Result, bail};
 use common::{database, source::Source, *};
@@ -9,6 +9,7 @@ use mysql::{prelude::*, *};
 use regex::Regex;
 use reqwest::header::USER_AGENT;
 use std::cmp::PartialEq;
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::fs::read_to_string;
 use std::slice::Iter;
@@ -1182,6 +1183,17 @@ pub fn get_rsn(source: &Source) -> core::result::Result<Vec<Row>, Error> {
             Err(e)
         }
     }
+}
+
+/// Latest Grand Exchange prices, keyed by item id.
+pub fn get_ge_data() -> Result<HashMap<u32, Price>> {
+    let ge_filename = "lib/ge.json";
+
+    let ge_file_contents = read_to_string(ge_filename).context("failed to open ge.json")?;
+
+    Ok(serde_json::from_str::<Data>(&ge_file_contents)
+        .context("failed to parse ge.json into JSON")?
+        .data)
 }
 
 pub fn get_item_db() -> Result<Vec<Mapping>> {

@@ -85,14 +85,14 @@ fn format_single_change(c: &Change, source: &Source) -> String {
 /// 400-byte send-splitter (see `process_message` in rust-reinze) so that lines
 /// are never blind-chopped mid-segment, which would orphan a fragment like
 /// `1031→1205 (+174)` onto its own prefix-less line.
-const MAX_LINE_LEN: usize = 400;
+pub(crate) const MAX_LINE_LEN: usize = 400;
 
 /// Greedily pack pre-formatted `parts` into lines that each start with `prefix`
 /// and join their segments with `sep`, keeping every line's byte length at or
 /// below `max_len`. Each returned line is self-contained (carries the prefix),
 /// so a split never produces a meaningless fragment. A single part that cannot
 /// fit even on its own line is emitted anyway rather than dropped.
-fn pack_lines(prefix: &str, parts: &[String], sep: &str, max_len: usize) -> Vec<String> {
+pub(crate) fn pack_lines(prefix: &str, parts: &[String], sep: &str, max_len: usize) -> Vec<String> {
     let mut lines: Vec<String> = Vec::new();
     let mut current = String::new();
     let mut has_part = false;

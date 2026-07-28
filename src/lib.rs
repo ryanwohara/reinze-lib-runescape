@@ -10,6 +10,7 @@ mod collectionlog;
 mod colosseum;
 mod combat_est;
 mod common;
+mod degrime;
 mod fairy;
 mod ge;
 mod grats;
@@ -62,6 +63,7 @@ co?mb(at)?\d*$
 co?mb(at)?-?est
 colo(sseum)?\d*$
 coll(ection(log)?)?\d*
+^degrim(e|y)$
 ((con)?grat[sz]?(ulations?)?|gz)
 ^ge
 ^grid
@@ -163,6 +165,7 @@ pub extern "C" fn exported(context: *const PluginContext) -> *mut c_char {
             "clue" | "clues" => clues::lookup(source),
             "combat" | "cmb" => stats::combat(source),
             "combatest" | "cmbest" | "cmb-est" | "combat-est" => combat_est::estimate(source),
+            "degrime" | "degrimy" => degrime::lookup(&source),
             "colo" | "colosseum" => colosseum::lookup(source),
             "coll" | "collection" | "collectionlog" => collectionlog::lookup(source),
             "congratulations" | "congratulation" | "congrats" | "congratz" | "grats" | "gratz"
@@ -217,6 +220,7 @@ collectionlog[N]
 combat[N]
 combat-est
 congrats
+degrime
 fairy
 ge
 grid[N]
@@ -305,6 +309,8 @@ mod tests {
             "cmbest",
             "cmb-est",
             "combat-est",
+            "degrime",
+            "degrimy",
             "colo",
             "colosseum",
             "coll",

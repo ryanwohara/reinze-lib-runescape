@@ -1,7 +1,7 @@
 use crate::common::parse_item_db;
 use anyhow::{Result, bail};
-use common::source::Source;
 use common::commas;
+use common::source::Source;
 
 pub fn lookup(s: &Source) -> Result<Vec<String>> {
     let query = &s.query;

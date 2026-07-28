@@ -1,8 +1,8 @@
 use crate::common::{eval_query, parse_item_db};
 use crate::items::{Data, Mapping};
 use anyhow::{Context, Result, bail};
-use common::source::Source;
 use common::commas;
+use common::source::Source;
 use log::error;
 use regex::Regex;
 use std::fs::read_to_string;

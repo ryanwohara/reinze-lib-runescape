@@ -2,8 +2,8 @@ extern crate ini;
 
 use crate::common::skill as common_skill;
 use anyhow::Result;
-use common::source::Source;
 use common::capitalize;
+use common::source::Source;
 use ini::Ini;
 use log::error;
 
@@ -87,8 +87,14 @@ mod tests {
     }
 
     fn assert_caller_colors(text: &str) {
-        assert!(text.contains("\x0307"), "expected caller c1 (07) in: {text:?}");
-        assert!(text.contains("\x0313"), "expected caller c2 (13) in: {text:?}");
+        assert!(
+            text.contains("\x0307"),
+            "expected caller c1 (07) in: {text:?}"
+        );
+        assert!(
+            text.contains("\x0313"),
+            "expected caller c2 (13) in: {text:?}"
+        );
         assert!(
             !text.contains("\x0314"),
             "hard-coded default c1 (14) leaked into: {text:?}"

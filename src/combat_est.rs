@@ -190,8 +190,14 @@ mod tests {
         let out = estimate(source_with("99a 99s 90d 70h 43p 1r 1m")).unwrap();
         let text = &out[0];
 
-        assert!(text.contains("\x0307"), "expected caller c1 (07) in: {text:?}");
-        assert!(text.contains("\x0313"), "expected caller c2 (13) in: {text:?}");
+        assert!(
+            text.contains("\x0307"),
+            "expected caller c1 (07) in: {text:?}"
+        );
+        assert!(
+            text.contains("\x0313"),
+            "expected caller c2 (13) in: {text:?}"
+        );
         assert!(
             !text.contains("\x0314"),
             "hard-coded default c1 (14) leaked into: {text:?}"
