@@ -162,6 +162,180 @@ pub fn level_tier(level: u32) -> &'static Tier {
     }
 }
 
+// Exact game breakpoints. Deliberately NOT derived from common::level_to_xp,
+// which accumulates in f32 and drifts by a few XP at the top of the curve.
+pub const XP_92: u64 = 6_517_253;
+pub const XP_99: u64 = 13_034_431;
+pub const XP_120: u64 = 104_273_167;
+pub const XP_MAX: u64 = 200_000_000;
+
+const X_SUB_100K: Tier = Tier {
+    emoji: "🌱",
+    variants: &[
+        "Grats on {}! Every bit counts.",
+        "{} — off to a start!",
+        "Nice, {}. Onwards.",
+    ],
+};
+
+const X_SUB_500K: Tier = Tier {
+    emoji: "🐣",
+    variants: &[
+        "Congrats on {}! Building up nicely.",
+        "{}. The numbers are getting real.",
+        "Grats on {}! Keep at it.",
+    ],
+};
+
+const X_SUB_1M: Tier = Tier {
+    emoji: "🪙",
+    variants: &[
+        "Grats on {}! Nearly a million.",
+        "{} — the first million is in sight.",
+        "Congrats on {}. Almost there!",
+    ],
+};
+
+const X_SUB_2_5M: Tier = Tier {
+    emoji: "📈",
+    variants: &[
+        "Congratulations on {}! Moving on up!",
+        "{}! Welcome to the millions club.",
+        "Grats on {}. Real progress.",
+    ],
+};
+
+const X_SUB_5M: Tier = Tier {
+    emoji: "⛏️",
+    variants: &[
+        "Congrats on {}! Grinding away.",
+        "{} — that is a lot of clicks.",
+        "Nice work on {}!",
+    ],
+};
+
+const X_SUB_92: Tier = Tier {
+    emoji: "💪",
+    variants: &[
+        "Congrats on {}! 92 is closing in.",
+        "{} — nearly at 92, the real halfway mark.",
+        "Grats on {}. Almost halfway to 99!",
+    ],
+};
+
+const X_92_TO_10M: Tier = Tier {
+    emoji: "🔥",
+    variants: &[
+        "Congrats on {}! Past 92 — you're more than halfway to 99.",
+        "{}. 92 down. The back half is shorter than it looks.",
+        "More than halfway there! Keep on trucking! Congratulations for {}!",
+    ],
+};
+
+const X_SUB_99: Tier = Tier {
+    emoji: "🚀",
+    variants: &[
+        "ALMOST TO 99! Congratulations for reaching {}! *jealous*",
+        "{} — 99 is within touching distance.",
+        "Grats on {}! Do not stop now.",
+    ],
+};
+
+const X_EXACTLY_99: Tier = Tier {
+    emoji: "🎓",
+    variants: &[
+        "\\o/ {} — that is EXACTLY 99. Cape earned!",
+        "{}. Bang on 99. Beautiful number.",
+        "CONGRATULATIONS on {}! Precisely 99. Go get the cape.",
+    ],
+};
+
+const X_SUB_20M: Tier = Tier {
+    emoji: "🏆",
+    variants: &[
+        "IMPRESSIVE WORK! You must really love this skill. Congrats on {}.",
+        "{} — post-99 and still going!",
+        "WOW, congratulations on {}! Go get yourself a snack. You earned it.",
+    ],
+};
+
+const X_SUB_50M: Tier = Tier {
+    emoji: "💎",
+    variants: &[
+        "I'm jealous of your {}! Congrats though!",
+        "{}. That is a frightening amount of dedication.",
+        "Grats on {}! Well past what most will ever do.",
+    ],
+};
+
+const X_SUB_100M: Tier = Tier {
+    emoji: "👑",
+    variants: &[
+        "You might be insane! Incredible congratulations on {}!",
+        "{} — everyone else is super jelly of your skillz.",
+        "Grats on {}. Genuinely absurd. Respect.",
+    ],
+};
+
+const X_SUB_120: Tier = Tier {
+    emoji: "🧙",
+    variants: &[
+        "I have no more words for you. Congrats on {}, you beast.",
+        "{}. I am Hulk green with envy.",
+        "Congratulations on {}! Nine figures. Unbelievable.",
+    ],
+};
+
+const X_120_TO_MAX: Tier = Tier {
+    emoji: "🏅",
+    variants: &[
+        "Congratulations on {}! That is level 120 territory.",
+        "{} — master cape numbers. Astonishing.",
+        "Grats on {}. The end is actually in sight now.",
+    ],
+};
+
+const X_MAXED: Tier = Tier {
+    emoji: "🌌",
+    variants: &[
+        "Okay, you win. Endless congratulations on {}. Go get some sunshine and a nice snack to celebrate!",
+        "{}. MAXED. You are on the highscores forever.",
+        "\\o/ {} — 200 MILLION. There is nothing left. Go outside.",
+    ],
+};
+
+const IMPOSSIBLE: Tier = Tier {
+    emoji: "❌",
+    variants: &[
+        "{}? That is not even a thing, get out of here.",
+        "{} is not a number this game recognises. Nice try.",
+        "{}? Absolutely not. Get out of here.",
+    ],
+};
+
+/// XP ladder, used for any non-Overall milestone above 150.
+pub fn xp_tier(xp: u64) -> &'static Tier {
+    match xp {
+        0..100_000 => &X_SUB_100K,
+        100_000..500_000 => &X_SUB_500K,
+        500_000..1_000_000 => &X_SUB_1M,
+        1_000_000..2_500_000 => &X_SUB_2_5M,
+        2_500_000..5_000_000 => &X_SUB_5M,
+        5_000_000..XP_92 => &X_SUB_92,
+        XP_92..10_000_000 => &X_92_TO_10M,
+        10_000_000..XP_99 => &X_SUB_99,
+        XP_99 => &X_EXACTLY_99,
+        // XP_99 + 1 ..= 19_999_999 — range patterns cannot hold arithmetic.
+        13_034_432..20_000_000 => &X_SUB_20M,
+        20_000_000..50_000_000 => &X_SUB_50M,
+        50_000_000..100_000_000 => &X_SUB_100M,
+        100_000_000..XP_120 => &X_SUB_120,
+        XP_120..XP_MAX => &X_120_TO_MAX,
+        XP_MAX => &X_MAXED,
+        _ => &IMPOSSIBLE,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -208,5 +382,61 @@ mod tests {
         // Not reachable through +gz (the regex rejects an empty milestone and
         // Combat clamps at 4), but the function must not panic on it.
         assert_eq!(level_tier(0).emoji, "🌱");
+    }
+
+    #[test]
+    fn xp_tier_lower_bands() {
+        assert_eq!(xp_tier(151).emoji, "🌱");
+        assert_eq!(xp_tier(99_999).emoji, "🌱");
+        assert_eq!(xp_tier(100_000).emoji, "🐣");
+        assert_eq!(xp_tier(499_999).emoji, "🐣");
+        assert_eq!(xp_tier(500_000).emoji, "🪙");
+        assert_eq!(xp_tier(999_999).emoji, "🪙");
+        assert_eq!(xp_tier(1_000_000).emoji, "📈");
+        assert_eq!(xp_tier(2_499_999).emoji, "📈");
+        assert_eq!(xp_tier(2_500_000).emoji, "⛏️");
+        assert_eq!(xp_tier(4_999_999).emoji, "⛏️");
+    }
+
+    #[test]
+    fn xp_tier_92_is_the_halfway_breakpoint() {
+        assert_eq!(XP_92, 6_517_253);
+        assert_eq!(xp_tier(5_000_000).emoji, "💪");
+        assert_eq!(xp_tier(XP_92 - 1).emoji, "💪");
+        assert_eq!(xp_tier(XP_92).emoji, "🔥");
+        assert_eq!(xp_tier(9_999_999).emoji, "🔥");
+    }
+
+    #[test]
+    fn xp_tier_99_is_an_exact_single_value_tier() {
+        assert_eq!(XP_99, 13_034_431);
+        assert_eq!(xp_tier(10_000_000).emoji, "🚀");
+        assert_eq!(xp_tier(XP_99 - 1).emoji, "🚀");
+        assert_eq!(xp_tier(XP_99).emoji, "🎓");
+        // One XP past 99 must fall out of the cape tier, not linger in it.
+        assert_eq!(xp_tier(XP_99 + 1).emoji, "🏆");
+    }
+
+    #[test]
+    fn xp_tier_upper_bands() {
+        assert_eq!(xp_tier(19_999_999).emoji, "🏆");
+        assert_eq!(xp_tier(20_000_000).emoji, "💎");
+        assert_eq!(xp_tier(49_999_999).emoji, "💎");
+        assert_eq!(xp_tier(50_000_000).emoji, "👑");
+        assert_eq!(xp_tier(99_999_999).emoji, "👑");
+        assert_eq!(xp_tier(100_000_000).emoji, "🧙");
+    }
+
+    #[test]
+    fn xp_tier_120_and_max() {
+        assert_eq!(XP_120, 104_273_167);
+        assert_eq!(XP_MAX, 200_000_000);
+        assert_eq!(xp_tier(XP_120 - 1).emoji, "🧙");
+        assert_eq!(xp_tier(XP_120).emoji, "🏅");
+        assert_eq!(xp_tier(XP_MAX - 1).emoji, "🏅");
+        assert_eq!(xp_tier(XP_MAX).emoji, "🌌");
+        assert_eq!(xp_tier(XP_MAX + 1).emoji, "❌");
+        // u64, not u32 — this must not saturate or wrap.
+        assert_eq!(xp_tier(4_600_000_000).emoji, "❌");
     }
 }
