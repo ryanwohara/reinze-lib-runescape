@@ -395,8 +395,9 @@ pub enum HiscoreName {
     KreeArra,
     KrilTsutsaroth,
     LunarChests,
-    Mimic,
+    MadAngel,
     MaggotKing,
+    Mimic,
     Nex,
     Nightmare,
     PhosanisNightmare,
@@ -515,8 +516,9 @@ impl HiscoreName {
             Self::KreeArra,
             Self::KrilTsutsaroth,
             Self::LunarChests,
-            Self::Mimic,
+            Self::MadAngel,
             Self::MaggotKing,
+            Self::Mimic,
             Self::Nex,
             Self::Nightmare,
             Self::PhosanisNightmare,
@@ -706,8 +708,9 @@ impl Display for HiscoreName {
             Self::KreeArra => "Kree'Arra",
             Self::KrilTsutsaroth => "K'ril Tsutsaroth",
             Self::LunarChests => "Lunar Chests",
-            Self::Mimic => "Mimic",
+            Self::MadAngel => "Mad Angel",
             Self::MaggotKing => "Maggot King",
+            Self::Mimic => "Mimic",
             Self::Nex => "Nex",
             Self::Nightmare => "Nightmare",
             Self::PhosanisNightmare => "Phosani's Nightmare",
@@ -1624,6 +1627,40 @@ mod tests {
         // record a name header we can't vouch for.
         let csv = "1,2\n3,4\n";
         assert_eq!(to_snapshot_data(csv), csv);
+    }
+
+    /// The hiscores CSV is positional and unlabelled, so `all()` must match the
+    /// live layout entry for entry: a wrong slot silently mislabels everything
+    /// after it. Check against
+    /// `secure.runescape.com/m=hiscore_oldschool/index_lite.json?player=<rsn>`,
+    /// which is the same layout with names attached.
+    #[test]
+    fn hiscore_layout_has_one_entry_per_live_line() {
+        assert_eq!(HiscoreName::all().len(), 116);
+    }
+
+    #[test]
+    fn hiscore_names_are_unique() {
+        let names: Vec<String> = HiscoreName::all().iter().map(|n| n.to_string()).collect();
+        let mut unique = names.clone();
+        unique.sort();
+        unique.dedup();
+
+        assert_eq!(names.len(), unique.len(), "two entries share a name");
+    }
+
+    #[test]
+    fn bosses_sit_in_hiscores_order_not_alphabetical_guesswork() {
+        let names: Vec<String> = HiscoreName::all().iter().map(|n| n.to_string()).collect();
+        let start = names
+            .iter()
+            .position(|name| name == "Lunar Chests")
+            .expect("Lunar Chests is in the layout");
+
+        assert_eq!(
+            &names[start..start + 5],
+            &["Lunar Chests", "Mad Angel", "Maggot King", "Mimic", "Nex"]
+        );
     }
 
     #[test]

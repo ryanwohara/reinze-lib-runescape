@@ -153,7 +153,13 @@ mod tests {
     #[test]
     fn render_variant_splices_value_into_placeholder() {
         let s = source_with("");
-        let out = render_variant(&s, "🏆", "Grats on {}! You are a CHAMPION!", "bob", "70 Attack");
+        let out = render_variant(
+            &s,
+            "🏆",
+            "Grats on {}! You are a CHAMPION!",
+            "bob",
+            "70 Attack",
+        );
 
         assert!(out.starts_with("bob: 🏆 "), "got: {}", out);
         // The value must survive as one contiguous run — no control byte splitting
@@ -263,7 +269,11 @@ mod tests {
     fn gz_200m_is_maxed_not_impossible() {
         let out = get(&source_with("200m runecraft")).unwrap();
         assert!(out[0].contains("🌌"), "got: {}", out[0]);
-        assert!(out[0].contains("200,000,000 Runecraft xp"), "got: {}", out[0]);
+        assert!(
+            out[0].contains("200,000,000 Runecraft xp"),
+            "got: {}",
+            out[0]
+        );
     }
 
     #[test]
