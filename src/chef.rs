@@ -110,21 +110,48 @@ fn setups(fish: &Fish) -> Vec<(&'static str, Stop)> {
     setups
 }
 
-/// Raw fish needed to carry `xp` up to `target_xp`, re-rating burn as the level
-/// rises. Walks level bands rather than single fish, because burn is constant
-/// within a level and a 200m-XP target would otherwise iterate millions of
-/// times. `None` when the level is below the fish's cooking level.
-fn fish_between(xp: u32, target_xp: u32, fish: &Fish, stop: Stop) -> Option<u64> {
+/// A stretch of levelling: the raw fish it costs and what it earns.
+#[derive(Debug, PartialEq)]
+struct Trip {
+    /// Raw fish bought. Burnt ones are counted - they cost the same.
+    count: u64,
+    /// Signed gp across the whole trip.
+    gp: i64,
+}
+
+/// The raw fish and the gp to carry `xp` up to `target_xp`, re-rating burn as
+/// the level rises. Walks level bands rather than single fish, because burn is
+/// constant within a level and a 200m-XP target would otherwise iterate
+/// millions of times.
+///
+/// Both figures come out of this one walk on purpose. Burn falls as the level
+/// rises, so the per-fish margin improves band by band and often crosses from
+/// loss into profit partway up; a margin frozen at the starting level and
+/// multiplied by the re-rated count is wrong by the width of the whole burn
+/// window, and wrong in sign whenever the trip starts below the level burning
+/// stops.
+///
+/// `None` when the level is below the fish's cooking level.
+fn fish_between(
+    xp: u32,
+    target_xp: u32,
+    fish: &Fish,
+    stop: Stop,
+    raw: u32,
+    cooked: u32,
+) -> Option<Trip> {
     if xp_to_level(xp) < fish.level {
         return None;
     }
 
     let mut current = xp as f64;
     let mut count: u64 = 0;
+    let mut gp = 0.0;
 
     while (current as u32) < target_xp {
         let level = xp_to_level(current as u32);
-        let each = fish.xp * (1.0 - burn(level, fish.level, stop));
+        let burnt = burn(level, fish.level, stop);
+        let each = fish.xp * (1.0 - burnt);
 
         if each <= 0.0 {
             return None;
@@ -138,12 +165,19 @@ fn fish_between(xp: u32, target_xp: u32, fish: &Fish, stop: Stop) -> Option<u64>
         };
 
         let in_band = (((band_end as f64 - current) / each).ceil() as u64).max(1);
+        // Per fish, not per hour - an integer division by the hourly rate
+        // first would throw away most of the margin on a cheap fish.
+        let margin = hourly(raw, cooked, burnt).profit as f64 / FISH_PER_HOUR as f64;
 
         count += in_band;
+        gp += in_band as f64 * margin;
         current += in_band as f64 * each;
     }
 
-    Some(count)
+    Some(Trip {
+        count,
+        gp: gp.round() as i64,
+    })
 }
 
 /// Signed gp is coloured by sign rather than by the c1/c2 palette: those two
@@ -153,9 +187,17 @@ const GREEN: &str = "\x0303";
 const RED: &str = "\x0304";
 
 fn gp(amount: i64) -> String {
+    gp_marked(amount, "")
+}
+
+/// Signed gp carrying `mark` - "~" for a figure the burn model produced. The
+/// mark sits inside the colour so the sign, the mark and the number read as one
+/// token rather than the mark inheriting whatever colour ran before it.
+fn gp_marked(amount: i64, mark: &str) -> String {
     format!(
-        "{}{}",
+        "{}{}{}",
         if amount < 0 { RED } else { GREEN },
+        mark,
         short_gp(amount)
     )
 }
@@ -447,24 +489,33 @@ fn detail(
     if goal != Goal::Maxed {
         let target_xp = cook.listing.xp().saturating_add(goal.remaining());
 
-        if let Some(count) = fish_between(cook.listing.xp(), target_xp, fish, best_stop) {
-            let hours = count as f64 / FISH_PER_HOUR as f64;
-            let hour = hourly(raw, cooked, burn(cook.level, fish.level, best_stop));
-            // Per fish, not per hour - an integer division by the hourly rate
-            // first would throw away most of the margin on a cheap fish.
-            let total = (hour.profit as f64 / FISH_PER_HOUR as f64 * count as f64).round() as i64;
+        if let Some(trip) = fish_between(cook.listing.xp(), target_xp, fish, best_stop, raw, cooked)
+        {
+            let hours = trip.count as f64 / FISH_PER_HOUR as f64;
+            // The fish count and the gp come out of the burn model whenever the
+            // trip burns anything, so they carry a `~` like the hours do. Burn
+            // only falls as the level rises, so a zero rate at the starting
+            // level means nothing burns anywhere on the trip and both figures
+            // are exact.
+            let mark = if burn(cook.level, fish.level, best_stop) > 0.0 {
+                "~"
+            } else {
+                ""
+            };
 
             progress.push(
                 vec![
-                    source.c2(&commas(count as f64, "d")),
+                    source.c2(&format!("{}{}", mark, commas(trip.count as f64, "d"))),
                     source.c1(&fish.name.to_lowercase()),
                 ]
                 .join(" "),
             );
+            // The hourly rate is an assumption at any burn rate, so the hours
+            // are an estimate even on a trip that never burns a fish.
             progress.push(source.c2(&format!("~{}", format_hours(hours))));
             progress.push(
                 vec![
-                    gp(total),
+                    gp_marked(trip.gp, mark),
                     source.p(&format!("{}, {}/hr", best_name, commas(FISH_PER_HOUR as f64, "d"))),
                 ]
                 .join(" "),
@@ -486,6 +537,11 @@ mod tests {
     use super::*;
     use crate::common::level_to_xp;
     use crate::fish::find_fish;
+
+    /// The wiki's quoted shark prices. 991 sells for 972 after tax, so a clean
+    /// cook clears 240 gp and one burnt at 50% loses 246.
+    const RAW: u32 = 732;
+    const COOKED: u32 = 991;
 
     #[test]
     fn burning_stops_at_and_above_the_stop_level() {
@@ -579,8 +635,16 @@ mod tests {
         let shark = find_fish("shark").expect("shark is in the table");
         let xp = level_to_xp(90);
 
-        assert_eq!(fish_between(xp, xp, shark, Stop::NoBurn), Some(0));
-        assert_eq!(fish_between(xp, xp - 1, shark, Stop::NoBurn), Some(0));
+        let nothing = Some(Trip { count: 0, gp: 0 });
+
+        assert_eq!(
+            fish_between(xp, xp, shark, Stop::NoBurn, RAW, COOKED),
+            nothing
+        );
+        assert_eq!(
+            fish_between(xp, xp - 1, shark, Stop::NoBurn, RAW, COOKED),
+            nothing
+        );
     }
 
     #[test]
@@ -588,9 +652,15 @@ mod tests {
         let shark = find_fish("shark").expect("shark is in the table");
         let xp = level_to_xp(90);
 
-        // 210 XP each with no burning.
-        assert_eq!(fish_between(xp, xp + 420, shark, Stop::NoBurn), Some(2));
-        assert_eq!(fish_between(xp, xp + 421, shark, Stop::NoBurn), Some(3));
+        // 210 XP each with no burning, clearing 240 gp each.
+        assert_eq!(
+            fish_between(xp, xp + 420, shark, Stop::NoBurn, RAW, COOKED),
+            Some(Trip { count: 2, gp: 480 })
+        );
+        assert_eq!(
+            fish_between(xp, xp + 421, shark, Stop::NoBurn, RAW, COOKED),
+            Some(Trip { count: 3, gp: 720 })
+        );
     }
 
     #[test]
@@ -599,14 +669,21 @@ mod tests {
         let xp = level_to_xp(85);
         let target = xp + 100_000;
 
-        let clean = fish_between(xp, target, shark, Stop::NoBurn).expect("cookable");
-        let burning = fish_between(xp, target, shark, Stop::Never).expect("cookable");
+        let clean = fish_between(xp, target, shark, Stop::NoBurn, RAW, COOKED).expect("cookable");
+        let burning = fish_between(xp, target, shark, Stop::Never, RAW, COOKED).expect("cookable");
 
         assert!(
-            burning > clean,
+            burning.count > clean.count,
             "burning {} should need more than clean {}",
-            burning,
-            clean
+            burning.count,
+            clean.count
+        );
+        // Extra fish bought that return nothing, so the gp falls with it.
+        assert!(
+            burning.gp < clean.gp,
+            "burning {} should earn less than clean {}",
+            burning.gp,
+            clean.gp
         );
     }
 
@@ -615,7 +692,78 @@ mod tests {
         let shark = find_fish("shark").expect("shark is in the table");
         let xp = level_to_xp(70);
 
-        assert_eq!(fish_between(xp, level_to_xp(71), shark, Stop::NoBurn), None);
+        assert_eq!(
+            fish_between(xp, level_to_xp(71), shark, Stop::NoBurn, RAW, COOKED),
+            None
+        );
+    }
+
+    #[test]
+    fn a_trip_is_priced_at_the_burn_rate_of_each_band_it_crosses() {
+        // Shark, best setup (gauntlets + 10% Hosidius) stops burning at 84, so
+        // a trip from 82 to 86 starts burning and finishes clean. Walking the
+        // bands, with 210 XP a clean cook and 972 gp a taxed sale against a 732
+        // gp raw fish:
+        //
+        //   L82  burn 25.0%  157.50 XP each  1,601 fish  @   -3 gp =   -4,803
+        //   L83  burn 12.5%  183.75 XP each  1,514 fish  @ +118.5 = +179,409
+        //   L84  burn  0.0%  210.00 XP each  1,463 fish  @ +240   = +351,120
+        //   L85  burn  0.0%  210.00 XP each  1,615 fish  @ +240   = +387,600
+        //                                    -----------           ----------
+        //                                    6,193 fish            +913,326
+        //
+        // Freezing the margin at the starting level instead prices all 6,193
+        // fish at the level 82 rate of -3 gp, for -18,579: a loss, from a trip
+        // that makes most of a million. Pinning the sign is what catches that -
+        // a magnitude-only assertion would not.
+        let shark = find_fish("shark").expect("shark is in the table");
+
+        let trip = fish_between(
+            level_to_xp(82),
+            level_to_xp(86),
+            shark,
+            Stop::Level(84),
+            RAW,
+            COOKED,
+        )
+        .expect("shark is cookable at 82");
+
+        assert_eq!(trip.count, 6_193);
+        assert_eq!(trip.gp, 913_326);
+        assert!(trip.gp > 0, "the trip turns a profit, got {}", trip.gp);
+    }
+
+    #[test]
+    fn the_best_setup_is_the_one_that_stops_burning_soonest() {
+        // `best_setup` takes the last setup listed. Nothing in the table
+        // enforces that ordering, and a fish that broke it would have the whole
+        // goal block quoted at its worst setup under the best one's label.
+        for fish in FISH.iter() {
+            let (best_name, best_stop) = best_setup(fish);
+
+            for (name, stop) in setups(fish) {
+                assert!(
+                    stop_rank(best_stop) <= stop_rank(stop),
+                    "{}: {} stops at {:?}, sooner than the quoted best {} at {:?}",
+                    fish.name,
+                    name,
+                    stop,
+                    best_name,
+                    best_stop
+                );
+            }
+        }
+    }
+
+    /// A stop as a comparable level, lower being better. `NoBurn` never burns
+    /// at all so it ranks below every real level; `Never` burns past 99 and
+    /// ranks above them, at the notional level the curve interpolates towards.
+    fn stop_rank(stop: Stop) -> u32 {
+        match stop {
+            Stop::NoBurn => 0,
+            Stop::Level(level) => level,
+            Stop::Never => NEVER_STOPS_AT as u32,
+        }
     }
 
     #[test]
@@ -697,5 +845,123 @@ mod tests {
         // one in the table.
         assert_eq!(xp_label(211.3), "211.3");
         assert_eq!(xp_label(216.3), "216.3");
+    }
+
+    fn test_source() -> Source {
+        use ::common::{ColorResult, author::Author};
+        use std::os::raw::c_char;
+
+        extern "C" fn stub_color(_host: *const c_char, _colors: *const c_char) -> ColorResult {
+            ColorResult::default()
+        }
+
+        Source::create(
+            "0",
+            Author::create("test!test@test", stub_color),
+            "chef",
+            "",
+        )
+    }
+
+    /// A price book holding only the shark rows, so `detail` can be exercised
+    /// without the live Grand Exchange.
+    fn shark_prices() -> (Vec<Mapping>, HashMap<u32, Price>) {
+        let mapping = |id: u32, name: &str| Mapping {
+            id,
+            name: name.to_string(),
+            members: true,
+            lowalch: None,
+            highalch: None,
+            limit: None,
+            value: None,
+            total: None,
+        };
+
+        let ge = HashMap::from([
+            (
+                383,
+                Price {
+                    high: Some(RAW),
+                    low: Some(RAW),
+                },
+            ),
+            (
+                385,
+                Price {
+                    high: Some(COOKED),
+                    low: Some(COOKED),
+                },
+            ),
+        ]);
+
+        (vec![mapping(383, "Raw shark"), mapping(385, "Shark")], ge)
+    }
+
+    /// The goal block for a shark trip, which is the last line `detail` emits.
+    fn shark_goal_line(cook_level: u32, target_level: u32) -> String {
+        let source = test_source();
+        let (items, ge) = shark_prices();
+        let shark = find_fish("shark").expect("shark is in the table");
+        let xp = level_to_xp(cook_level);
+
+        let cook = Cook {
+            listing: Listing::Entry(Entry {
+                name: HiscoreName::Cooking,
+                level: cook_level,
+                xp,
+                rank: 0,
+            }),
+            level: cook_level,
+        };
+
+        let flags = StatsFlags {
+            end: target_level,
+            ..Default::default()
+        };
+
+        detail(
+            &source, "[Chef]", "Cooking", &cook, shark, &flags, &items, &ge,
+        )
+        .last()
+        .expect("detail emits a goal line")
+        .clone()
+    }
+
+    #[test]
+    fn a_goal_that_burns_marks_the_fish_count_and_the_gp_as_estimates() {
+        // 82 to 86 on shark: the best setup burns until 84, so the count and
+        // the gp both came out of the model and read as estimates.
+        let line = shark_goal_line(82, 86);
+
+        assert!(line.contains("~6,193"), "unmarked fish count in {:?}", line);
+        assert!(
+            line.contains(&format!("{}~913.3k", GREEN)),
+            "unmarked gp in {:?}",
+            line
+        );
+        assert!(line.contains("~4.8h"), "unmarked hours in {:?}", line);
+    }
+
+    #[test]
+    fn a_goal_that_never_burns_leaves_the_fish_count_and_the_gp_exact() {
+        // 90 to 91 on shark: the best setup stopped burning at 84, so nothing
+        // burns and both figures are exact.
+        let line = shark_goal_line(90, 91);
+
+        assert!(line.contains("2,650"), "no fish count in {:?}", line);
+        assert!(!line.contains("~2,650"), "fish count marked in {:?}", line);
+        assert!(
+            line.contains(&format!("{}636.0k", GREEN)),
+            "no exact gp in {:?}",
+            line
+        );
+        assert!(
+            !line.contains(&format!("{}~636.0k", GREEN)),
+            "gp marked in {:?}",
+            line
+        );
+        // 1,300 fish an hour is an assumption whatever the burn rate, so the
+        // hours stay an estimate even when nothing burns.
+        assert!(line.contains("~2.0h"), "unmarked hours in {:?}", line);
     }
 }

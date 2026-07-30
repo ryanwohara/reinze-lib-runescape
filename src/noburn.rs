@@ -2,6 +2,7 @@ use anyhow::Result;
 use common::source::Source;
 
 use crate::fish::{FISH, Fish, Stop};
+use crate::track::{MAX_LINE_LEN, pack_lines};
 
 /// One stop-burn cell. A level prints as itself; the two "no level" cases are
 /// opposites and must not look alike - `Never` means the fish still burns at
@@ -14,7 +15,7 @@ fn render(stop: Stop) -> String {
     }
 }
 
-/// The three gauntlet columns, or three dashes for the fish gauntlets do not
+/// The three gauntlet columns, or three dashes for a fish that gauntlets do not
 /// affect.
 fn gauntlet_columns(fish: &Fish) -> Vec<String> {
     match &fish.gauntlets {
@@ -49,20 +50,29 @@ fn row(fish: &Fish, s: &Source) -> String {
 
 pub fn noburn(s: &Source) -> Result<Vec<String>> {
     let query = s.query.trim();
+    let prefix = s.l("NoBurn");
 
-    let output: Vec<String> = FISH
+    let rows: Vec<String> = FISH
         .iter()
         .filter(|fish| matches(fish, query))
         .map(|fish| row(fish, s))
         .collect();
 
-    Ok(vec![
-        format!("{} {}", s.l("NoBurn"), s.not_found(output)),
-        s.p(
-            "Fire | Range | Hosidius 5% | Hosidius 10% | (Gauntlets | Gauntlets + Hosidius 5% | Gauntlets + Hosidius 10%)",
-        ),
-        s.p("N/A = still burns at 99 | any = never burns | - = gauntlets don't apply"),
-    ])
+    // Eleven colour-wrapped rows run well past the bot's send splitter, which
+    // blind-chops mid-segment and orphans a prefix-less fragment, so pack them
+    // into self-contained lines instead of joining them onto one.
+    let mut lines = if rows.is_empty() {
+        vec![format!("{} {}", prefix, s.not_found(rows))]
+    } else {
+        pack_lines(&prefix, &rows, &s.c1(" | "), MAX_LINE_LEN)
+    };
+
+    lines.push(s.p(
+        "Fire | Range | Hosidius 5% | Hosidius 10% | (Gauntlets | Gauntlets + Hosidius 5% | Gauntlets + Hosidius 10%)",
+    ));
+    lines.push(s.p("N/A = still burns at 99 | any = never burns | - = gauntlets don't apply"));
+
+    Ok(lines)
 }
 
 #[cfg(test)]
@@ -142,20 +152,62 @@ mod tests {
         );
     }
 
-    #[test]
-    fn a_query_that_matches_no_fish_reports_not_found() {
+    fn test_source(query: &str) -> Source {
         use ::common::{ColorResult, author::Author};
-        use common::source::Source;
         use std::os::raw::c_char;
 
         extern "C" fn stub_color(_host: *const c_char, _colors: *const c_char) -> ColorResult {
             ColorResult::default()
         }
 
-        let s = Source::create("0", Author::create("test!test@test", stub_color), "noburn", "zzz");
+        Source::create(
+            "0",
+            Author::create("test!test@test", stub_color),
+            "noburn",
+            query,
+        )
+    }
 
-        let result = noburn(&s).expect("should not error on no-match");
+    #[test]
+    fn a_query_that_matches_no_fish_reports_not_found() {
+        let result = noburn(&test_source("zzz")).expect("should not error on no-match");
+
         assert_eq!(result.len(), 3); // three lines: data, header, legend
         assert!(result[0].contains("Not found"));
+    }
+
+    #[test]
+    fn no_line_exceeds_the_send_limit() {
+        // Eleven colour-wrapped rows on one line run past the bot's splitter,
+        // which blind-chops mid-segment and orphans a prefix-less fragment.
+        let result = noburn(&test_source("")).expect("the full table renders");
+
+        for line in &result {
+            assert!(
+                line.len() <= MAX_LINE_LEN,
+                "a {} byte line exceeds the {} byte cap: {:?}",
+                line.len(),
+                MAX_LINE_LEN,
+                line
+            );
+        }
+
+        // More than the one data line plus two legends, so the rows really were
+        // packed across lines rather than fitting by luck.
+        assert!(
+            result.len() > 3,
+            "the table was not packed, got {} lines",
+            result.len()
+        );
+    }
+
+    #[test]
+    fn a_narrow_query_still_keeps_both_legend_lines() {
+        let result = noburn(&test_source("shark")).expect("shark renders");
+
+        assert_eq!(result.len(), 3);
+        assert!(result[0].contains("Shark"));
+        assert!(result[1].contains("Hosidius 10%"));
+        assert!(result[2].contains("gauntlets don't apply"));
     }
 }
