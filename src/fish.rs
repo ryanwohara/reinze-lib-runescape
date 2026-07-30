@@ -45,8 +45,14 @@ pub struct Fish {
 }
 
 /// Every fish with both a raw and a cooked Grand Exchange item, in cooking
-/// level order. Levels, XP and stop-burn levels are the wiki's.
-pub const FISH: [Fish; 11] = [
+/// level order. Levels, XP and stop-burn levels are the wiki's, except for the
+/// Sailing fish. The wiki's burn table does not cover those yet - the page
+/// carries an "incomplete" banner saying so - and their stop-burn levels are
+/// instead derived from the success-rate curve on each fish's own page. That
+/// derivation reproduces every Fire, Range and Hosidius 5% level already in
+/// this table exactly, and lands within one level on six of the Hosidius 10%
+/// and gauntlet cells, which are left as the wiki has them.
+pub const FISH: [Fish; 19] = [
     Fish {
         name: "Tuna",
         raw: "Raw tuna",
@@ -116,6 +122,20 @@ pub const FISH: [Fish; 11] = [
         }),
     },
     Fish {
+        name: "Swordtip squid",
+        raw: "Raw swordtip squid",
+        cooked: "Swordtip squid",
+        level: 56,
+        xp: 150.0,
+        fire: Stop::Level(91),
+        range: Stop::Level(85),
+        hosidius5: Stop::Level(83),
+        // Derived level 80, below the elite diary's own level 84 requirement,
+        // so the 10% setup never burns it.
+        hosidius10: Stop::NoBurn,
+        gauntlets: None,
+    },
+    Fish {
         name: "Monkfish",
         raw: "Raw monkfish",
         cooked: "Monkfish",
@@ -130,6 +150,54 @@ pub const FISH: [Fish; 11] = [
             hosidius5: Stop::Level(82),
             hosidius10: Stop::NoBurn,
         }),
+    },
+    Fish {
+        name: "Giant krill",
+        raw: "Raw giant krill",
+        cooked: "Giant krill",
+        level: 69,
+        xp: 177.5,
+        fire: Stop::Never,
+        range: Stop::Never,
+        hosidius5: Stop::Level(98),
+        hosidius10: Stop::Level(95),
+        gauntlets: None,
+    },
+    Fish {
+        name: "Jumbo squid",
+        raw: "Raw jumbo squid",
+        cooked: "Jumbo squid",
+        level: 71,
+        xp: 180.0,
+        fire: Stop::Never,
+        range: Stop::Never,
+        hosidius5: Stop::Level(98),
+        hosidius10: Stop::Level(96),
+        gauntlets: None,
+    },
+    Fish {
+        name: "Haddock",
+        raw: "Raw haddock",
+        cooked: "Haddock",
+        level: 73,
+        xp: 180.0,
+        fire: Stop::Never,
+        range: Stop::Never,
+        hosidius5: Stop::Level(99),
+        hosidius10: Stop::Level(97),
+        gauntlets: None,
+    },
+    Fish {
+        name: "Yellowfin",
+        raw: "Raw yellowfin",
+        cooked: "Yellowfin",
+        level: 79,
+        xp: 200.0,
+        fire: Stop::Never,
+        range: Stop::Never,
+        hosidius5: Stop::Never,
+        hosidius10: Stop::Level(98),
+        gauntlets: None,
     },
     Fish {
         name: "Shark",
@@ -160,6 +228,18 @@ pub const FISH: [Fish; 11] = [
         gauntlets: None,
     },
     Fish {
+        name: "Halibut",
+        raw: "Raw halibut",
+        cooked: "Halibut",
+        level: 83,
+        xp: 212.5,
+        fire: Stop::Never,
+        range: Stop::Never,
+        hosidius5: Stop::Never,
+        hosidius10: Stop::Level(99),
+        gauntlets: None,
+    },
+    Fish {
         name: "Anglerfish",
         raw: "Raw anglerfish",
         cooked: "Anglerfish",
@@ -174,6 +254,18 @@ pub const FISH: [Fish; 11] = [
             hosidius5: Stop::Level(93),
             hosidius10: Stop::Level(87),
         }),
+    },
+    Fish {
+        name: "Bluefin",
+        raw: "Raw bluefin",
+        cooked: "Bluefin",
+        level: 87,
+        xp: 215.0,
+        fire: Stop::Never,
+        range: Stop::Never,
+        hosidius5: Stop::Never,
+        hosidius10: Stop::Level(99),
+        gauntlets: None,
     },
     Fish {
         name: "Dark crab",
@@ -193,6 +285,18 @@ pub const FISH: [Fish; 11] = [
         cooked: "Manta ray",
         level: 91,
         xp: 216.3,
+        fire: Stop::Never,
+        range: Stop::Never,
+        hosidius5: Stop::Never,
+        hosidius10: Stop::Never,
+        gauntlets: None,
+    },
+    Fish {
+        name: "Marlin",
+        raw: "Raw marlin",
+        cooked: "Marlin",
+        level: 91,
+        xp: 225.0,
         fire: Stop::Never,
         range: Stop::Never,
         hosidius5: Stop::Never,
@@ -306,6 +410,54 @@ mod tests {
         assert!(find_fish("nature rune").is_none());
         assert!(find_fish("").is_none());
         assert!(find_fish("   ").is_none());
+    }
+
+    #[test]
+    fn the_sailing_fish_are_reachable_by_name() {
+        assert_eq!(find_fish("halibut").map(|f| f.name), Some("Halibut"));
+        assert_eq!(find_fish("bluefin").map(|f| f.name), Some("Bluefin"));
+        assert_eq!(find_fish("marlin").map(|f| f.name), Some("Marlin"));
+        assert_eq!(find_fish("haddock").map(|f| f.name), Some("Haddock"));
+        // Two-word fish are substring-only, as with "Sea turtle".
+        assert_eq!(find_fish("krill").map(|f| f.name), Some("Giant krill"));
+
+        // Two fish end in "fin" and two end in "squid". The ladder returns the
+        // first match in table order, so the lower level fish wins; both are
+        // still reachable by their full names.
+        assert_eq!(find_fish("fin").map(|f| f.name), Some("Yellowfin"));
+        assert_eq!(find_fish("squid").map(|f| f.name), Some("Swordtip squid"));
+        assert_eq!(find_fish("jumbo").map(|f| f.name), Some("Jumbo squid"));
+        assert_eq!(find_fish("yellowfin").map(|f| f.name), Some("Yellowfin"));
+    }
+
+    #[test]
+    fn the_sailing_fish_never_take_gauntlets() {
+        for name in [
+            "Swordtip squid",
+            "Giant krill",
+            "Jumbo squid",
+            "Haddock",
+            "Yellowfin",
+            "Halibut",
+            "Bluefin",
+            "Marlin",
+        ] {
+            let fish = find_fish(name).expect("the fish is in the table");
+            assert!(
+                fish.gauntlets.is_none(),
+                "{name} should not carry gauntlet levels"
+            );
+        }
+    }
+
+    #[test]
+    fn marlin_burns_at_every_level_on_every_setup() {
+        let marlin = find_fish("marlin").expect("marlin is in the table");
+
+        assert_eq!(marlin.fire, Stop::Never);
+        assert_eq!(marlin.range, Stop::Never);
+        assert_eq!(marlin.hosidius5, Stop::Never);
+        assert_eq!(marlin.hosidius10, Stop::Never);
     }
 
     #[test]
