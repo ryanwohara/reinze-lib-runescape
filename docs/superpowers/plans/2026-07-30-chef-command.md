@@ -14,7 +14,7 @@
 
 - **No new dependencies.** Everything needed is already in `Cargo.toml`.
 - **`cargo test` must pass after every task.** The suite is 128 tests today and runs in ~5s.
-- **Burn figures are estimates.** Every burn percentage, and every gp or fish count derived from one, is printed with a leading `~`.
+- **Modelled burn figures are estimates.** Every burn percentage produced by the model, and every gp or fish count derived from one, is printed with a leading `~`. An exact `0%` is the one exception: it comes from the wiki's own stop-burn table rather than the model, so it is printed unmarked.
 - **`MAX_BURN = 0.50`** is the single tunable burn anchor. It appears exactly once, in `chef.rs`, with a comment saying it is a modelling choice and not a wiki figure.
 - **`FISH_PER_HOUR = 1_300`** — the wiki money-making guide's default cook rate.
 - **GE tax is 2%**, rounded down per item, capped at 5,000,000 gp. Computed with integer maths, never floating point.
