@@ -14,7 +14,7 @@ fn render(stop: Stop) -> String {
     }
 }
 
-/// The three gauntlet columns, or three N/As for the fish gauntlets do not
+/// The three gauntlet columns, or three dashes for the fish gauntlets do not
 /// affect.
 fn gauntlet_columns(fish: &Fish) -> Vec<String> {
     match &fish.gauntlets {
@@ -23,7 +23,7 @@ fn gauntlet_columns(fish: &Fish) -> Vec<String> {
             render(gauntlets.hosidius5),
             render(gauntlets.hosidius10),
         ],
-        None => vec!["N/A".to_string(), "N/A".to_string(), "N/A".to_string()],
+        None => vec!["-".to_string(), "-".to_string(), "-".to_string()],
     }
 }
 
@@ -57,11 +57,11 @@ pub fn noburn(s: &Source) -> Result<Vec<String>> {
         .collect();
 
     Ok(vec![
-        format!("{} {}", s.l("NoBurn"), output.join(&s.c1(" | "))),
+        format!("{} {}", s.l("NoBurn"), s.not_found(output)),
         s.p(
             "Fire | Range | Hosidius 5% | Hosidius 10% | (Gauntlets | Gauntlets + Hosidius 5% | Gauntlets + Hosidius 10%)",
         ),
-        s.p("N/A = still burns at 99 | any = never burns"),
+        s.p("N/A = still burns at 99 | any = never burns | - = gauntlets don't apply"),
     ])
 }
 
@@ -89,7 +89,7 @@ mod tests {
         let karambwan = find_fish("karambwan").expect("karambwan is in the table");
         let columns = gauntlet_columns(karambwan);
 
-        assert_eq!(columns, vec!["N/A", "N/A", "N/A"]);
+        assert_eq!(columns, vec!["-", "-", "-"]);
     }
 
     #[test]
@@ -130,5 +130,32 @@ mod tests {
             .collect();
 
         assert_eq!(matched, vec!["Dark crab"]);
+    }
+
+    #[test]
+    fn the_gauntlet_not_applicable_mark_differs_from_never() {
+        // "-" is for gauntlets that don't apply; "N/A" means still burns at 99.
+        // They must never be the same string.
+        assert_ne!(
+            gauntlet_columns(&find_fish("karambwan").expect("karambwan exists"))[0],
+            render(Stop::Never)
+        );
+    }
+
+    #[test]
+    fn a_query_that_matches_no_fish_reports_not_found() {
+        use ::common::{ColorResult, author::Author};
+        use common::source::Source;
+        use std::os::raw::c_char;
+
+        extern "C" fn stub_color(_host: *const c_char, _colors: *const c_char) -> ColorResult {
+            ColorResult::default()
+        }
+
+        let s = Source::create("0", Author::create("test!test@test", stub_color), "noburn", "zzz");
+
+        let result = noburn(&s).expect("should not error on no-match");
+        assert_eq!(result.len(), 3); // three lines: data, header, legend
+        assert!(result[0].contains("Not found"));
     }
 }
