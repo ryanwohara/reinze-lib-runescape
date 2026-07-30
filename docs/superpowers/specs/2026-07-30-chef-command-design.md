@@ -231,6 +231,35 @@ before you have the level — but marked, and the footnote line only appears whe
 at least one fish is marked. Colouring follows the house pattern: `source.l` for
 the prefix, `c1` for labels, `c2` for values, `p` for parenthetical detail.
 
+### Profit and loss are colour-coded
+
+Every signed gp figure is green when it is a profit and red when it is a loss,
+so a losing method reads as losing at a glance rather than needing the minus sign
+spotted:
+
+```rust
+/// Signed gp, coloured by sign. The c1/c2 palette is per-user configurable and
+/// carries no profit/loss meaning, so these two codes are deliberately fixed.
+const GREEN: &str = "\x0303";
+const RED: &str = "\x0304";
+
+fn gp(amount: i64) -> String {
+    format!("{}{}", if amount < 0 { RED } else { GREEN }, short_gp(amount))
+}
+```
+
+This applies to the per-setup profit/hr figures, the ranked list's profit/hr, and
+the goal block's total profit. Zero counts as green — it is not a loss. Prices,
+XP, burn percentages and fish counts are not signed quantities and keep the
+normal `c2` treatment.
+
+Two consequences worth recording. An IRC colour code sets the colour for the rest
+of the line, so anything following a coloured figure must re-assert its own
+colour — the `c1`/`c2`/`p` helpers already emit a colour prefix every time, so
+this holds as long as no raw text is concatenated after a `gp()` call. And the
+codes cost three bytes each against `MAX_LINE_LEN`, which `pack_lines` already
+measures correctly because it counts the formatted string.
+
 ## Error handling
 
 Each case returns a single prefixed line, matching degrime and herbi:
@@ -257,6 +286,8 @@ network — the same split degrime uses.
   up; `None` below the cooking level; zero when the target is already met.
 - `find_fish` — exact beats prefix beats substring; `turtle` finds Sea turtle;
   unknown and empty queries return `None`.
+- `gp` — green code on a profit and on zero, red code on a loss, with the sign
+  preserved in the text.
 - table integrity — every fish's raw and cooked names are distinct and non-empty,
   levels and XP are positive, no duplicates (mirrors degrime's
   `every_herb_is_named_and_distinct`).
