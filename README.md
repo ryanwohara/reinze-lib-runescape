@@ -25,10 +25,13 @@ caller's stored RSN — or IRC nick — when none is given.
   `-e`/`-x` XP. A comparison (`< <= > >= =`) filters to matching skills.
 - `-combat[N] [flags] [RSN]` — Show total combat level and style, each combat
   skill's level/XP, and the XP each needs to raise combat by one (alias `-cmb`).
-- `-track[N] [RSN] [@duration]` — Diff a player's live hiscores against a saved
-  snapshot, reporting per-skill and activity changes. No duration diffs the most
-  recent snapshot; `@3d`/`@1w`/`@12h`/`@2w3d` diffs that far back. Records a fresh
-  snapshot each call.
+- `-track[N] [RSN] [@duration] [^name ...]` — Diff a player's live hiscores
+  against a saved snapshot, reporting per-skill and activity changes. No duration
+  diffs the most recent snapshot; `@3d`/`@1w`/`@12h`/`@2w3d` diffs that far back.
+  Records a fresh snapshot each call. `^name` narrows the report to specific rows
+  and may be repeated — `^mining`, `^mine` and `^att` go through the skill
+  aliases, `^zulrah`/`^cox`/`^clue` match any hiscore row by substring. A
+  requested row that did not change reports its current standing instead.
 - `-players` — Report OSRS and RS3 players online (and each side's share), the
   combined total, and total registered accounts, live from Jagex.
 

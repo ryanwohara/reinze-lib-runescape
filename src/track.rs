@@ -168,12 +168,18 @@ pub(crate) fn pack_lines(prefix: &str, parts: &[String], sep: &str, max_len: usi
     lines
 }
 
-pub fn format_changes(changes: &[Change], source: &Source, duration_str: &str) -> Vec<String> {
-    let prefix = format!(
+/// `[Track] (1d):` — the self-contained prefix every emitted line carries, so a
+/// line split never produces a meaningless fragment.
+fn track_prefix(source: &Source, duration_str: &str) -> String {
+    format!(
         "{} {}:",
         source.l("Track"),
         source.c2(&format!("({})", duration_str))
-    );
+    )
+}
+
+pub fn format_changes(changes: &[Change], source: &Source, duration_str: &str) -> Vec<String> {
+    let prefix = track_prefix(source, duration_str);
 
     if changes.is_empty() {
         return vec![format!("{} {}", prefix, source.c1("No changes"))];
@@ -197,10 +203,85 @@ pub fn format_changes(changes: &[Change], source: &Source, duration_str: &str) -
     pack_lines(&prefix, &parts, &source.c2(" | "), MAX_LINE_LEN)
 }
 
+/// A requested row that did not change still has to report something, so it
+/// falls back to its live standing with an explicit zero delta. Jagex reports
+/// unranked rows as `-1`, which the `u32` parse floors to 0 — that is what
+/// distinguishes "unranked" from a genuine level 1 / score 0.
+fn format_current_standing(listing: &Listing, source: &Source) -> String {
+    let name = source.c1(&listing.name().to_string());
+
+    match listing {
+        Listing::Entry(e) if e.level == 0 => format!("{} {}", name, source.c1("Unranked")),
+        Listing::Entry(e) => format!("{} {} ({} XP) +0 XP", name, e.level, short_xp(e.xp as f64)),
+        Listing::SubEntry(s) if s.xp == 0 => format!("{} {}", name, source.c1("Unranked")),
+        Listing::SubEntry(s) => format!("{} {} +0", name, s.xp),
+    }
+}
+
+/// One segment per requested row, in the order typed. Unlike the unfiltered
+/// path this never collapses to a bare "No changes" — each requested row
+/// reports its own state, and an unresolvable token is flagged in place rather
+/// than failing the whole lookup.
+pub fn format_requested(
+    requested: &[Requested],
+    changes: &[Change],
+    live: &Listings,
+    source: &Source,
+    duration_str: &str,
+) -> Vec<String> {
+    let parts: Vec<String> = requested
+        .iter()
+        .map(|r| match r {
+            Requested::Unmatched(token) => source.c1(&format!("no match for '{}'", token)),
+            Requested::Row(name) => match changes.iter().find(|c| c.name == *name) {
+                Some(change) => format_single_change(change, source),
+                None => match live.skill(&name.to_string()) {
+                    Some(listing) => format_current_standing(&listing, source),
+                    None => format!("{} {}", source.c1(&name.to_string()), source.c1("No data")),
+                },
+            },
+        })
+        .collect();
+
+    pack_lines(
+        &track_prefix(source, duration_str),
+        &parts,
+        &source.c2(" | "),
+        MAX_LINE_LEN,
+    )
+}
+
+/// Every `^name` token was a typo, so there is nothing to diff. Reported under a
+/// duration-less prefix, matching the shape of the other early returns in
+/// `lookup`.
+fn format_all_unmatched(requested: &[Requested], source: &Source) -> Vec<String> {
+    let parts: Vec<String> = requested
+        .iter()
+        .filter_map(|r| match r {
+            Requested::Unmatched(token) => Some(source.c1(&format!("no match for '{}'", token))),
+            Requested::Row(_) => None,
+        })
+        .collect();
+
+    pack_lines(&source.l("Track"), &parts, &source.c2(" | "), MAX_LINE_LEN)
+}
+
 pub fn lookup(source: Source) -> Result<Vec<String>> {
     let query = source.query.clone();
     let flags = stats_parameters(&query);
     let cleaned = strip_stats_parameters(&query);
+    let requested = resolve_requested(&flags.names);
+
+    // Every `^name` was a typo, so there is nothing worth diffing. Bail before
+    // the rsn lookup and the hiscores fetch so a typo costs no round trip and
+    // records no snapshot.
+    if !requested.is_empty()
+        && requested
+            .iter()
+            .all(|r| matches!(r, Requested::Unmatched(_)))
+    {
+        return Ok(format_all_unmatched(&requested, &source));
+    }
 
     let rsn = resolve_rsn(cleaned.trim(), &source);
     let mode = flags.account_type.mode();
@@ -286,7 +367,18 @@ pub fn lookup(source: Source) -> Result<Vec<String>> {
         }
     };
     let changes = diff_listings(&old_listings, &live_listings);
-    Ok(format_changes(&changes, &source, &duration_str))
+
+    if requested.is_empty() {
+        Ok(format_changes(&changes, &source, &duration_str))
+    } else {
+        Ok(format_requested(
+            &requested,
+            &changes,
+            &live_listings,
+            &source,
+            &duration_str,
+        ))
+    }
 }
 
 /// Called by the bot timer system every 6h.
@@ -317,6 +409,61 @@ pub fn snapshot_all() -> Result<Vec<String>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use crate::common::{Entry, SubEntry};
+    use ::common::ColorResult;
+    use ::common::author::Author;
+    use regex::Regex;
+    use std::os::raw::c_char;
+
+    extern "C" fn stub_color(_host: *const c_char, _colors: *const c_char) -> ColorResult {
+        ColorResult::default()
+    }
+
+    fn stub_source() -> Source {
+        Source::create(
+            "0",
+            Author::create("nick!ident@host", stub_color),
+            "track",
+            "",
+        )
+    }
+
+    /// Strip IRC colour codes so assertions read as plain text.
+    fn plain(s: &str) -> String {
+        Regex::new(r"\x03\d{0,2}")
+            .unwrap()
+            .replace_all(s, "")
+            .to_string()
+    }
+
+    fn entry(name: HiscoreName, level: u32, xp: u32) -> Listing {
+        Listing::Entry(Entry {
+            name,
+            rank: 1,
+            level,
+            xp,
+        })
+    }
+
+    fn sub(name: HiscoreName, score: u32) -> Listing {
+        Listing::SubEntry(SubEntry {
+            name,
+            rank: 1,
+            xp: score,
+        })
+    }
+
+    fn skill_change(name: HiscoreName, old_level: u32, new_level: u32, gained: u32) -> Change {
+        Change {
+            name,
+            is_skill: true,
+            old_level,
+            new_level,
+            old_xp: 2_000_000,
+            new_xp: 2_000_000 + gained,
+        }
+    }
 
     fn parts(n: usize, each: &str) -> Vec<String> {
         (0..n).map(|_| each.to_string()).collect()
@@ -429,5 +576,137 @@ mod tests {
                 Requested::Unmatched("asdf".to_string()),
             ]
         );
+    }
+
+    #[test]
+    fn a_changed_skill_reports_its_delta() {
+        let live = Listings::new(vec![entry(HiscoreName::Mining, 83, 2_031_000)]);
+        let out = format_requested(
+            &[Requested::Row(HiscoreName::Mining)],
+            &[skill_change(HiscoreName::Mining, 82, 83, 31_000)],
+            &live,
+            &stub_source(),
+            "1d",
+        );
+        assert_eq!(plain(&out[0]), "[Track] (1d): Mining 82→83 (+31.0k XP)");
+    }
+
+    #[test]
+    fn a_changed_activity_reports_its_score_delta() {
+        // `diff_listings` stores an activity's score in every level/xp field, so
+        // the Change for a boss carries scores, not levels.
+        let change = Change {
+            name: HiscoreName::Zulrah,
+            is_skill: false,
+            old_level: 1031,
+            new_level: 1205,
+            old_xp: 1031,
+            new_xp: 1205,
+        };
+        let live = Listings::new(vec![sub(HiscoreName::Zulrah, 1205)]);
+        let out = format_requested(
+            &[Requested::Row(HiscoreName::Zulrah)],
+            &[change],
+            &live,
+            &stub_source(),
+            "1d",
+        );
+        assert_eq!(plain(&out[0]), "[Track] (1d): Zulrah 1031→1205 (+174)");
+    }
+
+    #[test]
+    fn an_unchanged_skill_reports_its_current_standing() {
+        let live = Listings::new(vec![entry(HiscoreName::Mining, 82, 13_034_431)]);
+        let out = format_requested(
+            &[Requested::Row(HiscoreName::Mining)],
+            &[],
+            &live,
+            &stub_source(),
+            "1d",
+        );
+        assert_eq!(plain(&out[0]), "[Track] (1d): Mining 82 (13.0m XP) +0 XP");
+    }
+
+    #[test]
+    fn an_unchanged_activity_reports_its_score() {
+        let live = Listings::new(vec![sub(HiscoreName::Zulrah, 1205)]);
+        let out = format_requested(
+            &[Requested::Row(HiscoreName::Zulrah)],
+            &[],
+            &live,
+            &stub_source(),
+            "1w",
+        );
+        assert_eq!(plain(&out[0]), "[Track] (1w): Zulrah 1205 +0");
+    }
+
+    #[test]
+    fn an_unranked_row_says_so_instead_of_showing_zeroes() {
+        // Jagex reports unranked rows as `-1`, which the u32 parse floors to 0.
+        let live = Listings::new(vec![
+            entry(HiscoreName::Mining, 0, 0),
+            sub(HiscoreName::Zulrah, 0),
+        ]);
+        let out = format_requested(
+            &[
+                Requested::Row(HiscoreName::Mining),
+                Requested::Row(HiscoreName::Zulrah),
+            ],
+            &[],
+            &live,
+            &stub_source(),
+            "1d",
+        );
+        assert_eq!(
+            plain(&out[0]),
+            "[Track] (1d): Mining Unranked | Zulrah Unranked"
+        );
+    }
+
+    #[test]
+    fn a_row_absent_from_the_response_says_no_data() {
+        let out = format_requested(
+            &[Requested::Row(HiscoreName::Zulrah)],
+            &[],
+            &Listings::new(vec![]),
+            &stub_source(),
+            "1d",
+        );
+        assert_eq!(plain(&out[0]), "[Track] (1d): Zulrah No data");
+    }
+
+    #[test]
+    fn a_typo_keeps_the_good_column_and_flags_the_bad_token() {
+        let live = Listings::new(vec![entry(HiscoreName::Mining, 82, 2_031_000)]);
+        let out = format_requested(
+            &[
+                Requested::Row(HiscoreName::Mining),
+                Requested::Unmatched("asdf".to_string()),
+            ],
+            &[skill_change(HiscoreName::Mining, 82, 82, 31_000)],
+            &live,
+            &stub_source(),
+            "1d",
+        );
+        assert_eq!(
+            plain(&out[0]),
+            "[Track] (1d): Mining +31.0k XP | no match for 'asdf'"
+        );
+    }
+
+    #[test]
+    fn all_tokens_bad_reports_the_misses_without_a_duration() {
+        let requested = resolve_requested(&["asdf".to_string(), "qwer".to_string()]);
+        let out = format_all_unmatched(&requested, &stub_source());
+        assert_eq!(
+            plain(&out[0]),
+            "[Track] no match for 'asdf' | no match for 'qwer'"
+        );
+    }
+
+    #[test]
+    fn the_unfiltered_path_still_collapses_to_no_changes() {
+        let out = format_changes(&[], &stub_source(), "1d");
+        assert_eq!(plain(&out[0]), "[Track] (1d): No changes");
     }
 }
