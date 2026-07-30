@@ -36,6 +36,10 @@ pub struct StatsFlags {
     pub start: u32,
     pub end: u32,
     pub search: String,
+    /// Explicit `^name` hiscore-row filters, in the order typed. Interpreted by
+    /// commands that support narrowing to specific rows (currently `track`);
+    /// ignored elsewhere.
+    pub names: Vec<String>,
 }
 
 impl Default for StatsFlags {
@@ -49,6 +53,7 @@ impl Default for StatsFlags {
             start: 0,
             end: 0,
             search: "".to_string(),
+            names: vec![],
         }
     }
 }
@@ -207,7 +212,7 @@ impl From<&str> for MutuallyExclusiveFlag {
 }
 
 pub fn get_stats_regex() -> Regex {
-    Regex::new(r"(?:^|\b|\s)(?:(-([serox]|[iuhdlt1]|sk|fs))|([<>=]=?)\s?([\d,.]+[kmb]?)|([#^])([\d,.]+[kmb]?)|(@)(\S+))(?:\b|$)").unwrap()
+    Regex::new(r"(?:^|\b|\s)(?:(-([serox]|[iuhdlt1]|sk|fs))|([<>=]=?)\s?([\d,.]+[kmb]?)|([#^])([\d,.]+[kmb]?)|(\^)([A-Za-z]\S*)|(@)(\S+))(?:\b|$)").unwrap()
 }
 
 pub fn stats_parameters(query: &str) -> StatsFlags {
@@ -220,6 +225,7 @@ pub fn stats_parameters(query: &str) -> StatsFlags {
         start: 0,
         end: 0,
         search: "".to_string(),
+        names: vec![],
     };
 
     for (_, [flag_identifier, detail]) in get_stats_regex()
@@ -240,6 +246,11 @@ pub fn stats_parameters(query: &str) -> StatsFlags {
             "-o" => stats.flag = MutuallyExclusiveFlag::Order,
             "-r" => stats.flag = MutuallyExclusiveFlag::Rank,
             "-e" | "-x" => stats.flag = MutuallyExclusiveFlag::Exp,
+            // Both caret forms share the identifier, so the detail decides:
+            // a leading letter is a row filter, anything else is a start level.
+            "^" if detail.starts_with(|c: char| c.is_ascii_alphabetic()) => {
+                stats.names.push(detail.to_string())
+            }
             "^" => stats.start = eval_query(detail).unwrap_or(0.0) as u32,
             "#" => stats.end = eval_query(detail).unwrap_or(0.0) as u32,
             "@" => stats.search = detail.to_string(),
@@ -656,6 +667,53 @@ mod tests {
         assert!(rendered.contains("200m XP"), "got: {rendered}");
         assert!(rendered.contains("100%"), "got: {rendered}");
         assert!(!rendered.contains("XP to"), "no target left: {rendered}");
+    }
+
+    #[test]
+    fn caret_number_still_sets_the_start_level() {
+        for (query, expected) in [("^50 dra", 50), ("^50k dra", 50_000), ("^1.5m dra", 1_500_000)] {
+            let flags = stats_parameters(query);
+            assert_eq!(flags.start, expected, "start for {query:?}");
+            assert!(
+                flags.names.is_empty(),
+                "a numeric caret is not a row filter: {query:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn caret_name_collects_a_row_filter_and_leaves_start_alone() {
+        let flags = stats_parameters("dra ^mining");
+        assert_eq!(flags.names, vec!["mining".to_string()]);
+        assert_eq!(flags.start, 0);
+    }
+
+    #[test]
+    fn caret_names_accumulate_in_the_order_typed() {
+        let flags = stats_parameters("^mining ^fishing dra");
+        assert_eq!(
+            flags.names,
+            vec!["mining".to_string(), "fishing".to_string()]
+        );
+    }
+
+    #[test]
+    fn caret_names_are_stripped_from_the_rsn_text() {
+        assert_eq!(strip_stats_parameters("^mining ^fishing dra").trim(), "dra");
+    }
+
+    /// Also guards the capture-group invariant: `stats_parameters` reads matches
+    /// through `extract::<2>()`, so a new branch with the wrong number of groups
+    /// panics here rather than failing an assertion.
+    #[test]
+    fn a_row_filter_does_not_disturb_the_other_flags() {
+        let flags = stats_parameters("dra ^zulrah @3d -i >70 #99");
+        assert_eq!(flags.names, vec!["zulrah".to_string()]);
+        assert_eq!(flags.search, "3d");
+        assert_eq!(flags.account_type.mode(), "iron");
+        assert_eq!(flags.filter_by, FilterBy::GreaterThan);
+        assert_eq!(flags.filter_at, 70);
+        assert_eq!(flags.end, 99);
     }
 }
 
