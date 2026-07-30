@@ -5,7 +5,7 @@ use log::error;
 
 use crate::common::{
     HiscoreName, Listing, Listings, fetch_hiscores_raw, parse_hiscores_raw, parse_snapshot_data,
-    resolve_rsn, short_xp, to_snapshot_data,
+    resolve_rsn, short_xp, skill, to_snapshot_data,
 };
 use crate::stats::{StatsFlags, stats_parameters, strip_stats_parameters};
 
@@ -49,6 +49,52 @@ pub fn diff_listings(old: &Listings, new: &Listings) -> Vec<Change> {
     }
 
     changes
+}
+
+/// One `^name` token's resolution outcome, kept in the order typed so the
+/// output columns match what the caller asked for.
+#[derive(Debug, PartialEq)]
+pub enum Requested {
+    Row(HiscoreName),
+    Unmatched(String),
+}
+
+/// Resolve a `^name` token to a hiscore row.
+///
+/// The alias table comes first because no row's display name *contains* the
+/// substring "mine" — `^mine`, `^att` and `^cmb` only work through it. The
+/// substring pass then covers activities (`^zulrah`, `^cox`, `^clue`).
+///
+/// `HiscoreName::None` is a safe miss sentinel: its `Display` is the empty
+/// string, and `""` never contains a non-empty needle, so the substring pass
+/// can never select it by accident.
+fn resolve_name(token: &str) -> HiscoreName {
+    let aliased = skill(token);
+
+    if aliased.is_empty() {
+        HiscoreName::from(token)
+    } else {
+        HiscoreName::from(aliased.as_str())
+    }
+}
+
+/// Resolve every token, dropping repeats so `^mining ^mine` yields one column,
+/// while preserving the order typed.
+fn resolve_requested(tokens: &[String]) -> Vec<Requested> {
+    let mut requested: Vec<Requested> = Vec::new();
+
+    for token in tokens {
+        let resolved = match resolve_name(token) {
+            HiscoreName::None => Requested::Unmatched(token.clone()),
+            name => Requested::Row(name),
+        };
+
+        if !requested.contains(&resolved) {
+            requested.push(resolved);
+        }
+    }
+
+    requested
 }
 
 fn format_single_change(c: &Change, source: &Source) -> String {
@@ -331,5 +377,57 @@ mod tests {
         let lines = pack_lines("P:", &[big.clone()], " | ", 20);
         assert_eq!(lines.len(), 1);
         assert!(lines[0].contains(&big));
+    }
+
+    #[test]
+    fn aliases_resolve_through_the_skill_table() {
+        // No row's display name contains "mine", so these only work via the
+        // alias table, not the substring pass.
+        assert_eq!(resolve_name("mine"), HiscoreName::Mining);
+        assert_eq!(resolve_name("att"), HiscoreName::Attack);
+        assert_eq!(resolve_name("cmb"), HiscoreName::Overall);
+    }
+
+    #[test]
+    fn activities_resolve_by_substring() {
+        assert_eq!(resolve_name("zulrah"), HiscoreName::Zulrah);
+        assert_eq!(resolve_name("cox"), HiscoreName::CoX);
+        assert_eq!(resolve_name("clue"), HiscoreName::ClueScrollAll);
+    }
+
+    #[test]
+    fn an_unknown_token_is_a_miss_not_a_row() {
+        assert_eq!(resolve_name("asdf"), HiscoreName::None);
+    }
+
+    #[test]
+    fn repeated_tokens_collapse_to_one_column() {
+        let requested = resolve_requested(&["mining".to_string(), "mine".to_string()]);
+        assert_eq!(requested, vec![Requested::Row(HiscoreName::Mining)]);
+    }
+
+    #[test]
+    fn resolution_preserves_the_order_typed() {
+        let requested = resolve_requested(&["fishing".to_string(), "mining".to_string()]);
+        assert_eq!(
+            requested,
+            vec![
+                Requested::Row(HiscoreName::Fishing),
+                Requested::Row(HiscoreName::Mining),
+            ]
+        );
+    }
+
+    #[test]
+    fn misses_are_kept_in_place_alongside_hits() {
+        let requested =
+            resolve_requested(&["mining".to_string(), "asdf".to_string(), "asdf".to_string()]);
+        assert_eq!(
+            requested,
+            vec![
+                Requested::Row(HiscoreName::Mining),
+                Requested::Unmatched("asdf".to_string()),
+            ]
+        );
     }
 }
