@@ -17,6 +17,11 @@ const MAX_BURN: f64 = 0.50;
 /// towards a notional level 100 instead of a real stop level.
 const NEVER_STOPS_AT: f64 = 100.0;
 
+/// Old School RuneScape cooking uses only the real Cooking level (capped at 99)
+/// to determine burn rate. Virtual levels above 99 are XP artefacts and do not
+/// reduce burn; a player at 200M XP burns exactly as much as one at 13.03M.
+const REAL_LEVEL_CAP: f64 = 99.0;
+
 /// The Grand Exchange takes 2% of a sale, rounded down, capped per item.
 /// 1% until 29 May 2025. https://oldschool.runescape.wiki/w/Grand_Exchange
 const GE_TAX_PERCENT: u64 = 2;
@@ -34,7 +39,9 @@ fn burn(level: u32, cook_level: u32, stop: Stop) -> f64 {
     let cook = cook_level as f64;
     // Below the cooking level the fish cannot be cooked at all; rating it at
     // the cooking level keeps the curve inside 0..MAX_BURN.
-    let level = (level as f64).max(cook);
+    // Virtual levels above 99 do not reduce burn rate, so clamp to the real
+    // level cap after the cooking-level floor.
+    let level = (level as f64).max(cook).min(REAL_LEVEL_CAP);
 
     if stop <= cook || level >= stop {
         return 0.0;
@@ -282,5 +289,24 @@ mod tests {
         // gauntlets are doing something.
         assert_eq!(names, vec!["Fire", "Range", "Hosidius"]);
         assert_eq!(setups(karambwan)[2].1, Stop::Level(87));
+    }
+
+    #[test]
+    fn virtual_levels_above_99_do_not_reduce_burn() {
+        // Virtual level 126 (200M XP) should burn at the same rate as level 99.
+        let rate_99 = burn(99, 80, Stop::Never);
+        let rate_126 = burn(126, 80, Stop::Never);
+
+        assert_eq!(rate_99, rate_126);
+        assert!(rate_99 > 0.0, "shark on fire should still burn at level 99");
+    }
+
+    #[test]
+    fn stop_level_fish_cap_at_real_level_99_with_virtual_levels() {
+        // Karambwan fire burns until level 99, so a virtual level 105 should
+        // still return 0.0 (no burn above the stop level).
+        assert_eq!(burn(105, 50, Stop::Level(99)), 0.0);
+        // Verify the level just below still burns.
+        assert!(burn(98, 50, Stop::Level(99)) > 0.0);
     }
 }
