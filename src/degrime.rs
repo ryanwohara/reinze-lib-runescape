@@ -2,10 +2,8 @@ use anyhow::Result;
 use common::commas;
 use common::source::Source;
 
-use crate::common::{get_ge_data, get_item_db, short_xp};
-use crate::items::{Mapping, Price};
+use crate::common::{get_ge_data, get_item_db, price_of, short_gp};
 use crate::track::{MAX_LINE_LEN, pack_lines};
-use std::collections::HashMap;
 
 /// One Degrime cast cleans an inventory of herbs for 2 nature runes (the 4
 /// earth runes come from the staff), and 600 casts fit in an hour.
@@ -153,26 +151,6 @@ fn find_herb(query: &str) -> Option<&'static Herb> {
                 .iter()
                 .find(|herb| herb.clean.to_lowercase().starts_with(query))
         })
-}
-
-/// GP with a sign, shortened for display: -1,500 -> "-1.5k".
-fn short_gp(gp: i64) -> String {
-    let sign = if gp < 0 { "-" } else { "" };
-
-    format!("{}{}", sign, short_xp(gp.unsigned_abs() as f64))
-}
-
-/// Price an item trades at, preferring the buy offer and falling back to the
-/// sell offer when nothing has bought recently.
-fn price_of(items: &[Mapping], ge: &HashMap<u32, Price>, name: &str) -> Option<u32> {
-    let id = items
-        .iter()
-        .find(|item| item.name.eq_ignore_ascii_case(name))?
-        .id;
-
-    let price = ge.get(&id)?;
-
-    price.high.or(price.low)
 }
 
 pub fn lookup(source: &Source) -> Result<Vec<String>> {
@@ -352,14 +330,6 @@ mod tests {
         assert!(find_herb("torstul").is_none());
         assert!(find_herb("").is_none());
         assert!(find_herb("nature rune").is_none());
-    }
-
-    #[test]
-    fn gp_is_shortened_and_keeps_its_sign() {
-        assert_eq!(short_gp(2_400_000), "2.4m");
-        assert_eq!(short_gp(453_000), "453.0k");
-        assert_eq!(short_gp(-1_500), "-1.5k");
-        assert_eq!(short_gp(0), "0");
     }
 
     #[test]

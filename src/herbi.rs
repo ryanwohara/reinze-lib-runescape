@@ -3,7 +3,8 @@ use common::commas;
 use common::source::Source;
 
 use crate::common::{
-    Entry, HiscoreName, Listing, MAX_SKILL_LEVEL, collect_hiscores, level_to_xp, xp_to_level,
+    Entry, HiscoreName, Listing, MAX_SKILL_LEVEL, collect_hiscores, format_hours, level_to_xp,
+    xp_to_level,
 };
 use crate::stats::{
     Goal, goal, goal_string, level_display, stats_parameters, strip_stats_parameters,
@@ -42,14 +43,6 @@ fn hours(catches: u32) -> f64 {
 /// GP earned along the way to `catches` herbiboars.
 fn profit(catches: u32) -> f64 {
     catches as f64 * GP_PER_HOUR / CATCHES_PER_HOUR
-}
-
-fn format_hours(hours: f64) -> String {
-    if hours < 1.0 {
-        return format!("{}min", (hours * 60.0).round());
-    }
-
-    format!("{}h", commas(hours, ".1f"))
 }
 
 /// Herbiboars needed to carry `xp` up to `target_xp`, re-rating each catch as
@@ -248,18 +241,5 @@ mod tests {
 
         assert_eq!(hours(294), 4.9);
         assert_eq!(profit(294), 1_960_000.0);
-    }
-
-    #[test]
-    fn hours_are_shown_to_one_decimal() {
-        assert_eq!(format_hours(4.9), "4.9h");
-        assert_eq!(format_hours(1.0), "1.0h");
-        assert_eq!(format_hours(1234.5), "1,234.5h");
-    }
-
-    #[test]
-    fn under_an_hour_is_shown_in_minutes() {
-        assert_eq!(format_hours(0.5), "30min");
-        assert_eq!(format_hours(0.0), "0min");
     }
 }

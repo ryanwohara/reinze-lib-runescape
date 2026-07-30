@@ -153,6 +153,35 @@ pub fn short_xp(n: f64) -> String {
     }
 }
 
+/// GP with a sign, shortened for display: -1,500 -> "-1.5k".
+pub fn short_gp(gp: i64) -> String {
+    let sign = if gp < 0 { "-" } else { "" };
+
+    format!("{}{}", sign, short_xp(gp.unsigned_abs() as f64))
+}
+
+/// Hours for display: under an hour reads in minutes, otherwise one decimal.
+pub fn format_hours(hours: f64) -> String {
+    if hours < 1.0 {
+        return format!("{}min", (hours * 60.0).round());
+    }
+
+    format!("{}h", commas(hours, ".1f"))
+}
+
+/// Price an item trades at, preferring the buy offer and falling back to the
+/// sell offer when nothing has bought recently.
+pub fn price_of(items: &[Mapping], ge: &HashMap<u32, Price>, name: &str) -> Option<u32> {
+    let id = items
+        .iter()
+        .find(|item| item.name.eq_ignore_ascii_case(name))?
+        .id;
+
+    let price = ge.get(&id)?;
+
+    price.high.or(price.low)
+}
+
 #[derive(Debug, Clone)]
 pub struct Combat {
     pub level: f64,
@@ -1706,6 +1735,27 @@ mod tests {
         assert_eq!(short_xp(174.0), "174");
         assert_eq!(short_xp(1_500.0), "1.5k");
         assert_eq!(short_xp(2_100_000.0), "2.1m");
+    }
+
+    #[test]
+    fn gp_is_shortened_and_keeps_its_sign() {
+        assert_eq!(short_gp(2_400_000), "2.4m");
+        assert_eq!(short_gp(453_000), "453.0k");
+        assert_eq!(short_gp(-1_500), "-1.5k");
+        assert_eq!(short_gp(0), "0");
+    }
+
+    #[test]
+    fn hours_are_shown_to_one_decimal() {
+        assert_eq!(format_hours(4.9), "4.9h");
+        assert_eq!(format_hours(1.0), "1.0h");
+        assert_eq!(format_hours(1234.5), "1,234.5h");
+    }
+
+    #[test]
+    fn under_an_hour_is_shown_in_minutes() {
+        assert_eq!(format_hours(0.5), "30min");
+        assert_eq!(format_hours(0.0), "0min");
     }
 
     #[test]
