@@ -1,93 +1,134 @@
 use anyhow::Result;
 use common::source::Source;
 
+use crate::fish::{FISH, Fish, Stop};
+
+/// One stop-burn cell. A level prints as itself; the two "no level" cases are
+/// opposites and must not look alike - `Never` means the fish still burns at
+/// 99, `NoBurn` means that setup never burns it at any level.
+fn render(stop: Stop) -> String {
+    match stop {
+        Stop::Level(level) => level.to_string(),
+        Stop::Never => "N/A".to_string(),
+        Stop::NoBurn => "any".to_string(),
+    }
+}
+
+/// The three gauntlet columns, or three N/As for the fish gauntlets do not
+/// affect.
+fn gauntlet_columns(fish: &Fish) -> Vec<String> {
+    match &fish.gauntlets {
+        Some(gauntlets) => vec![
+            render(gauntlets.default),
+            render(gauntlets.hosidius5),
+            render(gauntlets.hosidius10),
+        ],
+        None => vec!["N/A".to_string(), "N/A".to_string(), "N/A".to_string()],
+    }
+}
+
+/// An empty query matches everything; anything else is a case-insensitive
+/// substring of the fish's name.
+fn matches(fish: &Fish, query: &str) -> bool {
+    query.is_empty() || fish.name.to_lowercase().contains(&query.to_lowercase())
+}
+
+fn row(fish: &Fish, s: &Source) -> String {
+    let gauntlets = gauntlet_columns(fish);
+
+    format!(
+        "{} {} {} {} {} {}",
+        s.c1(fish.name),
+        s.c2(&render(fish.fire)),
+        s.c2(&render(fish.range)),
+        s.c2(&render(fish.hosidius5)),
+        s.c2(&render(fish.hosidius10)),
+        s.p(&gauntlets.join(" ")),
+    )
+}
+
 pub fn noburn(s: &Source) -> Result<Vec<String>> {
-    let query = &s.query;
+    let query = s.query.trim();
 
-    let fish: Vec<Fish> = vec![
-        Fish::new("Tuna", 63, 0, 59, 0, 0, 0, 0),
-        Fish::new("Lobster", 74, 74, 70, 0, 64, 61, 0),
-        Fish::new("Swordfish", 86, 81, 76, 0, 81, 76, 0),
-        Fish::new("Monkfish", 92, 90, 86, 82, 87, 82, 0),
-        Fish::new("Shark", 0, 0, 0, 99, 94, 89, 84),
-        Fish::new("Anglerfish", 0, 0, 0, 0, 98, 93, 88),
-    ];
-
-    let output: Vec<String> = fish
-        .into_iter()
-        .filter(|fish| fish_finder(fish, query))
-        .map(|fish| fish.to_string(s))
+    let output: Vec<String> = FISH
+        .iter()
+        .filter(|fish| matches(fish, query))
+        .map(|fish| row(fish, s))
         .collect();
 
     Ok(vec![
         format!("{} {}", s.l("NoBurn"), output.join(&s.c1(" | "))),
         s.p(
-            "Fire | Range | Hosidius 5% | Hosidius 10% | (Gauntlets | Gauntlets + Hosidius 5% | Gauntlet + Hosidius 10%)",
+            "Fire | Range | Hosidius 5% | Hosidius 10% | (Gauntlets | Gauntlets + Hosidius 5% | Gauntlets + Hosidius 10%)",
         ),
+        s.p("N/A = still burns at 99 | any = never burns"),
     ])
 }
 
-struct Fish {
-    name: &'static str,
-    fire: u32,
-    range: u32,
-    hosidius5: u32,
-    hosidius10: u32,
-    gauntlet: u32,
-    gauntlet_hosidius5: u32,
-    gauntlet_hosidius10: u32,
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::fish::{FISH, Stop, find_fish};
 
-impl Fish {
-    fn new(
-        name: &'static str,
-        fire: u32,
-        range: u32,
-        hosidius5: u32,
-        hosidius10: u32,
-        gauntlet: u32,
-        gauntlet_hosidius5: u32,
-        gauntlet_hosidius10: u32,
-    ) -> Self {
-        Self {
-            name,
-            fire,
-            range,
-            hosidius5,
-            hosidius10,
-            gauntlet,
-            gauntlet_hosidius5,
-            gauntlet_hosidius10,
-        }
+    #[test]
+    fn a_stop_level_renders_as_its_number() {
+        assert_eq!(render(Stop::Level(74)), "74");
+        assert_eq!(render(Stop::Level(99)), "99");
     }
 
-    fn to_string(&self, s: &Source) -> String {
-        format!(
-            "{} {} {} {} {} {}",
-            s.c1(self.name),
-            s.c2(&if_not_available(self.fire, s)),
-            s.c2(&if_not_available(self.range, s)),
-            s.c2(&if_not_available(self.hosidius5, s)),
-            s.c2(&if_not_available(self.hosidius10, s)),
-            s.p(&format!(
-                "{} {} {}",
-                &if_not_available(self.gauntlet, s),
-                &if_not_available(self.gauntlet_hosidius5, s),
-                &if_not_available(self.gauntlet_hosidius10, s)
-            )),
-        )
-    }
-}
-
-fn if_not_available(int: u32, s: &Source) -> String {
-    if int == 0 {
-        return s.c2("N/A");
+    #[test]
+    fn never_and_no_burn_render_differently() {
+        // They are opposites, so they must not both print "N/A".
+        assert_eq!(render(Stop::Never), "N/A");
+        assert_eq!(render(Stop::NoBurn), "any");
+        assert_ne!(render(Stop::Never), render(Stop::NoBurn));
     }
 
-    int.to_string()
-}
+    #[test]
+    fn a_fish_without_gauntlets_renders_them_as_not_applicable() {
+        let karambwan = find_fish("karambwan").expect("karambwan is in the table");
+        let columns = gauntlet_columns(karambwan);
 
-fn fish_finder(fish: &Fish, query: &str) -> bool {
-    (query.len() > 0 && fish.name.to_lowercase().contains(&query.to_lowercase()))
-        || query.len() == 0
+        assert_eq!(columns, vec!["N/A", "N/A", "N/A"]);
+    }
+
+    #[test]
+    fn a_gauntlet_fish_renders_all_three_gauntlet_columns() {
+        let shark = find_fish("shark").expect("shark is in the table");
+
+        assert_eq!(gauntlet_columns(shark), vec!["94", "89", "84"]);
+    }
+
+    #[test]
+    fn an_empty_query_matches_every_fish() {
+        let matched: Vec<&str> = FISH
+            .iter()
+            .filter(|fish| matches(fish, ""))
+            .map(|fish| fish.name)
+            .collect();
+
+        assert_eq!(matched.len(), FISH.len());
+    }
+
+    #[test]
+    fn a_query_narrows_to_the_named_fish() {
+        let matched: Vec<&str> = FISH
+            .iter()
+            .filter(|fish| matches(fish, "shark"))
+            .map(|fish| fish.name)
+            .collect();
+
+        assert_eq!(matched, vec!["Shark"]);
+    }
+
+    #[test]
+    fn a_query_is_case_insensitive_and_can_be_partial() {
+        let matched: Vec<&str> = FISH
+            .iter()
+            .filter(|fish| matches(fish, "CRAB"))
+            .map(|fish| fish.name)
+            .collect();
+
+        assert_eq!(matched, vec!["Dark crab"]);
+    }
 }
