@@ -63,7 +63,20 @@ pub enum Requested {
 ///
 /// The alias table comes first because no row's display name *contains* the
 /// substring "mine" — `^mine`, `^att` and `^cmb` only work through it. The
-/// substring pass then covers activities (`^zulrah`, `^cox`, `^clue`).
+/// alias hit is matched exactly against the display name (not routed back
+/// through the substring pass), so the alias path can't be outranked by an
+/// unrelated row that happens to sort earlier in `HiscoreName::all()`; the
+/// substring fallback only fires if somehow no exact match exists, so this
+/// can only make an alias resolve more correctly, never less. The substring
+/// pass then covers activities (`^zulrah`, `^cox`, `^clue`) and is also the
+/// fallback for aliases.
+///
+/// The substring pass is a known source of surprises: it returns the first
+/// hit in `HiscoreName::all()` order, so a short token can match an earlier
+/// row's display name instead of the one the caller meant (`^king` finds
+/// Cooking, not King Black Dragon — see
+/// `short_tokens_can_resolve_to_a_surprising_earlier_row`). That is an
+/// accepted design trade-off, not a bug.
 ///
 /// `HiscoreName::None` is a safe miss sentinel: its `Display` is the empty
 /// string, and `""` never contains a non-empty needle, so the substring pass
@@ -74,7 +87,10 @@ fn resolve_name(token: &str) -> HiscoreName {
     if aliased.is_empty() {
         HiscoreName::from(token)
     } else {
-        HiscoreName::from(aliased.as_str())
+        HiscoreName::all()
+            .into_iter()
+            .find(|n| n.to_string() == aliased)
+            .unwrap_or_else(|| HiscoreName::from(aliased.as_str()))
     }
 }
 
@@ -95,6 +111,17 @@ fn resolve_requested(tokens: &[String]) -> Vec<Requested> {
     }
 
     requested
+}
+
+/// True only when the caller supplied `^name` tokens and none of them resolved.
+/// The emptiness check is load-bearing: `.all()` is vacuously true for an empty
+/// slice, so without it an unfiltered `-track` would take the early return and
+/// emit nothing at all.
+fn all_unmatched(requested: &[Requested]) -> bool {
+    !requested.is_empty()
+        && requested
+            .iter()
+            .all(|r| matches!(r, Requested::Unmatched(_)))
 }
 
 fn format_single_change(c: &Change, source: &Source) -> String {
@@ -207,6 +234,12 @@ pub fn format_changes(changes: &[Change], source: &Source, duration_str: &str) -
 /// falls back to its live standing with an explicit zero delta. Jagex reports
 /// unranked rows as `-1`, which the `u32` parse floors to 0 — that is what
 /// distinguishes "unranked" from a genuine level 1 / score 0.
+///
+/// This path is reached whenever `changes` has no entry for the row, which
+/// isn't always because nothing changed: it also covers a row absent from the
+/// old snapshot and an `Entry`/`SubEntry` kind mismatch between snapshots
+/// (`diff_listings` has a `_ => continue` arm for that). So `+0` here means
+/// "no diff available for this row", not strictly "unchanged".
 fn format_current_standing(listing: &Listing, source: &Source) -> String {
     let name = source.c1(&listing.name().to_string());
 
@@ -275,11 +308,7 @@ pub fn lookup(source: Source) -> Result<Vec<String>> {
     // Every `^name` was a typo, so there is nothing worth diffing. Bail before
     // the rsn lookup and the hiscores fetch so a typo costs no round trip and
     // records no snapshot.
-    if !requested.is_empty()
-        && requested
-            .iter()
-            .all(|r| matches!(r, Requested::Unmatched(_)))
-    {
+    if all_unmatched(&requested) {
         return Ok(format_all_unmatched(&requested, &source));
     }
 
@@ -708,5 +737,53 @@ mod tests {
     fn the_unfiltered_path_still_collapses_to_no_changes() {
         let out = format_changes(&[], &stub_source(), "1d");
         assert_eq!(plain(&out[0]), "[Track] (1d): No changes");
+    }
+
+    #[test]
+    fn an_unfiltered_lookup_does_not_take_the_all_unmatched_path() {
+        // `.all()` is vacuously true on an empty slice — without the emptiness
+        // check, a plain `-track` with no `^name` tokens at all would take the
+        // early return and silently emit nothing.
+        assert!(!all_unmatched(&[]));
+    }
+
+    #[test]
+    fn every_token_unmatched_takes_the_early_return() {
+        let requested = resolve_requested(&["asdf".to_string(), "qwer".to_string()]);
+        assert!(all_unmatched(&requested));
+    }
+
+    #[test]
+    fn one_matched_token_among_misses_does_not_take_the_early_return() {
+        let requested = resolve_requested(&["mining".to_string(), "asdf".to_string()]);
+        assert!(!all_unmatched(&requested));
+    }
+
+    #[test]
+    fn short_tokens_can_resolve_to_a_surprising_earlier_row() {
+        // `resolve_name` falls back to a case-insensitive substring match over
+        // `HiscoreName::all()`, returning the first hit in enum order. A short,
+        // realistic token can be a substring of an earlier row's display name
+        // and resolve there instead of the row the caller probably meant. This
+        // is an accepted design trade-off (see the design doc's "Resolution"
+        // section), not a bug — but nothing else pins it, and rows get added
+        // to `all()` often (the base commit here is "feat(boss): Mad Angel"),
+        // so a reordering could silently change these answers.
+        let cases = [
+            // "Cooking" contains "king" and sorts before King Black Dragon.
+            ("king", HiscoreName::Cooking),
+            // "Gridmaster" contains "master" and sorts before Master Clue Scrolls.
+            ("master", HiscoreName::Gridmaster),
+            // "Overall" contains "all" and sorts before All Clue Scrolls.
+            ("all", HiscoreName::Overall),
+            // Case-insensitivity via `skill()`'s lowercasing.
+            ("MINE", HiscoreName::Mining),
+            // Case-insensitivity via `HiscoreName::from`'s lowercasing.
+            ("Cox", HiscoreName::CoX),
+        ];
+
+        for (token, expected) in cases {
+            assert_eq!(resolve_name(token), expected, "token {token:?}");
+        }
     }
 }

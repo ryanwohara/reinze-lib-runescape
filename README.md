@@ -31,7 +31,13 @@ caller's stored RSN — or IRC nick — when none is given.
   Records a fresh snapshot each call. `^name` narrows the report to specific rows
   and may be repeated — `^mining`, `^mine` and `^att` go through the skill
   aliases, `^zulrah`/`^cox`/`^clue` match any hiscore row by substring. A
-  requested row that did not change reports its current standing instead.
+  requested row that did not change reports its current standing instead. A
+  short token matches the first row whose name contains it, so `^king` finds
+  Cooking rather than King Black Dragon — spell more of the name to fix it
+  (`^dragon`, not `^black dragon`; a token is a single non-space run, so
+  spaces don't work). An unresolvable token is reported inline as
+  `no match for 'x'` beside the columns that did resolve; if every `^name`
+  token is unresolvable, the command short-circuits and records no snapshot.
 - `-players` — Report OSRS and RS3 players online (and each side's share), the
   combined total, and total registered accounts, live from Jagex.
 
