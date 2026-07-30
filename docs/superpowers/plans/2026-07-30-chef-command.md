@@ -464,7 +464,48 @@ mod tests {
         let karambwan = find_fish("karambwan").expect("karambwan is in the table");
         let columns = gauntlet_columns(karambwan);
 
-        assert_eq!(columns, vec!["N/A", "N/A", "N/A"]);
+        assert_eq!(columns, vec!["-", "-", "-"]);
+    }
+
+    #[test]
+    fn not_applicable_is_not_the_same_mark_as_still_burning() {
+        // Three outcomes, three marks: gauntlets do not apply to this fish at
+        // all, versus the fish still burns at 99 with them.
+        let karambwan = find_fish("karambwan").expect("karambwan is in the table");
+
+        assert_ne!(gauntlet_columns(karambwan)[0], render(Stop::Never));
+    }
+
+    #[test]
+    fn a_query_matching_nothing_says_so() {
+        // `stub_color`/`stub_source` follow the pattern already used by the
+        // test modules in track.rs, params.rs, combat_est.rs and grats.rs:
+        //
+        //     extern "C" fn stub_color(
+        //         _host: *const c_char,
+        //         _colors: *const c_char,
+        //     ) -> ColorResult {
+        //         ColorResult::default()
+        //     }
+        //
+        //     fn stub_source(query: &str) -> Source {
+        //         Source::create(
+        //             "0",
+        //             Author::create("nick!ident@host", stub_color),
+        //             "noburn",
+        //             query,
+        //         )
+        //     }
+        //
+        // with `use ::common::ColorResult; use ::common::author::Author;
+        // use std::os::raw::c_char;` in the test module.
+        let lines = noburn(&stub_source("zzz")).expect("noburn renders");
+
+        assert!(
+            lines[0].contains("Not found"),
+            "expected a not-found line, got {}",
+            lines[0]
+        );
     }
 
     #[test]
@@ -535,7 +576,11 @@ fn render(stop: Stop) -> String {
     }
 }
 
-/// The three gauntlet columns, or three N/As for the fish gauntlets do not
+/// Gauntlets do not apply to this fish at all - a third outcome, so a third
+/// mark. Reusing "N/A" here would say "still burns at 99 with gauntlets".
+const NO_GAUNTLETS: &str = "-";
+
+/// The three gauntlet columns, or three dashes for a fish gauntlets do not
 /// affect.
 fn gauntlet_columns(fish: &Fish) -> Vec<String> {
     match &fish.gauntlets {
@@ -544,7 +589,7 @@ fn gauntlet_columns(fish: &Fish) -> Vec<String> {
             render(gauntlets.hosidius5),
             render(gauntlets.hosidius10),
         ],
-        None => vec!["N/A".to_string(), "N/A".to_string(), "N/A".to_string()],
+        None => vec![NO_GAUNTLETS.to_string(); 3],
     }
 }
 
@@ -577,12 +622,14 @@ pub fn noburn(s: &Source) -> Result<Vec<String>> {
         .map(|fish| row(fish, s))
         .collect();
 
+    // `not_found` joins with the same separator when there is anything to
+    // join, so an unmatched query says so instead of printing a bare prefix.
     Ok(vec![
-        format!("{} {}", s.l("NoBurn"), output.join(&s.c1(" | "))),
+        format!("{} {}", s.l("NoBurn"), s.not_found(output)),
         s.p(
             "Fire | Range | Hosidius 5% | Hosidius 10% | (Gauntlets | Gauntlets + Hosidius 5% | Gauntlets + Hosidius 10%)",
         ),
-        s.p("N/A = still burns at 99 | any = never burns"),
+        s.p("N/A = still burns at 99 | any = never burns | - = gauntlets don't apply"),
     ])
 }
 ```
@@ -801,6 +848,24 @@ mod tests {
     }
 
     #[test]
+    fn virtual_levels_do_not_reduce_burning() {
+        // Cooking mechanics use the real level, which caps at 99. A player
+        // with 200m XP reads as level 126 here and must burn exactly what a
+        // level 99 one does, not stop burning entirely.
+        assert_eq!(burn(126, 80, Stop::Never), burn(99, 80, Stop::Never));
+        assert!(burn(126, 80, Stop::Never) > 0.0);
+    }
+
+    #[test]
+    fn a_real_stop_level_still_applies_at_a_virtual_level() {
+        // Karambwan stops burning at 99 on a fire, so a virtual level is past
+        // it either way.
+        let karambwan = find_fish("karambwan").expect("karambwan is in the table");
+
+        assert_eq!(burn(126, karambwan.level, karambwan.fire), 0.0);
+    }
+
+    #[test]
     fn tax_is_two_percent_rounded_down() {
         assert_eq!(tax(991), 19);
         assert_eq!(tax(100), 2);
@@ -946,6 +1011,12 @@ const MAX_BURN: f64 = 0.50;
 /// towards a notional level 100 instead of a real stop level.
 const NEVER_STOPS_AT: f64 = 100.0;
 
+/// Burning is set by the real Cooking level, which caps at 99. This crate
+/// models virtual levels up to 126 from XP earned past the cap, but they buy
+/// no reduction in burning - a 200m XP cook burns exactly what a 13.03m one
+/// does - so the curve is fed a level clamped to the real cap.
+const REAL_LEVEL_CAP: f64 = 99.0;
+
 /// The Grand Exchange takes 2% of a sale, rounded down, capped per item.
 /// 1% until 29 May 2025. https://oldschool.runescape.wiki/w/Grand_Exchange
 const GE_TAX_PERCENT: u64 = 2;
@@ -961,9 +1032,12 @@ fn burn(level: u32, cook_level: u32, stop: Stop) -> f64 {
     };
 
     let cook = cook_level as f64;
-    // Below the cooking level the fish cannot be cooked at all; rating it at
-    // the cooking level keeps the curve inside 0..MAX_BURN.
-    let level = (level as f64).max(cook);
+    // Bounded on both sides: below the cooking level the fish cannot be cooked
+    // at all, and above 99 the extra levels are virtual and change nothing.
+    // Without the upper clamp a 15m XP cook reads as level 100, trips the
+    // `level >= stop` guard against the notional 100, and is told a fish that
+    // always burns never does.
+    let level = (level as f64).max(cook).min(REAL_LEVEL_CAP);
 
     if stop <= cook || level >= stop {
         return 0.0;
@@ -1411,7 +1485,13 @@ fn detail(
         source.c2(fish.name),
         level_string.to_string(),
         vec![
-            source.c2(&commas(fish.xp, "d")),
+            // Sea turtle and manta ray are the only fractional XP values in
+            // the table; "d" would truncate them to a number the table does
+            // not contain.
+            source.c2(&commas(
+                fish.xp,
+                if fish.xp.fract() == 0.0 { "d" } else { ".1f" },
+            )),
             source.c1("XP each"),
         ]
         .join(" "),
@@ -1509,10 +1589,12 @@ Note `crate::stats::StatsFlags` is already `pub`, and `crate::items::{Mapping, P
 Add the trigger to `TRIGGERS`, on its own line after `boss\d*`:
 
 ```
-^chef$
+^chef\d*$
 ```
 
-Anchored at both ends because `lib.rs`'s `commands_are_not_dispatched_twice` test requires every command to fire exactly one trigger. Check the anchoring holds by eye: `chef` must not be matched by `(no)?burn`, `co?mb(at)?\d*$`, `^craft(ing)?\d*$` or `clues?\d*`, and `^chef$` must not match any other command name.
+Anchored at both ends because `lib.rs`'s `commands_are_not_dispatched_twice` test requires every command to fire exactly one trigger. The `\d*` is what makes `+chef2` reach the plugin at all: `TRIGGERS` is the external router's list, so a command it does not match never arrives, and every other `[N]`-documented command carries `\d*` for exactly this reason. The dispatch arm needs no change — `lib.rs` splits the trailing digit off with `^([a-zA-Z]+)(\d+)$` before matching, so `chef2` reaches the `"chef"` arm with `rsn_n` set to `2`.
+
+Check the anchoring holds by eye: `chef` must not be matched by `(no)?burn`, `co?mb(at)?\d*$`, `^craft(ing)?\d*$` or `clues?\d*`, and `^chef\d*$` must not match any other command name.
 
 Add the dispatch arm immediately after the `"boss" | "bosses" | "kc"` arm:
 
@@ -1526,7 +1608,7 @@ Add `chef` to the `"help"` list between `boost` and `clues[N]`:
 chef
 ```
 
-Add `"chef"` to the `commands_are_not_dispatched_twice` test's list, after `"boosts"`.
+Add `"chef"` and `"chef2"` to the `commands_are_not_dispatched_twice` test's list, after `"boosts"`. Both must fire exactly one trigger.
 
 - [ ] **Step 8: Run the full suite**
 
@@ -1589,6 +1671,35 @@ EOF
 | `+chef @shark #99` | goal block targeting 99 |
 | `+noburn` | eleven fish, and the new legend line distinguishing "N/A" from "any" |
 | `+noburn shark` | one row |
+
+## Amendments after the final review
+
+The plan below is the record of intent; four things changed during execution and
+the code is the truth on each. Reviews caught all four.
+
+1. **`burn` clamps the level to 99.** The curve was fed the raw level, but this
+   crate models virtual levels to 126 from XP past the cap, so a 15m-XP cook
+   read as level 100, tripped the `level >= stop` guard against the notional 100
+   and was told a fish that always burns never does. Cooking mechanics use the
+   real level; virtual levels buy no reduction. (`REAL_LEVEL_CAP`.)
+
+2. **The goal block is priced band by band.** `fish_between` re-rates burn as the
+   level rises, but the profit was the re-rated count times a per-fish margin
+   frozen at the starting level — two figures on one line assuming different
+   burn rates. At Cooking 80 a shark trip to 92 printed a 5.9m loss where the
+   model's own bands give a 3.5m profit: wrong in sign, and invisible to every
+   test because they all happened to pick spans with no burning. One traversal
+   now returns both the count and the gp.
+
+3. **`+noburn` packs its rows.** Eleven fish no longer fit the bot's 400-byte
+   send-splitter on one line, so it uses `pack_lines` like `chef` and `degrime`.
+
+4. **The trigger is `^chef\d*$`.** `^chef$` would have meant `+chef2` never
+   reached the plugin, while the README documented `-chef[N]`.
+
+Also: `gp(-161_850)` renders `-161.8k`, not the `-161.9k` this plan asserted —
+`161850.0 / 1000.0` is `161.8499...` in f64. The plan's arithmetic was wrong;
+the formatting helper is correct and untouched.
 
 ## Notes for the implementer
 
