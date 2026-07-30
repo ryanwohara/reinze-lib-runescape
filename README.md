@@ -64,6 +64,14 @@ caller's stored RSN — or IRC nick — when none is given.
   level. Requires 80 Hunter, or 74 with a super hunter potion. `^level` computes
   from a hypothetical level or raw XP instead of a hiscores lookup; time and gp
   are estimates (~60 catches and ~400k gp per hour with a herb sack).
+- `-chef[N] [@fish] [#goal] [^level] [RSN]` — Cooking profit at live Grand
+  Exchange prices. With no `@fish`, every tradeable raw→cooked fish ranked by
+  profit per hour; with one, that fish across four setups (fire, range, cooking
+  gauntlets, Hosidius) with its burn rate, plus the fish, time and gp between a
+  player's Cooking level and their next level or `#goal`. Profit is green and
+  losses are red, and both account for the 2% Grand Exchange tax and for burnt
+  fish, which cost a raw fish and return nothing. Burn rates are estimates and
+  are marked `~`.
 
 ### Bosses & Minigames
 

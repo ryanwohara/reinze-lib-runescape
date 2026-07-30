@@ -1,5 +1,18 @@
-use crate::common::{MAX_SKILL_LEVEL, level_to_xp, xp_to_level};
-use crate::fish::{Fish, Stop};
+use anyhow::Result;
+use common::commas;
+use common::source::Source;
+
+use crate::common::{
+    Entry, HiscoreName, Listing, MAX_SKILL_LEVEL, collect_hiscores, format_hours, get_ge_data,
+    get_item_db, level_to_xp, price_of, short_gp, xp_to_level,
+};
+use crate::fish::{FISH, Fish, Stop, find_fish};
+use crate::items::{Mapping, Price};
+use crate::stats::{
+    Goal, StatsFlags, goal, goal_string, level_display, stats_parameters, strip_stats_parameters,
+};
+use crate::track::{MAX_LINE_LEN, pack_lines};
+use std::collections::HashMap;
 
 /// Fish cooked per hour, the rate the wiki's money making guides assume.
 /// https://oldschool.runescape.wiki/w/Money_making_guide/Cooking_raw_sharks
@@ -131,6 +144,333 @@ fn fish_between(xp: u32, target_xp: u32, fish: &Fish, stop: Stop) -> Option<u64>
     }
 
     Some(count)
+}
+
+/// Signed gp is coloured by sign rather than by the c1/c2 palette: those two
+/// colours are per-user configurable and carry no profit/loss meaning, so a
+/// themed colour cannot say "this loses money".
+const GREEN: &str = "\x0303";
+const RED: &str = "\x0304";
+
+fn gp(amount: i64) -> String {
+    format!(
+        "{}{}",
+        if amount < 0 { RED } else { GREEN },
+        short_gp(amount)
+    )
+}
+
+/// A burn rate for display. A modelled rate is marked `~`; an exact 0% from the
+/// wiki's own table is not.
+fn burn_label(burn: f64) -> String {
+    if burn <= 0.0 {
+        return "0%".to_string();
+    }
+
+    format!("~{}%", (burn * 100.0).round())
+}
+
+/// The Cooking level a listing reports, and the level to calculate from.
+struct Cook {
+    listing: Listing,
+    level: u32,
+}
+
+/// The player's Cooking listing, or a synthetic one when `^N` supplied a level
+/// (or raw XP) to calculate from instead.
+fn cooking(source: &Source, prefix: &str, flags: &StatsFlags) -> Result<Cook, Vec<String>> {
+    let joined: String = strip_stats_parameters(&source.query)
+        .split_whitespace()
+        .collect::<Vec<&str>>()
+        .join(" ");
+
+    let listing = if flags.start > 0 {
+        let xp = if flags.start > MAX_SKILL_LEVEL {
+            flags.start
+        } else {
+            level_to_xp(flags.start)
+        };
+
+        Listing::Entry(Entry {
+            name: HiscoreName::Cooking,
+            level: xp_to_level(xp),
+            xp,
+            rank: 0,
+        })
+    } else {
+        let hiscores = match collect_hiscores(&joined, source, flags) {
+            Ok(hiscores) => hiscores,
+            Err(_) => {
+                return Err(vec![format!(
+                    "{} {}",
+                    prefix,
+                    source.c1("No hiscores found")
+                )]);
+            }
+        };
+
+        match hiscores.skill("Cooking") {
+            Some(listing) => listing,
+            None => {
+                return Err(vec![format!(
+                    "{} {}",
+                    prefix,
+                    source.c1("No Cooking level found")
+                )]);
+            }
+        }
+    };
+
+    let level = listing.actual_level();
+
+    Ok(Cook { listing, level })
+}
+
+/// The best of the reported setups - the one the ranked list and the goal block
+/// are quoted at.
+fn best_setup(fish: &Fish) -> (&'static str, Stop) {
+    let setups = setups(fish);
+
+    *setups.last().expect("every fish reports at least one setup")
+}
+
+pub fn lookup(source: Source) -> Result<Vec<String>> {
+    let prefix = source.l("Chef");
+    let flags = stats_parameters(&source.query);
+
+    let items = get_item_db()?;
+    let ge = get_ge_data()?;
+
+    let cook = match cooking(&source, &prefix, &flags) {
+        Ok(cook) => cook,
+        Err(lines) => return Ok(lines),
+    };
+
+    let (reported_level, virtual_level) = level_display(cook.listing.level(), cook.level);
+    let level_string = vec![
+        source.c1("Cooking"),
+        source.c2(&reported_level.to_string()),
+        virtual_level.map_or(String::new(), |level| source.p(&level.to_string())),
+    ]
+    .join(" ")
+    .trim_end()
+    .to_string();
+
+    if flags.search.is_empty() {
+        return Ok(ranked(&source, &prefix, &level_string, cook.level, &items, &ge));
+    }
+
+    let fish = match find_fish(&flags.search) {
+        Some(fish) => fish,
+        None => {
+            return Ok(vec![format!(
+                "{} {}",
+                prefix,
+                source.c1(&format!(
+                    "'{}' isn't a cookable fish - try +chef for the full list",
+                    flags.search
+                ))
+            )]);
+        }
+    };
+
+    Ok(detail(
+        &source,
+        &prefix,
+        &level_string,
+        &cook,
+        fish,
+        &flags,
+        &items,
+        &ge,
+    ))
+}
+
+/// Every fish ranked by profit at its best setup, most profitable first. Fish
+/// above the caller's level are kept - the market answer is useful before the
+/// level is - but marked, and quoted with no burning: rating a fish you cannot
+/// cook at the worst burn rate on the curve says nothing about the market.
+fn ranked(
+    source: &Source,
+    prefix: &str,
+    level_string: &str,
+    level: u32,
+    items: &[Mapping],
+    ge: &HashMap<u32, Price>,
+) -> Vec<String> {
+    let mut ranked: Vec<(&Fish, Hourly, bool)> = FISH
+        .iter()
+        .filter_map(|fish| {
+            let raw = price_of(items, ge, fish.raw)?;
+            let cooked = price_of(items, ge, fish.cooked)?;
+            let (_, stop) = best_setup(fish);
+            let locked = level < fish.level;
+
+            let burnt = if locked {
+                0.0
+            } else {
+                burn(level, fish.level, stop)
+            };
+
+            Some((fish, hourly(raw, cooked, burnt), locked))
+        })
+        .collect();
+
+    if ranked.is_empty() {
+        return vec![format!("{} {}", prefix, source.c1("No fish prices"))];
+    }
+
+    ranked.sort_by(|(_, a, _), (_, b, _)| b.profit.cmp(&a.profit));
+
+    let locked = ranked.iter().any(|(_, _, locked)| *locked);
+
+    let parts: Vec<String> = ranked
+        .iter()
+        .map(|(fish, hour, locked)| {
+            format!(
+                "{} {}{}",
+                source.c1(fish.name),
+                gp(hour.profit),
+                if *locked { source.c1("*") } else { String::new() }
+            )
+        })
+        .collect();
+
+    let mut lines = pack_lines(
+        &format!("{} {} {}", prefix, level_string, source.c1("Profit/hr:")),
+        &parts,
+        &source.c1(" | "),
+        MAX_LINE_LEN,
+    );
+
+    if locked {
+        lines.push(format!(
+            "{} {}",
+            prefix,
+            source.p("* above your Cooking level, quoted with no burning")
+        ));
+    }
+
+    lines
+}
+
+/// One fish across every setup, plus what it takes to reach the goal.
+fn detail(
+    source: &Source,
+    prefix: &str,
+    level_string: &str,
+    cook: &Cook,
+    fish: &Fish,
+    flags: &StatsFlags,
+    items: &[Mapping],
+    ge: &HashMap<u32, Price>,
+) -> Vec<String> {
+    let (raw, cooked) = match (
+        price_of(items, ge, fish.raw),
+        price_of(items, ge, fish.cooked),
+    ) {
+        (Some(raw), Some(cooked)) => (raw, cooked),
+        _ => {
+            return vec![format!(
+                "{} {}",
+                prefix,
+                source.c1(&format!("No price for {}", fish.name))
+            )];
+        }
+    };
+
+    let header = vec![
+        source.c2(fish.name),
+        level_string.to_string(),
+        vec![
+            source.c2(&commas(fish.xp, "d")),
+            source.c1("XP each"),
+        ]
+        .join(" "),
+        vec![
+            source.c1("Raw"),
+            source.c2(&commas(raw as f64, "d")),
+            source.c1("Cooked"),
+            source.c2(&commas(cooked as f64, "d")),
+            source.p(&format!("-{} tax", commas(tax(cooked) as f64, "d"))),
+        ]
+        .join(" "),
+    ]
+    .join(&source.c1(" | "));
+
+    let mut lines = vec![format!("{} {}", prefix, header)];
+
+    if cook.level < fish.level {
+        lines.push(format!(
+            "{} {}",
+            prefix,
+            source.c1(&format!("Requires {} Cooking", fish.level))
+        ));
+
+        return lines;
+    }
+
+    let rates: Vec<String> = setups(fish)
+        .iter()
+        .map(|(name, stop)| {
+            let burnt = burn(cook.level, fish.level, *stop);
+
+            format!(
+                "{} {} {}{}",
+                source.c1(name),
+                source.c2(&burn_label(burnt)),
+                gp(hourly(raw, cooked, burnt).profit),
+                source.c1("/hr")
+            )
+        })
+        .collect();
+
+    lines.push(format!("{} {}", prefix, rates.join(&source.c1(" | "))));
+
+    let (best_name, best_stop) = best_setup(fish);
+    let goal = goal(
+        cook.listing.xp(),
+        cook.level,
+        cook.listing.next_level(flags),
+    );
+
+    let mut progress = vec![goal_string(&goal, source)];
+
+    if goal != Goal::Maxed {
+        let target_xp = cook.listing.xp().saturating_add(goal.remaining());
+
+        if let Some(count) = fish_between(cook.listing.xp(), target_xp, fish, best_stop) {
+            let hours = count as f64 / FISH_PER_HOUR as f64;
+            let hour = hourly(raw, cooked, burn(cook.level, fish.level, best_stop));
+            // Per fish, not per hour - an integer division by the hourly rate
+            // first would throw away most of the margin on a cheap fish.
+            let total = (hour.profit as f64 / FISH_PER_HOUR as f64 * count as f64).round() as i64;
+
+            progress.push(
+                vec![
+                    source.c2(&commas(count as f64, "d")),
+                    source.c1(&fish.name.to_lowercase()),
+                ]
+                .join(" "),
+            );
+            progress.push(source.c2(&format!("~{}", format_hours(hours))));
+            progress.push(
+                vec![
+                    gp(total),
+                    source.p(&format!("{}, {}/hr", best_name, commas(FISH_PER_HOUR as f64, "d"))),
+                ]
+                .join(" "),
+            );
+        }
+    }
+
+    lines.push(format!(
+        "{} {}",
+        prefix,
+        progress.join(&source.c1(" | "))
+    ));
+
+    lines
 }
 
 #[cfg(test)]
@@ -308,5 +648,31 @@ mod tests {
         assert_eq!(burn(105, 50, Stop::Level(99)), 0.0);
         // Verify the level just below still burns.
         assert!(burn(98, 50, Stop::Level(99)) > 0.0);
+    }
+
+    #[test]
+    fn profit_is_green_and_loss_is_red() {
+        assert_eq!(gp(312_000), format!("{}312.0k", GREEN));
+        // 161_850 / 1000.0 is not exactly representable in f64 (it lands at
+        // 161.849999999999994...), so it formats to one decimal as 161.8k,
+        // not the 161.9k a decimal reading of -161,850 would suggest.
+        assert_eq!(gp(-161_850), format!("{}-161.8k", RED));
+    }
+
+    #[test]
+    fn breaking_even_is_not_a_loss() {
+        assert_eq!(gp(0), format!("{}0", GREEN));
+    }
+
+    #[test]
+    fn a_burn_percentage_is_marked_as_an_estimate() {
+        assert_eq!(burn_label(0.375), "~38%");
+        assert_eq!(burn_label(0.321), "~32%");
+    }
+
+    #[test]
+    fn a_setup_that_never_burns_is_not_marked_as_an_estimate() {
+        // 0% is exact - it comes from the wiki's stop-burn table, not the model.
+        assert_eq!(burn_label(0.0), "0%");
     }
 }

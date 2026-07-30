@@ -58,6 +58,7 @@ bolts?
 ^(b(ounty)?h(unter)?|bounty)\d*$
 boost
 boss\d*
+^chef$
 fairy
 kc\d*
 clues?\d*
@@ -164,6 +165,7 @@ pub extern "C" fn exported(context: *const PluginContext) -> *mut c_char {
             "bh" | "bounty" | "bhunter" | "bountyhunter" => bh::lookup(source),
             "boost" | "boosts" => boost::lookup(&source),
             "boss" | "bosses" | "kc" => bosses::lookup(source),
+            "chef" => chef::lookup(source),
             "clue" | "clues" => clues::lookup(source),
             "combat" | "cmb" => stats::combat(source),
             "combatest" | "cmbest" | "cmb-est" | "combat-est" => combat_est::estimate(source),
@@ -216,6 +218,7 @@ pub extern "C" fn exported(context: *const PluginContext) -> *mut c_char {
 bolts
 bh[N]
 boost
+chef
 clues[N]
 colosseum[N]
 collectionlog[N]
@@ -300,6 +303,7 @@ mod tests {
             "bountyhunter",
             "boost",
             "boosts",
+            "chef",
             "boss",
             "bosses",
             "kc",
