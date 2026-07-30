@@ -58,7 +58,7 @@ bolts?
 ^(b(ounty)?h(unter)?|bounty)\d*$
 boost
 boss\d*
-^chef$
+^chef\d*$
 fairy
 kc\d*
 clues?\d*
@@ -304,6 +304,7 @@ mod tests {
             "boost",
             "boosts",
             "chef",
+            "chef2",
             "boss",
             "bosses",
             "kc",

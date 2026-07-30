@@ -170,6 +170,18 @@ fn burn_label(burn: f64) -> String {
     format!("~{}%", (burn * 100.0).round())
 }
 
+/// A fish's per-cook XP for display. Whole XP prints as an integer; the two
+/// fractional-XP fish (Sea turtle at 211.3, Manta ray at 216.3) keep their
+/// decimal - truncating it would print a number that is not the one in the
+/// table.
+fn xp_label(xp: f64) -> String {
+    if xp.fract() == 0.0 {
+        commas(xp, "d")
+    } else {
+        commas(xp, ".1f")
+    }
+}
+
 /// The Cooking level a listing reports, and the level to calculate from.
 struct Cook {
     listing: Listing,
@@ -382,11 +394,7 @@ fn detail(
     let header = vec![
         source.c2(fish.name),
         level_string.to_string(),
-        vec![
-            source.c2(&commas(fish.xp, "d")),
-            source.c1("XP each"),
-        ]
-        .join(" "),
+        vec![source.c2(&xp_label(fish.xp)), source.c1("XP each")].join(" "),
         vec![
             source.c1("Raw"),
             source.c2(&commas(raw as f64, "d")),
@@ -674,5 +682,20 @@ mod tests {
     fn a_setup_that_never_burns_is_not_marked_as_an_estimate() {
         // 0% is exact - it comes from the wiki's stop-burn table, not the model.
         assert_eq!(burn_label(0.0), "0%");
+    }
+
+    #[test]
+    fn whole_xp_prints_as_an_integer() {
+        // Shark: 210.0 XP each - printing "210.0" would be a made-up decimal.
+        assert_eq!(xp_label(210.0), "210");
+    }
+
+    #[test]
+    fn fractional_xp_keeps_its_decimal() {
+        // Sea turtle and Manta ray are the only fish with fractional XP;
+        // truncating to "211" or "216" would print a number that is not the
+        // one in the table.
+        assert_eq!(xp_label(211.3), "211.3");
+        assert_eq!(xp_label(216.3), "216.3");
     }
 }
