@@ -12,6 +12,7 @@ mod combat_est;
 mod common;
 mod degrime;
 mod fairy;
+mod fish;
 mod ge;
 mod grats;
 mod gridmaster;
