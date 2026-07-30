@@ -5,6 +5,7 @@ mod bh;
 mod bolts;
 mod boost;
 mod bosses;
+mod chef;
 mod clues;
 mod collectionlog;
 mod colosseum;
