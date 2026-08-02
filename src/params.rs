@@ -7,6 +7,55 @@ use common::source::Source;
 use ini::Ini;
 use log::error;
 
+/// Every entry whose key matches `query`, best first. The caller caps the
+/// count.
+///
+/// Ranked by tier (exact, then prefix, then substring), then by fewest extra
+/// underscore-separated tokens, then case-insensitively alphabetically by
+/// key. The token count is what lifts a buried canonical answer above its
+/// longer variants; the alphabetical tiebreak is what sorts a list of peers
+/// into a stable order regardless of input order. Values are carried through
+/// untouched and paired with their own key, so a duplicate key does not
+/// cause one entry's value to be reported for another's.
+pub(crate) fn rank_matches<'a>(
+    entries: &[(&'a str, &'a str)],
+    query: &str,
+) -> Vec<(&'a str, &'a str)> {
+    let needle = query.replace(' ', "_").to_ascii_lowercase();
+    if needle.is_empty() {
+        return Vec::new();
+    }
+    let needle_tokens = needle.split('_').count();
+
+    let mut scored: Vec<(u8, usize, String, &'a str, &'a str)> = entries
+        .iter()
+        .filter_map(|(key, value)| {
+            let lower = key.to_ascii_lowercase();
+            let tier = if lower == needle {
+                0
+            } else if lower.starts_with(&needle) {
+                1
+            } else if lower.contains(&needle) {
+                2
+            } else {
+                return None;
+            };
+            let extra = lower.split('_').count().saturating_sub(needle_tokens);
+            Some((tier, extra, lower, *key, *value))
+        })
+        .collect();
+
+    // Sort on tier, extra tokens, lowercased key, and the original key for a
+    // total order — deliberately not on value, so a stable sort leaves a
+    // duplicate key's entries in their original relative order rather than
+    // reordering by value.
+    scored.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)).then(a.2.cmp(&b.2)).then(a.3.cmp(&b.3)));
+    scored
+        .into_iter()
+        .map(|(_, _, _, key, value)| (key, value))
+        .collect()
+}
+
 pub fn lookup(s: &Source) -> Result<Vec<String>> {
     let prefix = s.l("Params");
 
@@ -39,14 +88,10 @@ pub fn lookup(s: &Source) -> Result<Vec<String>> {
         _ => return Ok(vec![format!("{} {}", prefix, s.c1("No results found"))]),
     };
 
-    let underscored = param.replace(" ", "_");
+    let entries: Vec<(&str, &str)> = section.iter().collect();
 
-    let found_params: Vec<String> = section
-        .iter()
-        .filter(|(k, _)| {
-            k.to_ascii_lowercase()
-                .contains(&underscored.to_ascii_lowercase())
-        })
+    let found_params: Vec<String> = rank_matches(&entries, param)
+        .into_iter()
         .take(10)
         .map(|(k, v)| {
             format!(
@@ -107,6 +152,19 @@ mod tests {
 
     // Both cases return before the Database.ini load, so these stay offline.
 
+    /// Wraps bare keys as `(key, "0")` pairs so the ranking tests below can
+    /// keep asserting on keys alone without hand-building tuples.
+    fn pairs<'a>(keys: &[&'a str]) -> Vec<(&'a str, &'a str)> {
+        keys.iter().map(|k| (*k, "0")).collect()
+    }
+
+    fn ranked_keys<'a>(keys: &[&'a str], query: &str) -> Vec<&'a str> {
+        rank_matches(&pairs(keys), query)
+            .into_iter()
+            .map(|(k, _)| k)
+            .collect()
+    }
+
     #[test]
     fn params_bad_arguments_use_the_callers_colors() {
         let out = lookup(&source_with("")).unwrap();
@@ -117,5 +175,85 @@ mod tests {
     fn params_invalid_skill_uses_the_callers_colors() {
         let out = lookup(&source_with("notaskill somequery")).unwrap();
         assert_caller_colors(&out[0]);
+    }
+
+    #[test]
+    fn ranking_puts_an_exact_match_first() {
+        let keys = ["Steel_bar", "Bar_magnet", "Bar"];
+        assert_eq!(ranked_keys(&keys, "bar")[0], "Bar");
+    }
+
+    #[test]
+    fn ranking_puts_a_prefix_match_above_a_substring() {
+        let keys = ["Steel_bar", "Bar_magnet"];
+        assert_eq!(ranked_keys(&keys, "bar"), vec!["Bar_magnet", "Steel_bar"]);
+    }
+
+    #[test]
+    fn ranking_prefers_fewer_extra_tokens() {
+        // The plain cannonballs must outrank the chainshot and incendiary
+        // variants; this is the regression that motivated the change.
+        let keys = [
+            "Adamant_chainshot_cannonball",
+            "Steel_cannonball",
+            "Bronze_incendiary_cannonball",
+            "Rune_cannonball",
+        ];
+        assert_eq!(
+            ranked_keys(&keys, "cannonball"),
+            vec![
+                "Rune_cannonball",
+                "Steel_cannonball",
+                "Adamant_chainshot_cannonball",
+                "Bronze_incendiary_cannonball",
+            ]
+        );
+    }
+
+    #[test]
+    fn ranking_keeps_peers_alphabetical() {
+        // A list of same-shaped matches must not be reshuffled.
+        let keys = ["Camelot_Teleport", "Annakarl_Teleport", "Ardougne_Teleport"];
+        assert_eq!(
+            ranked_keys(&keys, "teleport"),
+            vec!["Annakarl_Teleport", "Ardougne_Teleport", "Camelot_Teleport"]
+        );
+    }
+
+    #[test]
+    fn ranking_treats_spaces_in_the_query_as_underscores() {
+        let keys = ["Oak_bird_house", "Bird_house", "Birdsong"];
+        assert_eq!(
+            ranked_keys(&keys, "bird house"),
+            vec!["Bird_house", "Oak_bird_house"]
+        );
+    }
+
+    #[test]
+    fn ranking_is_case_insensitive_both_ways() {
+        let keys = ["GOLD_BAR", "gold_ore"];
+        assert_eq!(ranked_keys(&keys, "GoLd_BaR"), vec!["GOLD_BAR"]);
+    }
+
+    #[test]
+    fn ranking_returns_nothing_when_no_key_matches() {
+        let keys = ["Gold_bar", "Iron_bar"];
+        assert!(ranked_keys(&keys, "dragon").is_empty());
+    }
+
+    #[test]
+    fn ranking_returns_nothing_for_an_empty_query() {
+        let keys = ["Gold_bar"];
+        assert!(ranked_keys(&keys, "").is_empty());
+    }
+
+    #[test]
+    fn ranking_carries_each_entrys_own_value() {
+        // A duplicated key must not make both rows show the first value.
+        let entries = [("Gold_bar", "22.5"), ("Gold_bar", "56.2")];
+        assert_eq!(
+            rank_matches(&entries, "gold bar"),
+            vec![("Gold_bar", "22.5"), ("Gold_bar", "56.2")]
+        );
     }
 }
