@@ -39,6 +39,12 @@ mod woodcutting;
 
 /// Sections still served from the embedded INI, pending the npc/data.rs
 /// consolidation. Everything else has a generated table.
+///
+/// `lookup` does not consult this: it asks `table_for` and falls back when it
+/// answers None, so the split is encoded there. This list exists so
+/// `generated_tables_match_the_ini` can assert the two agree, which is why it
+/// is compiled only for tests.
+#[cfg(test)]
 const INI_SECTIONS: &[&str] = &[
     "Attack",
     "Defence",
