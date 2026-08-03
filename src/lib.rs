@@ -35,6 +35,7 @@ mod rifts;
 mod rsn;
 mod salvage;
 mod soulwars;
+mod spell;
 mod stats;
 mod task;
 mod tog;
@@ -90,6 +91,7 @@ s(oul)?w(ar)?s?\d*
 zeal\d*
 e?xp(erience)?
 salvages?
+spells?
 stats
 task\d*
 overall
@@ -208,6 +210,7 @@ pub extern "C" fn exported(context: *const PluginContext) -> *mut c_char {
             "rsn" => rsn::process(source),
             "salvage" | "salvages" => salvage::lookup(&source),
             "sw" | "swar" | "soulw" | "soulwar" | "soulwars" | "zeal" => soulwars::lookup(source),
+            "spell" | "spells" => spell::lookup(&source),
             "task" => task::lookup(source),
             "togw" => tog::world(&source),
             "track" => track::lookup(source),
@@ -245,6 +248,7 @@ pvparena[N]
 rifts[N]
 rsn[N]
 salvage
+spell
 stats[N]
 sw[N]
 task[N]
@@ -415,6 +419,8 @@ mod tests {
             "sw",
             "soulwars",
             "zeal",
+            "spell",
+            "spells",
             "task",
             "togw",
             "track",
