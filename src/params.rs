@@ -5,7 +5,19 @@ use anyhow::Result;
 use common::capitalize;
 use common::source::Source;
 use ini::Ini;
-use log::error;
+use std::sync::OnceLock;
+
+/// The XP database. Embedded rather than read at runtime: the old
+/// `load_from_file` path resolved against the bot's working directory, which
+/// is what kept this file in the other repository.
+const DATABASE_INI: &str = include_str!("../lib/Database.ini");
+
+/// Parsed once per process. The previous code re-read and re-parsed 116 KB on
+/// every invocation of the command.
+fn database() -> &'static Ini {
+    static DB: OnceLock<Ini> = OnceLock::new();
+    DB.get_or_init(|| Ini::load_from_str(DATABASE_INI).expect("embedded Database.ini must parse"))
+}
 
 /// Every entry whose key matches `query`, best first. The caller caps the
 /// count.
@@ -76,14 +88,9 @@ pub fn lookup(s: &Source) -> Result<Vec<String>> {
         return Ok(vec![format!("{} {}", prefix, s.c2("Invalid skill"))]);
     }
 
-    let database = Ini::load_from_file("lib/Database.ini").map_err(|e| {
-        error!("Error loading Database.ini: {}", e);
-        anyhow::anyhow!("Error loading Database.ini: {}", e)
-    })?;
-
     let prefix = s.l(&capitalize(&skill));
 
-    let section = match database.section(Some(capitalize(&skill))) {
+    let section = match database().section(Some(capitalize(&skill))) {
         Some(section) => section,
         _ => return Ok(vec![format!("{} {}", prefix, s.c1("No results found"))]),
     };
