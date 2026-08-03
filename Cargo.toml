@@ -13,13 +13,16 @@ mysql = "28"
 rand = "0.9"
 regex = "1.12"
 reqwest = { version = "0.13", features = ["json", "blocking"] }
-rust-ini = "0.21"
 select = "0.6"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1.52", features = ["full"] }
 itertools = "0.15"
 log = "0.4"
+
+# Only the params drift guards parse the INI; nothing reads it at runtime.
+[dev-dependencies]
+rust-ini = "0.21"
 
 [lib]
 crate-type = ["dylib"]

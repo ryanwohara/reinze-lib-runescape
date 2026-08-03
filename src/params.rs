@@ -1,51 +1,49 @@
-extern crate ini;
-
 use crate::common::skill as common_skill;
 use anyhow::Result;
 use common::capitalize;
 use common::source::Source;
-use ini::Ini;
-use std::sync::OnceLock;
 
-/// The XP database. Embedded rather than read at runtime: the old
-/// `load_from_file` path resolved against the bot's working directory, which
-/// is what kept this file in the other repository.
+/// The XP database, read only by `generated_tables_match_the_ini`.
+///
+/// Every skill is served from a generated table now, so nothing parses this at
+/// runtime and it is no longer embedded in the shipped library. The file stays
+/// because it is what `bin/gen-params.py` builds seventeen of those tables
+/// from, which makes it worth keeping the guard that the two still agree.
+#[cfg(test)]
 const DATABASE_INI: &str = include_str!("../lib/Database.ini");
 
-/// Parsed once per process. The previous code re-read and re-parsed 116 KB on
-/// every invocation of the command.
-fn database() -> &'static Ini {
-    static DB: OnceLock<Ini> = OnceLock::new();
-    DB.get_or_init(|| Ini::load_from_str(DATABASE_INI).expect("embedded Database.ini must parse"))
-}
-
 mod agility;
+mod attack;
 mod construction;
 mod cooking;
 mod crafting;
+mod defence;
 mod farming;
 mod firemaking;
 mod fishing;
 mod fletching;
 mod herblore;
+mod hitpoints;
 mod hunter;
 mod magic;
 mod mining;
 mod prayer;
+mod ranged;
 mod runecraft;
+mod slayer;
 mod smithing;
+mod strength;
 mod thieving;
 mod woodcutting;
 
-/// Sections still served from the embedded INI, pending the npc/data.rs
-/// consolidation. Everything else has a generated table.
+/// Sections that exist in the INI but are served from `src/npc/data.rs`.
 ///
-/// `lookup` does not consult this: it asks `table_for` and falls back when it
-/// answers None, so the split is encoded there. This list exists so
-/// `generated_tables_match_the_ini` can assert the two agree, which is why it
-/// is compiled only for tests.
+/// The INI keeps its own combat and Slayer sections and they are stale --
+/// they disagree with the NPC data they shadow -- so nothing is generated
+/// from them, and `generated_tables_match_the_ini` has to skip them rather
+/// than compare. Compiled only for tests, which is where both guards live.
 #[cfg(test)]
-const INI_SECTIONS: &[&str] = &[
+const NPC_SERVED_SECTIONS: &[&str] = &[
     "Attack",
     "Defence",
     "Hitpoints",
@@ -54,25 +52,43 @@ const INI_SECTIONS: &[&str] = &[
     "Strength",
 ];
 
-/// The generated table for a capitalised skill name, or None if that skill is
-/// still served from the embedded INI.
+/// Every skill served from `src/npc/data.rs` rather than the INI, paired with
+/// the module holding its table. Drives `npc_tables_match_the_npc_data`.
+#[cfg(test)]
+const NPC_TABLES: &[(&str, &[(&str, &str)])] = &[
+    ("Attack", attack::ENTRIES),
+    ("Defence", defence::ENTRIES),
+    ("Hitpoints", hitpoints::ENTRIES),
+    ("Ranged", ranged::ENTRIES),
+    ("Slayer", slayer::ENTRIES),
+    ("Strength", strength::ENTRIES),
+];
+
+/// The generated table for a capitalised skill name, or None if the name is
+/// not a skill. Every skill has one; there is no runtime fallback left.
 fn table_for(skill: &str) -> Option<&'static [(&'static str, &'static str)]> {
     Some(match skill {
         "Agility" => agility::ENTRIES,
+        "Attack" => attack::ENTRIES,
         "Construction" => construction::ENTRIES,
         "Cooking" => cooking::ENTRIES,
         "Crafting" => crafting::ENTRIES,
+        "Defence" => defence::ENTRIES,
         "Farming" => farming::ENTRIES,
         "Firemaking" => firemaking::ENTRIES,
         "Fishing" => fishing::ENTRIES,
         "Fletching" => fletching::ENTRIES,
         "Herblore" => herblore::ENTRIES,
+        "Hitpoints" => hitpoints::ENTRIES,
         "Hunter" => hunter::ENTRIES,
         "Magic" => magic::ENTRIES,
         "Mining" => mining::ENTRIES,
         "Prayer" => prayer::ENTRIES,
+        "Ranged" => ranged::ENTRIES,
         "Runecraft" => runecraft::ENTRIES,
+        "Slayer" => slayer::ENTRIES,
         "Smithing" => smithing::ENTRIES,
+        "Strength" => strength::ENTRIES,
         "Thieving" => thieving::ENTRIES,
         "Woodcutting" => woodcutting::ENTRIES,
         _ => return None,
@@ -156,15 +172,11 @@ pub fn lookup(s: &Source) -> Result<Vec<String>> {
     let name = capitalize(&skill);
     let prefix = s.l(&name);
 
-    let entries: Vec<(&str, &str)> = match table_for(&name) {
-        Some(table) => table.to_vec(),
-        None => match database().section(Some(name.clone())) {
-            Some(section) => section.iter().collect(),
-            None => return Ok(vec![format!("{} {}", prefix, s.c1("No results found"))]),
-        },
+    let Some(entries) = table_for(&name) else {
+        return Ok(vec![format!("{} {}", prefix, s.c1("No results found"))]);
     };
 
-    let found_params: Vec<String> = rank_matches(&entries, param)
+    let found_params: Vec<String> = rank_matches(entries, param)
         .into_iter()
         .take(10)
         .map(|(k, v)| {
@@ -183,6 +195,7 @@ mod tests {
     use super::*;
     use common::ColorResult;
     use common::author::Author;
+    use ini::Ini;
     use std::ffi::CString;
     use std::os::raw::c_char;
 
@@ -340,10 +353,14 @@ mod tests {
 
         for section in ini.sections() {
             let Some(name) = section else { continue };
-            if INI_SECTIONS.contains(&name) {
+            if NPC_SERVED_SECTIONS.contains(&name) {
+                // The INI still carries these sections and they are stale.
+                // Their table comes from npc/data.rs, so comparing the two
+                // here would fail by design; npc_tables_match_the_npc_data
+                // is what guards them.
                 assert!(
-                    table_for(name).is_none(),
-                    "[{name}] is listed as INI-served but also has a generated table"
+                    table_for(name).is_some(),
+                    "[{name}] is served from npc/data.rs but has no table"
                 );
                 continue;
             }
@@ -379,5 +396,70 @@ mod tests {
             checked, 17,
             "expected 17 generated sections, checked {checked}; if you added a skill, update this count"
         );
+    }
+
+    /// The npc-served counterpart of `generated_tables_match_the_ini`.
+    ///
+    /// Checks against `NpcMetadata` rather than re-parsing `npc/data.rs`,
+    /// because a second parser here would be free to drift from the one in
+    /// `bin/gen-npc-params.py` while both kept passing. Rust renders `f64`
+    /// with the shortest form that round-trips, which is the same text the
+    /// generator produces by dropping a trailing `.0`.
+    #[test]
+    fn npc_tables_match_the_npc_data() {
+        use crate::npc::data::{Npc, NpcMetadata};
+        use crate::stats::skill::Skill;
+
+        for (section, table) in NPC_TABLES {
+            let expected: Vec<(String, String)> = Npc::all()
+                .iter()
+                .map(NpcMetadata::from)
+                .filter(|npc| !npc.name.is_empty())
+                .filter_map(|npc| {
+                    let value = match *section {
+                        "Hitpoints" => npc.hitpoints_xp,
+                        "Slayer" => npc.slayer_xp,
+                        _ => npc.combat_xp,
+                    };
+                    (value != 0.0).then(|| (npc.name.replace(' ', "_"), format!("{value}")))
+                })
+                .collect();
+
+            assert_eq!(
+                table.len(),
+                expected.len(),
+                "[{section}] has {} generated entries but {} in npc/data.rs; \
+                 run bin/gen-npc-params.py",
+                table.len(),
+                expected.len()
+            );
+            for (i, (generated, want)) in table.iter().zip(expected.iter()).enumerate() {
+                assert_eq!(
+                    (generated.0, generated.1),
+                    (want.0.as_str(), want.1.as_str()),
+                    "[{section}] entry {i} differs; run bin/gen-npc-params.py"
+                );
+            }
+        }
+    }
+
+    /// There is no runtime fallback left, so a skill `table_for` does not know
+    /// answers "No results found" for every query rather than reaching a data
+    /// source. The INI is the canonical list of section names.
+    #[test]
+    fn every_skill_has_a_table() {
+        let ini = Ini::load_from_str(DATABASE_INI).expect("embedded ini parses");
+        let mut count = 0;
+
+        for name in ini.sections().flatten() {
+            assert!(
+                table_for(name).is_some(),
+                "[{name}] is a skill section with no table in table_for"
+            );
+            count += 1;
+        }
+
+        assert_eq!(count, 23, "expected 23 skill sections, saw {count}");
+        assert!(table_for("Notaskill").is_none());
     }
 }
