@@ -178,4 +178,38 @@ mod tests {
         assert!(out.contains("\x0307"), "expected caller c1 in {out:?}");
         assert!(out.contains("\x0313"), "expected caller c2 in {out:?}");
     }
+
+    /// `bin/gen-spells.py` emits `src/spell/data.rs` and
+    /// `src/stats/magic.rs` from one parse, so `+spell` and `-mage` cannot
+    /// disagree. This is what catches one being regenerated without the
+    /// other.
+    #[test]
+    fn the_magic_skill_table_matches_the_spell_data() {
+        use crate::stats::magic::Magic;
+        use crate::stats::skill::{Details, Skill};
+
+        let mut checked = 0;
+        for magic in Magic::all() {
+            let Details::Magic(details) = magic.details() else {
+                panic!("Magic::details returned something other than Details::Magic");
+            };
+            let spell = SPELLS
+                .iter()
+                .find(|s| s.name == details.name)
+                .unwrap_or_else(|| panic!("{} is in stats/magic.rs but not SPELLS", details.name));
+
+            assert_eq!(details.level, spell.level, "{}: level", spell.name);
+            assert_eq!(details.xp, spell.xp, "{}: xp", spell.name);
+            assert_eq!(details.members, spell.members, "{}: members", spell.name);
+            checked += 1;
+        }
+
+        assert_eq!(
+            checked,
+            SPELLS.len(),
+            "stats/magic.rs has {checked} spells against SPELLS' {}; \
+             run bin/gen-spells.py",
+            SPELLS.len()
+        );
+    }
 }

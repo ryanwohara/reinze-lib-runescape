@@ -8,7 +8,9 @@ mod fishing;
 mod fletching;
 mod herblore;
 mod hunter;
-mod magic;
+// pub(crate) so the spell tests can assert this table still agrees with
+// src/spell/data.rs; bin/gen-spells.py emits both.
+pub(crate) mod magic;
 mod mining;
 mod prayer;
 mod runecraft;
