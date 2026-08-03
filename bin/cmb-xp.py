@@ -64,7 +64,7 @@ class NPC:
         if not len(data):
             return
 
-        name = data[1].text
+        name = cell_name(data[1])
         if not name or not len(data[4].text):
             return
         self.name = name
@@ -114,6 +114,30 @@ class NPC:
 def sanitize(dirty):
     return re.sub(r"[\[\](){}*.',\s!&\\/%-]", "", dirty)
 
+
+def cell_name(cell):
+    """The displayed name for a Bestiary row.
+
+    The name cell holds the base name in an <a> and, when the wiki lists
+    several variants of one monster, a qualifier in an <i> after a <br>:
+
+        <td><a href="/w/Aviansie">Aviansie</a><br/><i>Level 71</i></td>
+
+    ``.text`` concatenates those with no separator ("AviansieLevel 71"), so
+    join them explicitly instead. Rows with no qualifier are a single string
+    and pass through untouched, including the ones the wiki already
+    parenthesises ("Baby red dragon (Construction)").
+
+    Every character this adds -- space, parens, comma -- is one `sanitize`
+    strips, so the enum variant names it derives are unaffected.
+    """
+    parts = [part.strip() for part in cell.stripped_strings if part.strip()]
+    if not parts:
+        return ""
+    if len(parts) == 1:
+        return parts[0]
+    return "{} ({})".format(parts[0], ", ".join(parts[1:]))
+
 npcs = {}
 
 for link in links:
@@ -136,7 +160,7 @@ for link in links:
             if not data or len(data) < 2:
                 continue
 
-            sanitized = sanitize(data[1].text)
+            sanitized = sanitize(cell_name(data[1]))
 
             if sanitized in npcs and len(data) > 18:
                 npcs[sanitized].slayer(data[18].text, data[19].text, data[20].text, data[21].text)
