@@ -19,6 +19,60 @@ fn database() -> &'static Ini {
     DB.get_or_init(|| Ini::load_from_str(DATABASE_INI).expect("embedded Database.ini must parse"))
 }
 
+mod agility;
+mod construction;
+mod cooking;
+mod crafting;
+mod farming;
+mod firemaking;
+mod fishing;
+mod fletching;
+mod herblore;
+mod hunter;
+mod magic;
+mod mining;
+mod prayer;
+mod runecraft;
+mod smithing;
+mod thieving;
+mod woodcutting;
+
+/// Sections still served from the embedded INI, pending the npc/data.rs
+/// consolidation. Everything else has a generated table.
+const INI_SECTIONS: &[&str] = &[
+    "Attack",
+    "Defence",
+    "Hitpoints",
+    "Ranged",
+    "Slayer",
+    "Strength",
+];
+
+/// The generated table for a capitalised skill name, or None if that skill is
+/// still served from the embedded INI.
+fn table_for(skill: &str) -> Option<&'static [(&'static str, &'static str)]> {
+    Some(match skill {
+        "Agility" => agility::ENTRIES,
+        "Construction" => construction::ENTRIES,
+        "Cooking" => cooking::ENTRIES,
+        "Crafting" => crafting::ENTRIES,
+        "Farming" => farming::ENTRIES,
+        "Firemaking" => firemaking::ENTRIES,
+        "Fishing" => fishing::ENTRIES,
+        "Fletching" => fletching::ENTRIES,
+        "Herblore" => herblore::ENTRIES,
+        "Hunter" => hunter::ENTRIES,
+        "Magic" => magic::ENTRIES,
+        "Mining" => mining::ENTRIES,
+        "Prayer" => prayer::ENTRIES,
+        "Runecraft" => runecraft::ENTRIES,
+        "Smithing" => smithing::ENTRIES,
+        "Thieving" => thieving::ENTRIES,
+        "Woodcutting" => woodcutting::ENTRIES,
+        _ => return None,
+    })
+}
+
 /// Every entry whose key matches `query`, best first. The caller caps the
 /// count.
 ///
@@ -88,14 +142,16 @@ pub fn lookup(s: &Source) -> Result<Vec<String>> {
         return Ok(vec![format!("{} {}", prefix, s.c2("Invalid skill"))]);
     }
 
-    let prefix = s.l(&capitalize(&skill));
+    let name = capitalize(&skill);
+    let prefix = s.l(&name);
 
-    let section = match database().section(Some(capitalize(&skill))) {
-        Some(section) => section,
-        _ => return Ok(vec![format!("{} {}", prefix, s.c1("No results found"))]),
+    let entries: Vec<(&str, &str)> = match table_for(&name) {
+        Some(table) => table.to_vec(),
+        None => match database().section(Some(name.clone())) {
+            Some(section) => section.iter().collect(),
+            None => return Ok(vec![format!("{} {}", prefix, s.c1("No results found"))]),
+        },
     };
-
-    let entries: Vec<(&str, &str)> = section.iter().collect();
 
     let found_params: Vec<String> = rank_matches(&entries, param)
         .into_iter()
@@ -262,5 +318,48 @@ mod tests {
             rank_matches(&entries, "gold bar"),
             vec![("Gold_bar", "22.5"), ("Gold_bar", "56.2")]
         );
+    }
+
+    #[test]
+    fn generated_tables_match_the_ini() {
+        let ini = Ini::load_from_str(DATABASE_INI).expect("embedded ini parses");
+        let mut checked = 0;
+
+        for section in ini.sections() {
+            let Some(name) = section else { continue };
+            if INI_SECTIONS.contains(&name) {
+                assert!(
+                    table_for(name).is_none(),
+                    "[{name}] is listed as INI-served but also has a generated table"
+                );
+                continue;
+            }
+
+            let table = table_for(name).unwrap_or_else(|| {
+                panic!("[{name}] has no generated table; run bin/gen-params.py and add it to table_for")
+            });
+            let from_ini: Vec<(&str, &str)> = ini
+                .section(Some(name))
+                .expect("section exists")
+                .iter()
+                .collect();
+
+            assert_eq!(
+                table.len(),
+                from_ini.len(),
+                "[{name}] has {} generated entries but {} in the INI; regenerate",
+                table.len(),
+                from_ini.len()
+            );
+            for (i, (generated, ini_entry)) in table.iter().zip(from_ini.iter()).enumerate() {
+                assert_eq!(
+                    generated, ini_entry,
+                    "[{name}] entry {i} differs; regenerate"
+                );
+            }
+            checked += 1;
+        }
+
+        assert_eq!(checked, 17, "expected 17 generated sections, checked {checked}");
     }
 }
