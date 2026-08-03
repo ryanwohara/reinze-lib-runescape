@@ -37,6 +37,10 @@ links = ["Levels_1_to_10",
          "Slayer_assignments_(T_to_Z)"]
 
 class NPC:
+    # False until __init__ runs to completion. The early returns below leave an
+    # instance holding these class-level defaults, and a name of None formats
+    # into the generated Rust as the literal string "None".
+    valid = False
     name = None
     members = None
     hitpoints = None
@@ -64,7 +68,7 @@ class NPC:
         if not len(data):
             return
 
-        name = data[1].text
+        name = cell_name(data[1])
         if not name or not len(data[4].text):
             return
         self.name = name
@@ -97,8 +101,15 @@ class NPC:
         element = weakness_result.find(name="img")
         if element is not None:
             self.weakness = "{} {}".format(weakness_result.text, element.get("alt"))
+        # Every point of damage awards 4 experience in the attacked style and a
+        # third of that in Hitpoints -- "for every point of damage dealt, 1.33
+        # experience points are given to the player's Hitpoints"
+        # (https://oldschool.runescape.wiki/w/Hitpoints). Dividing the combat
+        # figure keeps the two exactly in step; the previous 1.3 multiplier was
+        # short by half a percent and drifted further the bigger the monster.
         self.combat_xp = self.hitpoints * 4
-        self.hitpoints_xp = self.hitpoints * 1.3
+        self.hitpoints_xp = round(self.combat_xp / 3, 2)
+        self.valid = True
 
     def slayer(self, slayer_req, slayer_xp, slayer_categories, slayer_masters):
         self.slayer_req = 0 if not len(slayer_req) else int(slayer_req)
@@ -113,6 +124,30 @@ class NPC:
 
 def sanitize(dirty):
     return re.sub(r"[\[\](){}*.',\s!&\\/%-]", "", dirty)
+
+
+def cell_name(cell):
+    """The displayed name for a Bestiary row.
+
+    The name cell holds the base name in an <a> and, when the wiki lists
+    several variants of one monster, a qualifier in an <i> after a <br>:
+
+        <td><a href="/w/Aviansie">Aviansie</a><br/><i>Level 71</i></td>
+
+    ``.text`` concatenates those with no separator ("AviansieLevel 71"), so
+    join them explicitly instead. Rows with no qualifier are a single string
+    and pass through untouched, including the ones the wiki already
+    parenthesises ("Baby red dragon (Construction)").
+
+    Every character this adds -- space, parens, comma -- is one `sanitize`
+    strips, so the enum variant names it derives are unaffected.
+    """
+    parts = [part.strip() for part in cell.stripped_strings if part.strip()]
+    if not parts:
+        return ""
+    if len(parts) == 1:
+        return parts[0]
+    return "{} ({})".format(parts[0], ", ".join(parts[1:]))
 
 npcs = {}
 
@@ -136,13 +171,22 @@ for link in links:
             if not data or len(data) < 2:
                 continue
 
-            sanitized = sanitize(data[1].text)
+            sanitized = sanitize(cell_name(data[1]))
 
             if sanitized in npcs and len(data) > 18:
                 npcs[sanitized].slayer(data[18].text, data[19].text, data[20].text, data[21].text)
             else:
                 npc = NPC(data)
                 npcs[sanitized] = npc
+
+# Rows the Bestiary lists without the stats block -- no name or no hitpoints
+# cell -- never finish __init__. Emitting them produced NPCs called "None" with
+# every stat zeroed, which `search` still matched.
+dropped = {key: npc for key, npc in npcs.items() if not npc.valid}
+npcs = {key: npc for key, npc in npcs.items() if npc.valid}
+if dropped:
+    print("Dropped {} row(s) with no stats: {}".format(
+        len(dropped), ", ".join(sorted(dropped))))
 
 fh = open("./src/npc/data.rs", "w")
 
