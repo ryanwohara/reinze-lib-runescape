@@ -105,20 +105,23 @@ fn table_for(skill: &str) -> Option<&'static [(&'static str, &'static str)]> {
 /// into a stable order regardless of input order. Values are carried through
 /// untouched and paired with their own key, so a duplicate key does not
 /// cause one entry's value to be reported for another's.
-pub(crate) fn rank_matches<'a>(
-    entries: &[(&'a str, &'a str)],
+pub(crate) fn rank_matches<'a, V: Copy>(
+    entries: &[(&'a str, V)],
     query: &str,
-) -> Vec<(&'a str, &'a str)> {
+) -> Vec<(&'a str, V)> {
     let needle = query.replace(' ', "_").to_ascii_lowercase();
     if needle.is_empty() {
         return Vec::new();
     }
     let needle_tokens = needle.split('_').count();
 
-    let mut scored: Vec<(u8, usize, String, &'a str, &'a str)> = entries
+    let mut scored: Vec<(u8, usize, String, &'a str, V)> = entries
         .iter()
         .filter_map(|(key, value)| {
-            let lower = key.to_ascii_lowercase();
+            // Normalised the same way as the needle, so a key written with
+            // spaces ranks identically to one written with underscores. The
+            // INI keys use underscores; spell names do not.
+            let lower = key.replace(' ', "_").to_ascii_lowercase();
             let tier = if lower == needle {
                 0
             } else if lower.starts_with(&needle) {
