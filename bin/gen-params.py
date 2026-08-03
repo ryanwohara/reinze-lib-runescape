@@ -39,10 +39,7 @@ def rust_string(value: str) -> str:
 def main() -> int:
     ini_path = ROOT / "lib" / "Database.ini"
     if not ini_path.exists():
-        # Task 1 runs before the file has moved into this repo.
-        ini_path = ROOT.parent / "rust-reinze" / "lib" / "Database.ini"
-    if not ini_path.exists():
-        print(f"cannot find Database.ini (looked in {ROOT / 'lib'})", file=sys.stderr)
+        print(f"cannot find Database.ini at {ini_path}", file=sys.stderr)
         return 1
 
     sections = read_sections(ini_path.read_text(encoding="utf-8"))

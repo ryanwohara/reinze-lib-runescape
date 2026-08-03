@@ -213,7 +213,9 @@ mod tests {
         );
     }
 
-    // Both cases return before the Database.ini load, so these stay offline.
+    // Both cases return before `lookup` reaches `table_for`/`database()`, so
+    // these two tests stay offline; `generated_tables_match_the_ini` below is
+    // the one test in this module that actually parses the embedded INI.
 
     /// Wraps bare keys as `(key, "0")` pairs so the ranking tests below can
     /// keep asserting on keys alone without hand-building tuples.
@@ -360,6 +362,10 @@ mod tests {
             checked += 1;
         }
 
-        assert_eq!(checked, 17, "expected 17 generated sections, checked {checked}");
+        assert_eq!(
+            checked,
+            17,
+            "expected 17 generated sections, checked {checked}; if you added a skill, update this count"
+        );
     }
 }
