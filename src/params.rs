@@ -121,7 +121,12 @@ pub(crate) fn rank_matches<'a>(
     // total order — deliberately not on value, so a stable sort leaves a
     // duplicate key's entries in their original relative order rather than
     // reordering by value.
-    scored.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)).then(a.2.cmp(&b.2)).then(a.3.cmp(&b.3)));
+    scored.sort_by(|a, b| {
+        a.0.cmp(&b.0)
+            .then(a.1.cmp(&b.1))
+            .then(a.2.cmp(&b.2))
+            .then(a.3.cmp(&b.3))
+    });
     scored
         .into_iter()
         .map(|(_, _, _, key, value)| (key, value))
@@ -344,7 +349,9 @@ mod tests {
             }
 
             let table = table_for(name).unwrap_or_else(|| {
-                panic!("[{name}] has no generated table; run bin/gen-params.py and add it to table_for")
+                panic!(
+                    "[{name}] has no generated table; run bin/gen-params.py and add it to table_for"
+                )
             });
             let from_ini: Vec<(&str, &str)> = ini
                 .section(Some(name))
@@ -369,8 +376,7 @@ mod tests {
         }
 
         assert_eq!(
-            checked,
-            17,
+            checked, 17,
             "expected 17 generated sections, checked {checked}; if you added a skill, update this count"
         );
     }

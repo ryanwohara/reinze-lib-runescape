@@ -671,7 +671,11 @@ mod tests {
 
     #[test]
     fn caret_number_still_sets_the_start_level() {
-        for (query, expected) in [("^50 dra", 50), ("^50k dra", 50_000), ("^1.5m dra", 1_500_000)] {
+        for (query, expected) in [
+            ("^50 dra", 50),
+            ("^50k dra", 50_000),
+            ("^1.5m dra", 1_500_000),
+        ] {
             let flags = stats_parameters(query);
             assert_eq!(flags.start, expected, "start for {query:?}");
             assert!(

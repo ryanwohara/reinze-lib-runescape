@@ -285,7 +285,9 @@ fn cooking(source: &Source, prefix: &str, flags: &StatsFlags) -> Result<Cook, Ve
 fn best_setup(fish: &Fish) -> (&'static str, Stop) {
     let setups = setups(fish);
 
-    *setups.last().expect("every fish reports at least one setup")
+    *setups
+        .last()
+        .expect("every fish reports at least one setup")
 }
 
 pub fn lookup(source: Source) -> Result<Vec<String>> {
@@ -311,7 +313,14 @@ pub fn lookup(source: Source) -> Result<Vec<String>> {
     .to_string();
 
     if flags.search.is_empty() {
-        return Ok(ranked(&source, &prefix, &level_string, cook.level, &items, &ge));
+        return Ok(ranked(
+            &source,
+            &prefix,
+            &level_string,
+            cook.level,
+            &items,
+            &ge,
+        ));
     }
 
     let fish = match find_fish(&flags.search) {
@@ -385,7 +394,11 @@ fn ranked(
                 "{} {}{}",
                 source.c1(fish.name),
                 gp(hour.profit),
-                if *locked { source.c1("*") } else { String::new() }
+                if *locked {
+                    source.c1("*")
+                } else {
+                    String::new()
+                }
             )
         })
         .collect();
@@ -516,18 +529,18 @@ fn detail(
             progress.push(
                 vec![
                     gp_marked(trip.gp, mark),
-                    source.p(&format!("{}, {}/hr", best_name, commas(FISH_PER_HOUR as f64, "d"))),
+                    source.p(&format!(
+                        "{}, {}/hr",
+                        best_name,
+                        commas(FISH_PER_HOUR as f64, "d")
+                    )),
                 ]
                 .join(" "),
             );
         }
     }
 
-    lines.push(format!(
-        "{} {}",
-        prefix,
-        progress.join(&source.c1(" | "))
-    ));
+    lines.push(format!("{} {}", prefix, progress.join(&source.c1(" | "))));
 
     lines
 }
