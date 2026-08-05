@@ -1,4 +1,14 @@
+use anyhow::Result;
+use common::commas;
+use common::source::Source;
+
+use crate::common::{
+    Entry, HiscoreName, Listing, MAX_SKILL_LEVEL, collect_hiscores, get_ge_data, get_item_db,
+    level_to_xp, short_gp, xp_to_level,
+};
 use crate::items::{Mapping, Price};
+use crate::stats::{StatsFlags, level_display, stats_parameters, strip_stats_parameters};
+use crate::track::{MAX_LINE_LEN, pack_lines};
 use std::collections::HashMap;
 
 /// Average value of a reward casket, in gp.
@@ -380,6 +390,257 @@ fn hourly(method: &Method, items: &[Mapping], ge: &HashMap<u32, Price>) -> Hourl
     }
 }
 
+/// Signed gp is coloured by sign rather than by the c1/c2 palette: those two
+/// colours are per-user configurable and carry no profit/loss meaning.
+const GREEN: &str = "\x0303";
+const RED: &str = "\x0304";
+
+fn gp(amount: i64) -> String {
+    format!(
+        "{}{}",
+        if amount < 0 { RED } else { GREEN },
+        short_gp(amount)
+    )
+}
+
+/// `3,000 pickpockets/hr`. H.A.M.'s unit is easy clues, so the unit is carried
+/// on the method rather than assumed.
+fn rate_line(method: &Method) -> String {
+    format!("{} {}/hr", commas(method.rate, "d"), method.rate_name)
+}
+
+fn xp_per_hour(method: &Method) -> f64 {
+    method.rate * method.xp
+}
+
+/// The Thieving listing to work from: the player's, or one conjured from `^N`.
+fn thieving(source: &Source, prefix: &str, flags: &StatsFlags) -> Result<Listing, Vec<String>> {
+    if flags.start > 0 {
+        let xp = if flags.start > MAX_SKILL_LEVEL {
+            flags.start
+        } else {
+            level_to_xp(flags.start)
+        };
+
+        return Ok(Listing::Entry(Entry {
+            name: HiscoreName::Thieving,
+            level: xp_to_level(xp),
+            xp,
+            rank: 0,
+        }));
+    }
+
+    let joined: String = strip_stats_parameters(&source.query)
+        .split_whitespace()
+        .collect::<Vec<&str>>()
+        .join(" ");
+
+    let hiscores = match collect_hiscores(&joined, source, flags) {
+        Ok(hiscores) => hiscores,
+        Err(_) => {
+            return Err(vec![format!(
+                "{} {}",
+                prefix,
+                source.c1("No hiscores found")
+            )]);
+        }
+    };
+
+    match hiscores.skill("Thieving") {
+        Some(listing) => Ok(listing),
+        None => Err(vec![format!(
+            "{} {}",
+            prefix,
+            source.c1("No Thieving level found")
+        )]),
+    }
+}
+
+/// Every method ranked by profit, most profitable first. Methods above the
+/// caller's level are kept - the market answer is useful before the level is -
+/// but marked.
+fn ranked(
+    source: &Source,
+    prefix: &str,
+    level_string: &str,
+    level: u32,
+    items: &[Mapping],
+    ge: &HashMap<u32, Price>,
+) -> Vec<String> {
+    let mut ranked: Vec<(&Method, Hourly)> = METHODS
+        .iter()
+        .map(|method| (method, hourly(method, items, ge)))
+        .collect();
+
+    ranked.sort_by(|(_, a), (_, b)| b.profit.cmp(&a.profit));
+
+    let locked = ranked.iter().any(|(method, _)| level < method.thieving);
+    let thin = ranked.iter().any(|(_, hour)| hour.unpriced);
+
+    let parts: Vec<String> = ranked
+        .iter()
+        .map(|(method, hour)| {
+            format!(
+                "{} {}{}",
+                source.c1(method.name),
+                gp(hour.profit),
+                if level < method.thieving {
+                    source.c1("*")
+                } else {
+                    String::new()
+                }
+            )
+        })
+        .collect();
+
+    let mut lines = pack_lines(
+        &format!("{} {} {}", prefix, level_string, source.c1("Profit/hr:")),
+        &parts,
+        &source.c1(" | "),
+        MAX_LINE_LEN,
+    );
+
+    let mut notes: Vec<String> = Vec::new();
+    if locked {
+        notes.push("* above your Thieving level".to_string());
+    }
+    if thin {
+        notes.push("some items have no buy price".to_string());
+    }
+    if !notes.is_empty() {
+        lines.push(format!("{} {}", prefix, source.p(&notes.join(" | "))));
+    }
+
+    lines
+}
+
+/// One method, with what it takes to do it.
+fn detail(
+    source: &Source,
+    prefix: &str,
+    level_string: &str,
+    level: u32,
+    method: &Method,
+    items: &[Mapping],
+    ge: &HashMap<u32, Price>,
+) -> Vec<String> {
+    let hour = hourly(method, items, ge);
+
+    let header = vec![
+        source.c2(method.name),
+        level_string.to_string(),
+        source.c1(&rate_line(method)),
+        vec![
+            source.c2(&commas(method.xp, ".1f")),
+            source.c1("XP each"),
+            source.p(&format!("{} XP/hr", short_gp(xp_per_hour(method).round() as i64))),
+        ]
+        .join(" "),
+    ]
+    .join(&source.c1(" | "));
+
+    let money = vec![
+        vec![source.c1("Profit/hr"), gp(hour.profit)].join(" "),
+        vec![
+            source.c1("Outputs"),
+            source.c2(&commas(hour.outputs as f64, "d")),
+        ]
+        .join(" "),
+        vec![
+            source.c1("Inputs"),
+            source.c2(&commas(hour.inputs as f64, "d")),
+        ]
+        .join(" "),
+    ]
+    .join(&source.c1(" | "));
+
+    let mut lines = vec![
+        format!("{} {}", prefix, header),
+        format!("{} {}", prefix, money),
+        format!(
+            "{} {} {}",
+            prefix,
+            source.c1("Requires"),
+            method
+                .requirements
+                .iter()
+                .map(|req| source.c2(req))
+                .collect::<Vec<String>>()
+                .join(&source.c1(" | "))
+        ),
+    ];
+
+    if level < method.thieving {
+        lines.push(format!(
+            "{} {}",
+            prefix,
+            source.c1(&format!("Requires {} Thieving", method.thieving))
+        ));
+    }
+
+    if hour.unpriced {
+        lines.push(format!(
+            "{} {}",
+            prefix,
+            source.p("some items have no buy price, so the totals understate it")
+        ));
+    }
+
+    lines
+}
+
+pub fn lookup(source: Source) -> Result<Vec<String>> {
+    let prefix = source.l("Pickpocket");
+    let flags = stats_parameters(&source.query);
+
+    let items = get_item_db()?;
+    let ge = get_ge_data()?;
+
+    let listing = match thieving(&source, &prefix, &flags) {
+        Ok(listing) => listing,
+        Err(lines) => return Ok(lines),
+    };
+
+    let level = listing.actual_level();
+    let (reported, virtual_level) = level_display(listing.level(), level);
+    let level_string = vec![
+        source.c1("Thieving"),
+        source.c2(&reported.to_string()),
+        virtual_level.map_or(String::new(), |lvl| source.p(&lvl.to_string())),
+    ]
+    .join(" ")
+    .trim_end()
+    .to_string();
+
+    if flags.search.is_empty() {
+        return Ok(ranked(&source, &prefix, &level_string, level, &items, &ge));
+    }
+
+    let method = match find_method(&flags.search) {
+        Some(method) => method,
+        None => {
+            return Ok(vec![format!(
+                "{} {}",
+                prefix,
+                source.c1(&format!(
+                    "'{}' isn't a pickpocketing method - try -pickpocket for the full list",
+                    flags.search
+                ))
+            )]);
+        }
+    };
+
+    Ok(detail(
+        &source,
+        &prefix,
+        &level_string,
+        level,
+        method,
+        &items,
+        &ge,
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -612,6 +873,31 @@ mod tests {
         // per pickpocket instead, the total would be orders of magnitude
         // larger.
         assert_eq!(hour.inputs, 6_036);
+    }
+
+    #[test]
+    fn profit_is_green_and_loss_is_red() {
+        assert_eq!(gp(1_222_670), format!("{}1.2m", GREEN));
+        assert_eq!(gp(-5_000), format!("{}-5.0k", RED));
+        assert_eq!(gp(0), format!("{}0", GREEN));
+    }
+
+    #[test]
+    fn a_rate_names_its_unit() {
+        let ham = find_method("ham").expect("H.A.M. is in the table");
+        let knights = find_method("knight").expect("knights are in the table");
+
+        // H.A.M.'s rate is clues an hour, not pickpockets, so it must say so.
+        assert_eq!(rate_line(ham), "18 easy clues/hr");
+        assert_eq!(rate_line(knights), "3,000 pickpockets/hr");
+    }
+
+    #[test]
+    fn experience_per_hour_is_the_rate_times_the_xp_each() {
+        let knights = find_method("knight").expect("knights are in the table");
+
+        // 3,000 x 84.3
+        assert_eq!(xp_per_hour(knights).round() as i64, 252_900);
     }
 
     #[test]

@@ -82,6 +82,8 @@ mp|money|moneyprinter|profit|printer|profitprinter
 npc
 params?
 patch
+^pickpocket\d*$
+^pp\d*$
 payment|plants?
 players
 price
@@ -194,6 +196,7 @@ pub extern "C" fn exported(context: *const PluginContext) -> *mut c_char {
             "npc" => npc::lookup(&source),
             "param" | "params" => params::lookup(&source),
             "patch" => patch::patch(&source),
+            "pickpocket" | "pp" => pickpocket::lookup(source),
             "players" => players::lookup(&source),
             "price" => prices::lookup(&source),
             "overall" | "stats" | "total" | "attack" | "att" | "defence" | "def" | "strength"
@@ -242,6 +245,7 @@ money
 noburn
 npc
 params
+pickpocket[N]
 plant
 players
 price
@@ -353,6 +357,9 @@ mod tests {
             "param",
             "params",
             "patch",
+            "pickpocket",
+            "pickpocket2",
+            "pp",
             "players",
             "price",
             "overall",

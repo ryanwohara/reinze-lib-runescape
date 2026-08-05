@@ -108,6 +108,12 @@ caller's stored RSN — or IRC nick — when none is given.
 - `-money [-l (limit)]` — High-alch "money maker" items ranked by profit after GE
   buy price and a nature rune (top 15); `-l 100k` filters by GE buy limit (aliases
   `-mp`, `-profit`, `-printer`, `-moneyprinter`, `-profitprinter`).
+- `-pickpocket[N] [@method] [^level] [RSN]` — Profit per hour for the six
+  pickpocketing money makers, ranked, with methods above your Thieving level
+  marked. `@method` details one — its rate, XP, and what it requires. Profit is
+  green and losses red, priced from the same Grand Exchange values `-price`
+  reports and net of the 2% tax. Rogue equipment is assumed, since the wiki's
+  loot rates include it (alias `-pp`).
 - `-bolts (bolt)` — The special effect of an enchanted crossbow bolt tip, by gem
   or ability name (alias `-bolt`).
 
