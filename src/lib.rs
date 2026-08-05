@@ -27,6 +27,7 @@ mod noburn;
 mod npc;
 mod params;
 mod patch;
+mod pickpocket;
 mod plant;
 mod players;
 mod prices;
