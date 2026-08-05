@@ -245,6 +245,7 @@ money
 noburn
 npc
 params
+patch
 pickpocket[N]
 plant
 players
