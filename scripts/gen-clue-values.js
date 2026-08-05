@@ -1,6 +1,9 @@
-// Refreshes the casket value constants in src/pickpocket.rs from the OSRS
-// wiki. A casket's worth comes from its reward table rather than the Grand
-// Exchange, so the wiki evaluates it and we bake in the result.
+// Refreshes the per-roll casket value constants in src/pickpocket.rs from the
+// OSRS wiki. A casket's worth comes from its reward table rather than the
+// Grand Exchange, so the wiki evaluates it and we bake in the result.
+//
+// These templates give the value of ONE ROLL of a casket's table, not of a
+// whole casket - src/pickpocket.rs multiplies by the average roll count.
 //
 //   node scripts/gen-clue-values.js
 //
@@ -42,11 +45,29 @@ async function expand(template) {
   }
 
   const source = fs.readFileSync(TARGET, 'utf8');
-  const updated = source
-    .replace(/pub const EASY_CASKET_GP: f64 = [\d_.]+;/,
-             `pub const EASY_CASKET_GP: f64 = ${easy.toLocaleString('en-US').replace(/,/g, '_')}.0;`)
-    .replace(/pub const MASTER_CASKET_GP: f64 = [\d_.]+;/,
-             `pub const MASTER_CASKET_GP: f64 = ${master.toLocaleString('en-US').replace(/,/g, '_')}.0;`);
+
+  // Compare the whole file and you cannot tell "already correct" from
+  // "matched nothing": one constant reformatted out of the regex's reach
+  // would go stale while the script reported success. So check each
+  // declaration is there, exactly once, before touching anything.
+  let updated = source;
+
+  for (const [name, value] of [
+    ['EASY_CASKET_ROLL_GP', easy],
+    ['MASTER_CASKET_ROLL_GP', master],
+  ]) {
+    const pattern = new RegExp(`pub const ${name}: f64 = [\\d_.]+;`, 'g');
+    const hits = source.match(pattern) || [];
+
+    if (hits.length !== 1) {
+      throw new Error(
+        `${name}: expected exactly 1 declaration in ${TARGET}, found ${hits.length}. ` +
+        `It was renamed or reformatted - fix this script before trusting it.`);
+    }
+
+    updated = updated.replace(pattern,
+      `pub const ${name}: f64 = ${value.toLocaleString('en-US').replace(/,/g, '_')}.0;`);
+  }
 
   if (updated === source) {
     console.log(`no change: easy ${easy}, master ${master}`);
