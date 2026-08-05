@@ -1,3 +1,6 @@
+use crate::items::{Mapping, Price};
+use std::collections::HashMap;
+
 /// Average value of a reward casket, in gp.
 ///
 /// Not a Grand Exchange price: a casket's worth comes from its reward table -
@@ -270,6 +273,113 @@ pub fn find_method(query: &str) -> Option<&'static Method> {
         .or_else(|| METHODS.iter().find(|method| plain(method.name).contains(&needle)))
 }
 
+/// The Grand Exchange takes 2% of a sale, rounded down, capped per item.
+const GE_TAX_PERCENT: f64 = 0.02;
+const GE_TAX_CAP: f64 = 5_000_000.0;
+
+/// Fish an item's buy price out of the item database and price list.
+///
+/// This is the `high` value with no fallback, which is what `-price` reports.
+/// `common::price_of` deliberately differs - it falls back to `low` - so a
+/// figure here can be checked with `-price` and agree.
+fn ge_high(items: &[Mapping], ge: &HashMap<u32, Price>, name: &str) -> Option<u32> {
+    let id = items
+        .iter()
+        .find(|item| item.name.eq_ignore_ascii_case(name))?
+        .id;
+
+    ge.get(&id)?.high
+}
+
+fn tax(price: f64) -> f64 {
+    (price * GE_TAX_PERCENT).floor().min(GE_TAX_CAP)
+}
+
+/// Which side of the ledger a line sits on. The Grand Exchange takes its cut
+/// when you sell, so an output nets less than its price while an input costs
+/// exactly its price.
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Side {
+    Input,
+    Output,
+}
+
+/// What one of an item is worth, net of tax where tax applies. `None` when the
+/// item cannot be priced at all.
+fn value_of(
+    loot: &Loot,
+    side: Side,
+    items: &[Mapping],
+    ge: &HashMap<u32, Price>,
+) -> Option<f64> {
+    let net = |gross: f64| match side {
+        Side::Output => gross - tax(gross),
+        Side::Input => gross,
+    };
+
+    match loot.value {
+        // Coins are not sold, so no lookup and no tax.
+        Value::Coins => Some(1.0),
+        // The casket averages already account for tax.
+        Value::EasyCaskets(n) => Some(n * EASY_CASKET_GP),
+        Value::MasterCaskets(n) => Some(n * MASTER_CASKET_GP),
+        Value::CrystalShard => {
+            let divine = ge_high(items, ge, "Divine super combat potion(4)")? as f64;
+            let plain = ge_high(items, ge, "Super combat potion(4)")? as f64;
+
+            Some(net((divine - plain) * 2.5))
+        }
+        Value::Ge => Some(net(ge_high(items, ge, loot.item)? as f64)),
+    }
+}
+
+/// An hour of a method, in gp.
+#[derive(Debug, PartialEq)]
+pub struct Hourly {
+    pub outputs: i64,
+    pub inputs: i64,
+    pub profit: i64,
+    /// At least one item had no buy price, so the totals understate reality.
+    pub unpriced: bool,
+}
+
+/// Total one side of the ledger. Per-pickpocket loot scales with the rate;
+/// hourly loot is counted once.
+fn total(
+    loot: &[Loot],
+    side: Side,
+    rate: f64,
+    items: &[Mapping],
+    ge: &HashMap<u32, Price>,
+) -> (f64, bool) {
+    let mut gp = 0.0;
+    let mut unpriced = false;
+
+    for line in loot {
+        match value_of(line, side, items, ge) {
+            Some(value) => {
+                let amount = if line.per_hour { line.qty } else { line.qty * rate };
+                gp += amount * value;
+            }
+            None => unpriced = true,
+        }
+    }
+
+    (gp, unpriced)
+}
+
+fn hourly(method: &Method, items: &[Mapping], ge: &HashMap<u32, Price>) -> Hourly {
+    let (outputs, out_missing) = total(method.outputs, Side::Output, method.rate, items, ge);
+    let (inputs, in_missing) = total(method.inputs, Side::Input, method.rate, items, ge);
+
+    Hourly {
+        outputs: outputs.round() as i64,
+        inputs: inputs.round() as i64,
+        profit: (outputs - inputs).round() as i64,
+        unpriced: out_missing || in_missing,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -389,5 +499,136 @@ mod tests {
 
         assert_eq!(farmers.outputs.len(), 18, "18 seed types drop");
         assert!(farmers.inputs.is_empty(), "master farmers cost nothing");
+    }
+
+    use crate::items::{Mapping, Price};
+    use std::collections::HashMap;
+
+    /// A two-item database: one that has traded, one that has not.
+    fn stub_market() -> (Vec<Mapping>, HashMap<u32, Price>) {
+        let items = vec![
+            Mapping { id: 1, name: "Chaos rune".to_string(), members: true,
+                      lowalch: None, highalch: None, limit: None, value: None, total: None },
+            Mapping { id: 2, name: "Blood shard".to_string(), members: true,
+                      lowalch: None, highalch: None, limit: None, value: None, total: None },
+        ];
+        let mut ge = HashMap::new();
+        ge.insert(1, Price { high: Some(100), low: Some(90) });
+        // No buy offer: -price prints 0 for this, so we do too.
+        ge.insert(2, Price { high: None, low: Some(5_000_000) });
+
+        (items, ge)
+    }
+
+    #[test]
+    fn a_price_is_the_high_value_matching_the_price_command() {
+        let (items, ge) = stub_market();
+
+        assert_eq!(ge_high(&items, &ge, "Chaos rune"), Some(100));
+        assert_eq!(ge_high(&items, &ge, "chaos RUNE"), Some(100));
+    }
+
+    #[test]
+    fn an_item_with_no_buy_offer_does_not_fall_back_to_the_sell_offer() {
+        // `price_of` in common.rs would answer 5,000,000 here. -price says 0,
+        // and this command matches -price.
+        let (items, ge) = stub_market();
+
+        assert_eq!(ge_high(&items, &ge, "Blood shard"), None);
+    }
+
+    #[test]
+    fn an_unknown_item_has_no_price() {
+        let (items, ge) = stub_market();
+
+        assert_eq!(ge_high(&items, &ge, "Santa hat"), None);
+    }
+
+    #[test]
+    fn tax_is_two_percent_rounded_down_and_capped() {
+        assert_eq!(tax(100.0), 2.0);
+        assert_eq!(tax(99.0), 1.0);
+        assert_eq!(tax(49.0), 0.0);
+        assert_eq!(tax(1_000_000_000.0), 5_000_000.0);
+    }
+
+    #[test]
+    fn coins_are_worth_one_each_and_are_never_taxed() {
+        let (items, ge) = stub_market();
+        let coins = Loot::coins(100.0);
+
+        assert_eq!(value_of(&coins, Side::Output, &items, &ge), Some(1.0));
+    }
+
+    #[test]
+    fn caskets_are_valued_from_the_generated_constants() {
+        let (items, ge) = stub_market();
+        let easy = Loot { item: "Clue scroll (easy)", qty: 1.0,
+                          value: Value::EasyCaskets(3.0), per_hour: false };
+
+        assert_eq!(
+            value_of(&easy, Side::Output, &items, &ge),
+            Some(3.0 * EASY_CASKET_GP)
+        );
+    }
+
+    #[test]
+    fn an_output_pays_the_tax_and_an_input_does_not() {
+        // You hand over 2% of what you sell, and pay the full ask for what you
+        // buy. Taxing both sides would overstate every method's profit.
+        let (items, ge) = stub_market();
+        let rune = Loot::ge("Chaos rune", 1.0);
+
+        assert_eq!(value_of(&rune, Side::Output, &items, &ge), Some(98.0));
+        assert_eq!(value_of(&rune, Side::Input, &items, &ge), Some(100.0));
+    }
+
+    #[test]
+    fn an_hour_is_outputs_less_inputs() {
+        let (items, ge) = stub_market();
+        // Knights: 3,000 pickpockets x 100 coins, less cosmic runes and wine
+        // that this stub market cannot price.
+        let knights = find_method("knight").expect("knights are in the table");
+        let hour = hourly(knights, &items, &ge);
+
+        assert_eq!(hour.outputs, 300_000);
+        assert_eq!(hour.inputs, 0, "neither input is priced by the stub");
+        assert_eq!(hour.profit, hour.outputs - hour.inputs);
+        assert!(hour.unpriced, "unpriced inputs must be flagged");
+    }
+
+    #[test]
+    fn hourly_loot_is_counted_once_not_once_per_pickpocket() {
+        let (mut items, mut ge) = stub_market();
+        items.push(Mapping { id: 3, name: "Dodgy necklace".to_string(), members: true,
+                             lowalch: None, highalch: None, limit: None, value: None, total: None });
+        ge.insert(3, Price { high: Some(1_000), low: Some(1_000) });
+
+        let vyres = find_method("vyre").expect("vyres are in the table");
+        let hour = hourly(vyres, &items, &ge);
+
+        // 720 pickpockets x 0.00838312 necklaces x 1,000 gp = 6,036, untaxed
+        // because it is a cost. If the 300 hourly cosmic runes were counted
+        // per pickpocket instead, the total would be orders of magnitude
+        // larger.
+        assert_eq!(hour.inputs, 6_036);
+    }
+
+    #[test]
+    fn a_method_whose_items_all_price_is_not_flagged() {
+        let (mut items, mut ge) = stub_market();
+        items.push(Mapping { id: 4, name: "Jug of wine".to_string(), members: false,
+                             lowalch: None, highalch: None, limit: None, value: None, total: None });
+        ge.insert(4, Price { high: Some(50), low: Some(50) });
+        items.push(Mapping { id: 5, name: "Cosmic rune".to_string(), members: true,
+                             lowalch: None, highalch: None, limit: None, value: None, total: None });
+        ge.insert(5, Price { high: Some(200), low: Some(200) });
+
+        let knights = find_method("knight").expect("knights are in the table");
+        let hour = hourly(knights, &items, &ge);
+
+        assert!(!hour.unpriced, "every knight item prices here");
+        // 3,000 x (0.1 x 200 + 0.005 x 50) = 60,750.
+        assert_eq!(hour.inputs, 60_750);
     }
 }
