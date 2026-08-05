@@ -67,19 +67,39 @@ pub struct Loot {
 
 impl Loot {
     const fn ge(item: &'static str, qty: f64) -> Self {
-        Self { item, qty, value: Value::Ge, per_hour: false }
+        Self {
+            item,
+            qty,
+            value: Value::Ge,
+            per_hour: false,
+        }
     }
 
     const fn ge_hourly(item: &'static str, qty: f64) -> Self {
-        Self { item, qty, value: Value::Ge, per_hour: true }
+        Self {
+            item,
+            qty,
+            value: Value::Ge,
+            per_hour: true,
+        }
     }
 
     const fn coins(qty: f64) -> Self {
-        Self { item: "Coins", qty, value: Value::Coins, per_hour: false }
+        Self {
+            item: "Coins",
+            qty,
+            value: Value::Coins,
+            per_hour: false,
+        }
     }
 
     const fn coins_hourly(qty: f64) -> Self {
-        Self { item: "Coins", qty, value: Value::Coins, per_hour: true }
+        Self {
+            item: "Coins",
+            qty,
+            value: Value::Coins,
+            per_hour: true,
+        }
     }
 }
 
@@ -107,8 +127,18 @@ const HAM_INPUTS: [Loot; 2] = [
 const HAM_OUTPUTS: [Loot; 2] = [
     // One casket apiece. The roll counts are what makes them whole caskets:
     // an easy casket averages 3 rolls of its table, a master casket 6.
-    Loot { item: "Clue scroll (easy)", qty: 1.0, value: Value::EasyCasketRolls(3.0), per_hour: false },
-    Loot { item: "Clue scroll (master)", qty: 0.02, value: Value::MasterCasketRolls(6.0), per_hour: false },
+    Loot {
+        item: "Clue scroll (easy)",
+        qty: 1.0,
+        value: Value::EasyCasketRolls(3.0),
+        per_hour: false,
+    },
+    Loot {
+        item: "Clue scroll (master)",
+        qty: 0.02,
+        value: Value::MasterCasketRolls(6.0),
+        per_hour: false,
+    },
 ];
 const HAM_REQS: [&str; 4] = [
     "15 Thieving (92 recommended)",
@@ -118,24 +148,24 @@ const HAM_REQS: [&str; 4] = [
 ];
 
 const FARMER_OUTPUTS: [Loot; 18] = [
-    Loot::ge("Barley seed", 0.72222222),        // 2 * 6.5 * 1/18
-    Loot::ge("Hammerstone seed", 0.55555556),   // 2 * 5 * 1/18
-    Loot::ge("Jute seed", 0.41493776),          // 2 * 5 * 1/24.1
-    Loot::ge("Asgarnian seed", 0.29288703),     // 2 * 3.5 * 1/23.9
-    Loot::ge("Yanillian seed", 0.19390582),     // 2 * 3.5 * 1/36.1
-    Loot::ge("Krandorian seed", 0.09695291),    // 2 * 3.5 * 1/72.2
-    Loot::ge("Wildblood seed", 0.02816901),     // 2 * 2 * 1/142
-    Loot::ge("Watermelon seed", 0.01058201),    // 2 * 1/189
-    Loot::ge("Snape grass seed", 0.00769231),   // 2 * 1/260
-    Loot::ge("Ranarr seed", 0.00754973),        // 2 * 1/264.91
-    Loot::ge("Toadflax seed", 0.00451467),      // 2 * 1/443
-    Loot::ge("Avantoe seed", 0.00211193),       // 2 * 1/947
-    Loot::ge("Kwuarm seed", 0.00143988),        // 2 * 1/1389
-    Loot::ge("Snapdragon seed", 0.00107852),    // 2 * 1/1854.4
-    Loot::ge("Cadantine seed", 0.00067204),     // 2 * 1/2976
-    Loot::ge("Lantadyme seed", 0.00047996),     // 2 * 1/4167
-    Loot::ge("Dwarf weed seed", 0.00028802),    // 2 * 1/6944
-    Loot::ge("Torstol seed", 0.0002157),        // 2 * 1/9271.98
+    Loot::ge("Barley seed", 0.72222222),      // 2 * 6.5 * 1/18
+    Loot::ge("Hammerstone seed", 0.55555556), // 2 * 5 * 1/18
+    Loot::ge("Jute seed", 0.41493776),        // 2 * 5 * 1/24.1
+    Loot::ge("Asgarnian seed", 0.29288703),   // 2 * 3.5 * 1/23.9
+    Loot::ge("Yanillian seed", 0.19390582),   // 2 * 3.5 * 1/36.1
+    Loot::ge("Krandorian seed", 0.09695291),  // 2 * 3.5 * 1/72.2
+    Loot::ge("Wildblood seed", 0.02816901),   // 2 * 2 * 1/142
+    Loot::ge("Watermelon seed", 0.01058201),  // 2 * 1/189
+    Loot::ge("Snape grass seed", 0.00769231), // 2 * 1/260
+    Loot::ge("Ranarr seed", 0.00754973),      // 2 * 1/264.91
+    Loot::ge("Toadflax seed", 0.00451467),    // 2 * 1/443
+    Loot::ge("Avantoe seed", 0.00211193),     // 2 * 1/947
+    Loot::ge("Kwuarm seed", 0.00143988),      // 2 * 1/1389
+    Loot::ge("Snapdragon seed", 0.00107852),  // 2 * 1/1854.4
+    Loot::ge("Cadantine seed", 0.00067204),   // 2 * 1/2976
+    Loot::ge("Lantadyme seed", 0.00047996),   // 2 * 1/4167
+    Loot::ge("Dwarf weed seed", 0.00028802),  // 2 * 1/6944
+    Loot::ge("Torstol seed", 0.0002157),      // 2 * 1/9271.98
 ];
 const FARMER_REQS: [&str; 4] = [
     "38 Thieving (94+ recommended)",
@@ -144,10 +174,7 @@ const FARMER_REQS: [&str; 4] = [
     "85 Farming raises the rare seed rates",
 ];
 
-const KNIGHT_INPUTS: [Loot; 2] = [
-    Loot::ge("Cosmic rune", 0.1),
-    Loot::ge("Jug of wine", 0.005),
-];
+const KNIGHT_INPUTS: [Loot; 2] = [Loot::ge("Cosmic rune", 0.1), Loot::ge("Jug of wine", 0.005)];
 // 50 coins, and 50 again with rogue equipment.
 const KNIGHT_OUTPUTS: [Loot; 1] = [Loot::coins(100.0)];
 const KNIGHT_REQS: [&str; 4] = [
@@ -178,14 +205,14 @@ const VYRE_INPUTS: [Loot; 2] = [
     Loot::ge_hourly("Cosmic rune", 300.0),
 ];
 const VYRE_OUTPUTS: [Loot; 8] = [
-    Loot::ge("Blood shard", 0.0004),              // 2 * 1/5000
-    Loot::coins(414.94318182),                    // (230 + 272.5) * 109/132
-    Loot::ge("Death rune", 0.24242424),           // 2 * 2 * 8/132
-    Loot::ge("Blood rune", 0.12121212),           // 2 * 4 * 2/132
-    Loot::ge("Blood pint", 0.09090909),           // 2 * 1 * 6/132
-    Loot::ge("Uncut ruby", 0.07575758),           // 2 * 1 * 5/132
-    Loot::ge("Diamond", 0.01515152),              // 2 * 1 * 1/132
-    Loot::ge("Cooked mystery meat", 0.01515152),  // 2 * 1 * 1/132
+    Loot::ge("Blood shard", 0.0004),             // 2 * 1/5000
+    Loot::coins(414.94318182),                   // (230 + 272.5) * 109/132
+    Loot::ge("Death rune", 0.24242424),          // 2 * 2 * 8/132
+    Loot::ge("Blood rune", 0.12121212),          // 2 * 4 * 2/132
+    Loot::ge("Blood pint", 0.09090909),          // 2 * 1 * 6/132
+    Loot::ge("Uncut ruby", 0.07575758),          // 2 * 1 * 5/132
+    Loot::ge("Diamond", 0.01515152),             // 2 * 1 * 1/132
+    Loot::ge("Cooked mystery meat", 0.01515152), // 2 * 1 * 1/132
 ];
 const VYRE_REQS: [&str; 4] = [
     "82 Thieving (99 recommended)",
@@ -200,13 +227,18 @@ const ELF_INPUTS: [Loot; 2] = [
 ];
 const ELF_OUTPUTS: [Loot; 8] = [
     Loot::ge("Enhanced crystal teleport seed", 0.00195313), // 2 * 1/1024
-    Loot { item: "Crystal shard", qty: 0.05714286, value: Value::CrystalShard, per_hour: false }, // 2 * 1/35
-    Loot::coins(516.796875),                // 2 * (280+350)/2 * 105/128
-    Loot::ge("Death rune", 0.25),           // 2 * 2 * 8/128
-    Loot::ge("Nature rune", 0.234375),      // 2 * 3 * 5/128
-    Loot::ge("Fire orb", 0.03125),          // 2 * 1 * 2/128
-    Loot::ge("Diamond", 0.015625),          // 2 * 1 * 1/128
-    Loot::ge("Gold ore", 0.015625),         // 2 * 1 * 1/128
+    Loot {
+        item: "Crystal shard",
+        qty: 0.05714286,
+        value: Value::CrystalShard,
+        per_hour: false,
+    }, // 2 * 1/35
+    Loot::coins(516.796875),                                // 2 * (280+350)/2 * 105/128
+    Loot::ge("Death rune", 0.25),                           // 2 * 2 * 8/128
+    Loot::ge("Nature rune", 0.234375),                      // 2 * 3 * 5/128
+    Loot::ge("Fire orb", 0.03125),                          // 2 * 1 * 2/128
+    Loot::ge("Diamond", 0.015625),                          // 2 * 1 * 1/128
+    Loot::ge("Gold ore", 0.015625),                         // 2 * 1 * 1/128
 ];
 const ELF_REQS: [&str; 4] = [
     "85 Thieving (99 recommended)",
@@ -311,8 +343,16 @@ pub fn find_method(query: &str) -> Option<&'static Method> {
         .iter()
         .find(|method| plain(method.name) == needle)
         .or_else(|| alias.and_then(|name| METHODS.iter().find(|method| method.name == name)))
-        .or_else(|| METHODS.iter().find(|method| plain(method.name).starts_with(&needle)))
-        .or_else(|| METHODS.iter().find(|method| plain(method.name).contains(&needle)))
+        .or_else(|| {
+            METHODS
+                .iter()
+                .find(|method| plain(method.name).starts_with(&needle))
+        })
+        .or_else(|| {
+            METHODS
+                .iter()
+                .find(|method| plain(method.name).contains(&needle))
+        })
 }
 
 /// The Grand Exchange takes 2% of a sale, rounded down, capped per item.
@@ -348,12 +388,7 @@ enum Side {
 
 /// What one of an item is worth, net of tax where tax applies. `None` when the
 /// item cannot be priced at all.
-fn value_of(
-    loot: &Loot,
-    side: Side,
-    items: &[Mapping],
-    ge: &HashMap<u32, Price>,
-) -> Option<f64> {
+fn value_of(loot: &Loot, side: Side, items: &[Mapping], ge: &HashMap<u32, Price>) -> Option<f64> {
     let net = |gross: f64| match side {
         Side::Output => gross - tax(gross),
         Side::Input => gross,
@@ -410,12 +445,20 @@ fn total(
     items: &[Mapping],
     ge: &HashMap<u32, Price>,
 ) -> Tally {
-    let mut tally = Tally { gp: 0.0, priced: false, unpriced: false };
+    let mut tally = Tally {
+        gp: 0.0,
+        priced: false,
+        unpriced: false,
+    };
 
     for line in loot {
         match value_of(line, side, items, ge) {
             Some(value) => {
-                let amount = if line.per_hour { line.qty } else { line.qty * rate };
+                let amount = if line.per_hour {
+                    line.qty
+                } else {
+                    line.qty * rate
+                };
                 tally.gp += amount * value;
                 tally.priced |= line.value.needs_market();
             }
@@ -602,7 +645,10 @@ fn detail(
         vec![
             source.c2(&commas(method.xp, ".1f")),
             source.c1("XP each"),
-            source.p(&format!("{} XP/hr", short_gp(xp_per_hour(method).round() as i64))),
+            source.p(&format!(
+                "{} XP/hr",
+                short_gp(xp_per_hour(method).round() as i64)
+            )),
         ]
         .join(" "),
     ]
@@ -720,7 +766,11 @@ mod tests {
 
         for method in METHODS.iter() {
             assert!(!method.name.is_empty(), "a method has no name");
-            assert!(method.thieving >= 1, "{} has no Thieving level", method.name);
+            assert!(
+                method.thieving >= 1,
+                "{} has no Thieving level",
+                method.name
+            );
             assert!(method.rate > 0.0, "{} has no rate", method.name);
             assert!(method.xp > 0.0, "{} has no xp", method.name);
             assert!(
@@ -783,7 +833,10 @@ mod tests {
             find_method("knight").map(|m| m.name),
             Some("Knights of Ardougne")
         );
-        assert_eq!(find_method("farmer").map(|m| m.name), Some("Master farmers"));
+        assert_eq!(
+            find_method("farmer").map(|m| m.name),
+            Some("Master farmers")
+        );
         assert_eq!(find_method("ham").map(|m| m.name), Some("H.A.M. members"));
 
         // The alias must not shadow the plural, or the prefix pass.
@@ -892,15 +945,43 @@ mod tests {
     /// A two-item database: one that has traded, one that has not.
     fn stub_market() -> (Vec<Mapping>, HashMap<u32, Price>) {
         let items = vec![
-            Mapping { id: 1, name: "Chaos rune".to_string(), members: true,
-                      lowalch: None, highalch: None, limit: None, value: None, total: None },
-            Mapping { id: 2, name: "Blood shard".to_string(), members: true,
-                      lowalch: None, highalch: None, limit: None, value: None, total: None },
+            Mapping {
+                id: 1,
+                name: "Chaos rune".to_string(),
+                members: true,
+                lowalch: None,
+                highalch: None,
+                limit: None,
+                value: None,
+                total: None,
+            },
+            Mapping {
+                id: 2,
+                name: "Blood shard".to_string(),
+                members: true,
+                lowalch: None,
+                highalch: None,
+                limit: None,
+                value: None,
+                total: None,
+            },
         ];
         let mut ge = HashMap::new();
-        ge.insert(1, Price { high: Some(100), low: Some(90) });
+        ge.insert(
+            1,
+            Price {
+                high: Some(100),
+                low: Some(90),
+            },
+        );
         // No buy offer: -price prints 0 for this, so we do too.
-        ge.insert(2, Price { high: None, low: Some(5_000_000) });
+        ge.insert(
+            2,
+            Price {
+                high: None,
+                low: Some(5_000_000),
+            },
+        );
 
         (items, ge)
     }
@@ -949,8 +1030,12 @@ mod tests {
     fn caskets_are_valued_from_the_generated_constants() {
         let (items, ge) = stub_market();
         // 3 rolls, which is one easy casket.
-        let easy = Loot { item: "Clue scroll (easy)", qty: 1.0,
-                          value: Value::EasyCasketRolls(3.0), per_hour: false };
+        let easy = Loot {
+            item: "Clue scroll (easy)",
+            qty: 1.0,
+            value: Value::EasyCasketRolls(3.0),
+            per_hour: false,
+        };
 
         assert_eq!(
             value_of(&easy, Side::Output, &items, &ge),
@@ -986,9 +1071,23 @@ mod tests {
     #[test]
     fn hourly_loot_is_counted_once_not_once_per_pickpocket() {
         let (mut items, mut ge) = stub_market();
-        items.push(Mapping { id: 3, name: "Dodgy necklace".to_string(), members: true,
-                             lowalch: None, highalch: None, limit: None, value: None, total: None });
-        ge.insert(3, Price { high: Some(1_000), low: Some(1_000) });
+        items.push(Mapping {
+            id: 3,
+            name: "Dodgy necklace".to_string(),
+            members: true,
+            lowalch: None,
+            highalch: None,
+            limit: None,
+            value: None,
+            total: None,
+        });
+        ge.insert(
+            3,
+            Price {
+                high: Some(1_000),
+                low: Some(1_000),
+            },
+        );
 
         let vyres = find_method("vyre").expect("vyres are in the table");
         let hour = hourly(vyres, &items, &ge);
@@ -1028,12 +1127,40 @@ mod tests {
     #[test]
     fn a_method_whose_items_all_price_is_not_flagged() {
         let (mut items, mut ge) = stub_market();
-        items.push(Mapping { id: 4, name: "Jug of wine".to_string(), members: false,
-                             lowalch: None, highalch: None, limit: None, value: None, total: None });
-        ge.insert(4, Price { high: Some(50), low: Some(50) });
-        items.push(Mapping { id: 5, name: "Cosmic rune".to_string(), members: true,
-                             lowalch: None, highalch: None, limit: None, value: None, total: None });
-        ge.insert(5, Price { high: Some(200), low: Some(200) });
+        items.push(Mapping {
+            id: 4,
+            name: "Jug of wine".to_string(),
+            members: false,
+            lowalch: None,
+            highalch: None,
+            limit: None,
+            value: None,
+            total: None,
+        });
+        ge.insert(
+            4,
+            Price {
+                high: Some(50),
+                low: Some(50),
+            },
+        );
+        items.push(Mapping {
+            id: 5,
+            name: "Cosmic rune".to_string(),
+            members: true,
+            lowalch: None,
+            highalch: None,
+            limit: None,
+            value: None,
+            total: None,
+        });
+        ge.insert(
+            5,
+            Price {
+                high: Some(200),
+                low: Some(200),
+            },
+        );
 
         let knights = find_method("knight").expect("knights are in the table");
         let hour = hourly(knights, &items, &ge);
@@ -1122,12 +1249,40 @@ mod tests {
     fn knights_only_market() -> (Vec<Mapping>, HashMap<u32, Price>) {
         let (mut items, mut ge) = stub_market();
 
-        items.push(Mapping { id: 4, name: "Jug of wine".to_string(), members: false,
-                             lowalch: None, highalch: None, limit: None, value: None, total: None });
-        ge.insert(4, Price { high: Some(50), low: Some(50) });
-        items.push(Mapping { id: 5, name: "Cosmic rune".to_string(), members: true,
-                             lowalch: None, highalch: None, limit: None, value: None, total: None });
-        ge.insert(5, Price { high: Some(200), low: Some(200) });
+        items.push(Mapping {
+            id: 4,
+            name: "Jug of wine".to_string(),
+            members: false,
+            lowalch: None,
+            highalch: None,
+            limit: None,
+            value: None,
+            total: None,
+        });
+        ge.insert(
+            4,
+            Price {
+                high: Some(50),
+                low: Some(50),
+            },
+        );
+        items.push(Mapping {
+            id: 5,
+            name: "Cosmic rune".to_string(),
+            members: true,
+            lowalch: None,
+            highalch: None,
+            limit: None,
+            value: None,
+            total: None,
+        });
+        ge.insert(
+            5,
+            Price {
+                high: Some(200),
+                low: Some(200),
+            },
+        );
 
         (items, ge)
     }
@@ -1166,9 +1321,18 @@ mod tests {
             &ge,
         ));
 
-        assert!(!text.contains("No prices"), "bailed on a live market: {:?}", text);
+        assert!(
+            !text.contains("No prices"),
+            "bailed on a live market: {:?}",
+            text
+        );
         for method in METHODS.iter() {
-            assert!(text.contains(method.name), "{} is missing: {:?}", method.name, text);
+            assert!(
+                text.contains(method.name),
+                "{} is missing: {:?}",
+                method.name,
+                text
+            );
         }
     }
 
@@ -1260,7 +1424,11 @@ mod tests {
         assert!(text.contains("Profit/hr 239.2k"), "{:?}", text);
         assert!(text.contains("Outputs 300,000"), "{:?}", text);
         assert!(text.contains("Inputs 60,750"), "{:?}", text);
-        assert!(text.contains("Requires 55 Thieving (95+ recommended)"), "{:?}", text);
+        assert!(
+            text.contains("Requires 55 Thieving (95+ recommended)"),
+            "{:?}",
+            text
+        );
         // Everything priced, so no footnote; level 99, so no level warning -
         // that line is a bare "Requires 55 Thieving", the requirement above
         // is the same words followed by its parenthetical.
@@ -1278,12 +1446,24 @@ mod tests {
         let elves = find_method("elf").expect("elves are in the table");
 
         let locked = plain_lines(&detail(
-            &source, "[Pickpocket]", "Thieving 1", 1, knights, &items, &ge,
+            &source,
+            "[Pickpocket]",
+            "Thieving 1",
+            1,
+            knights,
+            &items,
+            &ge,
         ));
         assert!(locked.contains("Requires 55 Thieving\n"), "{:?}", locked);
 
         let thin = plain_lines(&detail(
-            &source, "[Pickpocket]", "Thieving 99", 99, elves, &items, &ge,
+            &source,
+            "[Pickpocket]",
+            "Thieving 99",
+            99,
+            elves,
+            &items,
+            &ge,
         ));
         assert!(thin.contains("no buy price"), "{:?}", thin);
     }
