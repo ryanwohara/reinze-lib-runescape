@@ -738,7 +738,7 @@ pub fn lookup(source: Source) -> Result<Vec<String>> {
                 "{} {}",
                 prefix,
                 source.c1(&format!(
-                    "'{}' isn't a pickpocketing method - try -pickpocket for the full list",
+                    "'{}' isn't a pickpocketing method - try +pickpocket for the full list",
                     flags.search
                 ))
             )]);
