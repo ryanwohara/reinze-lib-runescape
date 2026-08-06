@@ -38,7 +38,7 @@ mod tests {
     fn the_usage_line_names_a_prefix_the_bot_answers_to() {
         let lines = query(&stub_source("")).expect("wiki renders");
 
-        assert_eq!(lines, vec!["Usage: -wiki <query>"]);
+        assert_eq!(lines, vec!["Usage: +wiki <query>"]);
         assert!(!lines[0].contains('!'), "'!' is not a prefix this bot takes");
     }
 
