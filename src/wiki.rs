@@ -3,7 +3,7 @@ use common::source::Source;
 
 pub fn query(s: &Source) -> Result<Vec<String>> {
     if s.query.is_empty() {
-        return Ok(vec!["Usage: -wiki <query>".to_string()]);
+        return Ok(vec!["Usage: +wiki <query>".to_string()]);
     }
 
     let link = vec![
