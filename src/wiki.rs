@@ -3,7 +3,7 @@ use common::source::Source;
 
 pub fn query(s: &Source) -> Result<Vec<String>> {
     if s.query.is_empty() {
-        return Ok(vec!["Usage: +wiki <query>".to_string()]);
+        return Ok(vec!["Usage: -wiki <query>".to_string()]);
     }
 
     let link = vec![
@@ -32,13 +32,13 @@ mod tests {
         Source::create("0", Author::create("nick!ident@host", stub_color), "wiki", query)
     }
 
-    /// The bot answers to `+` and `-`, never `!` - the usage line said `!wiki`,
-    /// which is a prefix no one can type. Commands name themselves with `+`.
+    /// The bot answers to `-` and `+`, never `!` - the usage line said `!wiki`,
+    /// which is a prefix no one can type.
     #[test]
     fn the_usage_line_names_a_prefix_the_bot_answers_to() {
         let lines = query(&stub_source("")).expect("wiki renders");
 
-        assert_eq!(lines, vec!["Usage: +wiki <query>"]);
+        assert_eq!(lines, vec!["Usage: -wiki <query>"]);
         assert!(!lines[0].contains('!'), "'!' is not a prefix this bot takes");
     }
 
