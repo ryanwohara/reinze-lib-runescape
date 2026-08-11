@@ -115,7 +115,6 @@ impl Patch {
                 "Farming Guild",
                 "Weiss",
                 "Harmony Island",
-                "Varlamore",
                 "Hosidius South-west",
                 "Civitas illa Fortis West",
             ],
@@ -226,5 +225,93 @@ impl fmt::Display for Patch {
             Self::None => "",
         };
         write!(f, "{}", s)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Every patch type, so a new one cannot be added without the checks below
+    /// seeing it.
+    const ALL: [Patch; 21] = [
+        Patch::Allotment,
+        Patch::Flower,
+        Patch::Herb,
+        Patch::Bush,
+        Patch::Tree,
+        Patch::Fruit,
+        Patch::Hops,
+        Patch::Spirit,
+        Patch::Belladonna,
+        Patch::Calquat,
+        Patch::Mushroom,
+        Patch::Celastrus,
+        Patch::Redwood,
+        Patch::Crystal,
+        Patch::Seaweed,
+        Patch::Grape,
+        Patch::Hespori,
+        Patch::Anima,
+        Patch::Cactus,
+        Patch::Hardwood,
+        Patch::Coral,
+    ];
+
+    #[test]
+    fn no_patch_lists_the_same_location_twice() {
+        for patch in ALL {
+            let locations = patch.locations();
+            let mut unique = locations.to_vec();
+            unique.sort();
+            unique.dedup();
+
+            assert_eq!(
+                locations.len(),
+                unique.len(),
+                "{} lists a location twice: {:?}",
+                patch,
+                locations
+            );
+        }
+    }
+
+    /// Varlamore has one herb patch, at Ortus Farm west of Civitas illa Fortis.
+    /// It was listed twice - once under each name - so a herb run counted a
+    /// patch that does not exist.
+    #[test]
+    fn varlamore_has_exactly_one_herb_patch() {
+        let herbs = Patch::Herb.locations();
+
+        assert!(herbs.contains(&"Civitas illa Fortis West"));
+        assert!(
+            !herbs.contains(&"Varlamore"),
+            "the Varlamore herb patch is the Civitas illa Fortis one: {:?}",
+            herbs
+        );
+    }
+
+    /// The three Ortus Farm patches share a name, so a rename has to move all
+    /// of them together.
+    #[test]
+    fn ortus_farm_is_named_the_same_way_across_its_three_patches() {
+        for patch in [Patch::Allotment, Patch::Flower, Patch::Herb] {
+            assert!(
+                patch.locations().contains(&"Civitas illa Fortis West"),
+                "{} is missing the Ortus Farm patch",
+                patch
+            );
+        }
+    }
+
+    #[test]
+    fn every_patch_type_names_at_least_one_location() {
+        for patch in ALL {
+            assert!(
+                !patch.locations().is_empty(),
+                "{} has nowhere to farm",
+                patch
+            );
+        }
     }
 }
