@@ -7,6 +7,7 @@ mod boost;
 mod bosses;
 mod chef;
 mod clues;
+mod cmb_percent;
 mod collectionlog;
 mod colosseum;
 mod combat_est;
@@ -64,6 +65,7 @@ boss\d*
 fairy
 kc\d*
 clues?\d*
+co?mb(at)?%
 co?mb(at)?\d*$
 co?mb(at)?-?est
 colo(sseum)?\d*$
@@ -142,7 +144,9 @@ pub extern "C" fn exported(context: *const PluginContext) -> *mut c_char {
         let channel = to_str_or_default((*context).channel);
         let color = (*context).color;
 
-        let re = Regex::new(r"^([a-zA-Z]+)(\d+)$").unwrap();
+        // `%` is part of the name for `+cmb%`, so it has to survive the split
+        // that peels a trailing RSN index off a command (`+cmb%5` -> `cmb%`, 5).
+        let re = Regex::new(r"^([a-zA-Z%]+)(\d+)$").unwrap();
         let cmd = command.to_string();
         let re_match = match re.captures(&cmd) {
             Some(captures) => vec![captures],
@@ -174,6 +178,7 @@ pub extern "C" fn exported(context: *const PluginContext) -> *mut c_char {
             "clue" | "clues" => clues::lookup(source),
             "combat" | "cmb" => stats::combat(source),
             "combatest" | "cmbest" | "cmb-est" | "combat-est" => combat_est::estimate(source),
+            "cmb%" | "combat%" => cmb_percent::percent(source),
             "degrime" | "degrimy" => degrime::lookup(&source),
             "colo" | "colosseum" => colosseum::lookup(source),
             "coll" | "collection" | "collectionlog" => collectionlog::lookup(source),
@@ -231,6 +236,7 @@ colosseum[N]
 collectionlog[N]
 combat[N]
 combat-est
+combat%[N]
 congrats
 degrime
 fairy
@@ -325,6 +331,9 @@ mod tests {
             "combatest",
             "cmbest",
             "cmb-est",
+            "cmb%",
+            "combat%",
+            "cmb%5",
             "combat-est",
             "degrime",
             "degrimy",
