@@ -29,7 +29,12 @@ mod tests {
     }
 
     fn stub_source(query: &str) -> Source {
-        Source::create("0", Author::create("nick!ident@host", stub_color), "wiki", query)
+        Source::create(
+            "0",
+            Author::create("nick!ident@host", stub_color),
+            "wiki",
+            query,
+        )
     }
 
     /// The bot answers to `-` and `+`, never `!` - the usage line said `!wiki`,
@@ -39,7 +44,10 @@ mod tests {
         let lines = query(&stub_source("")).expect("wiki renders");
 
         assert_eq!(lines, vec!["Usage: +wiki <query>"]);
-        assert!(!lines[0].contains('!'), "'!' is not a prefix this bot takes");
+        assert!(
+            !lines[0].contains('!'),
+            "'!' is not a prefix this bot takes"
+        );
     }
 
     #[test]
@@ -47,9 +55,8 @@ mod tests {
         let lines = query(&stub_source("abyssal whip")).expect("wiki renders");
 
         assert!(
-            lines[0].contains(
-                "https://oldschool.runescape.wiki/w/Special:Search?search=abyssal+whip"
-            ),
+            lines[0]
+                .contains("https://oldschool.runescape.wiki/w/Special:Search?search=abyssal+whip"),
             "got: {}",
             lines[0]
         );
