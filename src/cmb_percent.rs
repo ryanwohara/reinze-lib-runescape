@@ -3,7 +3,7 @@
 //! Reports the share of total XP earned in the seven combat skills, with the
 //! levels and XP on each side of that split.
 
-use crate::common::{Listing, Listings, collect_hiscores, resolve_rsn};
+use crate::common::{Listing, Listings, collect_hiscores};
 use crate::stats::{stats_parameters, strip_stats_parameters};
 use anyhow::Result;
 use common::{commas, source::Source};
@@ -81,7 +81,6 @@ pub fn percent(s: Source) -> Result<Vec<String>> {
         .collect::<Vec<&str>>()
         .join(" ");
 
-    let rsn = resolve_rsn(&joined, &s);
     let hiscores = match collect_hiscores(&joined, &s, &flags) {
         Ok(hiscores) => hiscores,
         Err(_) => return Ok(not_found),
@@ -97,7 +96,6 @@ pub fn percent(s: Source) -> Result<Vec<String>> {
 
     let output = vec![
         prefix,
-        s.l(&rsn),
         s.c1("Combat:"),
         s.c2(&format!("{share:.1}%")),
         s.c1("of"),
