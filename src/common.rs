@@ -1498,7 +1498,13 @@ pub fn replace_item_abbreviations(q: &str) -> String {
         (r"^zhasta$", "zamorakian hasta"),
         (r"\bhally\b", "halberd"),
         (r"\bobby\b", "obsidian"),
-        (r"\bd\b", "dragon"),
+        // `d` alone means dragon, but only when it stands as its own word.
+        // `\bd\b` also matched the `d` in `d'hide` - an apostrophe is not a
+        // word character, so it closes the word - which turned `green d'hide`
+        // into `green dragon'hide` and matched nothing. Requiring a space or
+        // the end of the query leaves apostrophe words alone. This rule runs
+        // near the end, so it was clobbering `dhide`'s own expansion too.
+        (r"\bd(\s|$)", "dragon$1"),
         (r"\bnezzy\b", "Helm of Neitiznot"),
     ];
 
@@ -1516,6 +1522,46 @@ pub fn replace_item_abbreviations(q: &str) -> String {
 mod tests {
     // import names from outer (for mod tests) scope
     use super::*;
+
+    /// An apostrophe is not a word character, so in `d'hide` the leading `d`
+    /// is a whole word and `\bd\b` matched it - turning `green d'hide` into
+    /// `green dragon'hide`, which matches no item. Searching `green` alone
+    /// worked, which is what made it look like a search bug rather than an
+    /// expansion one.
+    #[test]
+    fn an_apostrophe_word_is_not_mistaken_for_the_dragon_abbreviation() {
+        assert_eq!(replace_item_abbreviations("green d'hide"), "green d'hide");
+        assert_eq!(
+            replace_item_abbreviations("green d'hide body"),
+            "green d'hide body"
+        );
+        assert_eq!(replace_item_abbreviations("black d'hide"), "black d'hide");
+    }
+
+    /// The patterns run in order over the accumulating result, so `dhide`
+    /// expanded to `d'hide` and was then clobbered by the same `\bd\b` rule.
+    #[test]
+    fn the_dhide_abbreviation_survives_the_rules_that_run_after_it() {
+        assert_eq!(replace_item_abbreviations("dhide"), "d'hide");
+        assert_eq!(
+            replace_item_abbreviations("green dhide body"),
+            "green d'hide body"
+        );
+    }
+
+    #[test]
+    fn a_standalone_d_still_means_dragon() {
+        assert_eq!(replace_item_abbreviations("d scim"), "dragon scimitar");
+        assert_eq!(replace_item_abbreviations("d"), "dragon");
+        assert_eq!(replace_item_abbreviations("d platebody"), "dragon platebody");
+    }
+
+    #[test]
+    fn a_d_inside_a_word_is_left_alone() {
+        assert_eq!(replace_item_abbreviations("red topaz"), "red topaz");
+        assert_eq!(replace_item_abbreviations("3a"), "3rd age");
+    }
+
     #[test]
     fn test_skill() {
         assert_eq!(skill("overall"), "Overall");
