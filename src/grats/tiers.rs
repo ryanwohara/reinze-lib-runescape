@@ -143,7 +143,7 @@ const L_126_PLUS: Tier = Tier {
     ],
 };
 
-/// Level ladder, used for any milestone at or below 150.
+/// Level ladder, used for any milestone at or below 126.
 pub fn level_tier(level: u32) -> &'static Tier {
     match level {
         0..=9 => &L_1_9,
@@ -315,7 +315,7 @@ const IMPOSSIBLE: Tier = Tier {
     ],
 };
 
-/// XP ladder, used for any non-Overall milestone above 150.
+/// XP ladder, used for any non-Overall milestone above 126.
 pub fn xp_tier(xp: u64) -> &'static Tier {
     match xp {
         0..100_000 => &X_SUB_100K,
@@ -559,7 +559,9 @@ mod tests {
         assert_eq!(level_tier(121).emoji, "🛸");
         assert_eq!(level_tier(125).emoji, "🛸");
         assert_eq!(level_tier(126).emoji, "🌌");
-        assert_eq!(level_tier(150).emoji, "🌌");
+        // The catch-all still holds above 126, though +gz now routes anything
+        // past 126 to the XP ladder.
+        assert_eq!(level_tier(127).emoji, "🌌");
     }
 
     #[test]
@@ -571,7 +573,7 @@ mod tests {
 
     #[test]
     fn xp_tier_lower_bands() {
-        assert_eq!(xp_tier(151).emoji, "🌱");
+        assert_eq!(xp_tier(127).emoji, "🌱");
         assert_eq!(xp_tier(99_999).emoji, "🌱");
         assert_eq!(xp_tier(100_000).emoji, "🐣");
         assert_eq!(xp_tier(499_999).emoji, "🐣");

@@ -62,14 +62,14 @@ pub fn get(s: &Source) -> Result<Vec<String>> {
     }
 
     // Overall carries two ladders — total level below the derived maximum,
-    // total XP above it. Everything else switches from levels to XP at 150.
+    // total XP above it. Everything else switches from levels to XP at 126.
     let (tier, is_xp) = if skill == "Overall" {
         if milestone_value <= tiers::max_total_level() {
             (tiers::overall_level_tier(milestone_value), false)
         } else {
             (tiers::overall_xp_tier(milestone_value), true)
         }
-    } else if milestone_value <= 150 {
+    } else if milestone_value <= 126 {
         (tiers::level_tier(milestone_value as u32), false)
     } else {
         (tiers::xp_tier(milestone_value), true)
@@ -248,6 +248,18 @@ mod tests {
         let out = get(&source_with("70 attack")).unwrap();
         assert!(out[0].contains("🏆"), "got: {}", out[0]);
         assert!(out[0].contains("70 Attack"), "got: {}", out[0]);
+    }
+
+    #[test]
+    fn gz_switches_to_xp_just_past_126() {
+        // 126 is the last value read as a level, matching the combat cap; 127
+        // is the first one read as XP.
+        let out = get(&source_with("126 attack")).unwrap();
+        assert!(out[0].contains("126 Attack"), "got: {}", out[0]);
+        assert!(!out[0].contains(" xp"), "got: {}", out[0]);
+
+        let out = get(&source_with("127 attack")).unwrap();
+        assert!(out[0].contains("127 Attack xp"), "got: {}", out[0]);
     }
 
     #[test]
