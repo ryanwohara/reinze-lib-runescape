@@ -95,6 +95,7 @@ impl Patch {
                 "Ardougne North",
                 "Farming Guild",
                 "Hosidius South-west",
+                "Prifddinas North",
                 "Civitas illa Fortis West",
             ],
             Self::Flower => &[
@@ -104,7 +105,9 @@ impl Patch {
                 "Ardougne North",
                 "Farming Guild",
                 "Hosidius South-west",
+                "Prifddinas North",
                 "Civitas illa Fortis West",
+                "Kastori",
             ],
             Self::Herb => &[
                 "Falador South",
@@ -132,7 +135,7 @@ impl Patch {
                 "Taverley",
                 "Gnome Stronghold",
                 "Farming Guild",
-                "Auburnvale",
+                "Nemus Retreat",
             ],
             Self::Fruit => &[
                 "Catherby East",
@@ -141,6 +144,7 @@ impl Patch {
                 "Gnome Stronghold",
                 "Lletya",
                 "Farming Guild",
+                "Kastori",
             ],
             Self::Hops => &[
                 "Lumbridge North",
@@ -156,7 +160,7 @@ impl Patch {
                 "Farming Guild",
                 "Hosidius South-west",
             ],
-            Self::Belladonna => &["Draynor Village Manor"],
+            Self::Belladonna => &["Draynor Village Manor", "Auburnvale"],
             Self::Calquat => &[
                 "Kastori",
                 "Tai Bwo Wannai North",
@@ -302,6 +306,64 @@ mod tests {
                 patch
             );
         }
+    }
+
+    /// Prifddinas grows two allotments and a flower patch beside its crystal
+    /// tree, but no herb - so it belongs on an allotment run and not a herb
+    /// one. All three share the crystal patch's name, since they sit together.
+    #[test]
+    fn prifddinas_has_allotment_and_flower_patches_but_no_herb() {
+        for patch in [Patch::Allotment, Patch::Flower, Patch::Crystal] {
+            assert!(
+                patch.locations().contains(&"Prifddinas North"),
+                "{} is missing the Prifddinas patch: {:?}",
+                patch,
+                patch.locations()
+            );
+        }
+
+        let herbs = Patch::Herb.locations();
+        assert!(
+            !herbs.iter().any(|location| location.contains("Prifddinas")),
+            "Prifddinas has no herb patch: {:?}",
+            herbs
+        );
+    }
+
+    /// Kastori holds three patches - calquat, fruit tree, and a flower patch
+    /// that, unusually, has no allotment beside it. A run that stops short of
+    /// any of them misses a patch.
+    #[test]
+    fn kastori_holds_a_calquat_fruit_and_flower_patch() {
+        for patch in [Patch::Calquat, Patch::Fruit, Patch::Flower] {
+            assert!(
+                patch.locations().contains(&"Kastori"),
+                "{} is missing the Kastori patch: {:?}",
+                patch,
+                patch.locations()
+            );
+        }
+    }
+
+    /// Auburn Valley holds two patches in two different settlements: the tree
+    /// patch at Nemus Retreat and the belladonna patch at Auburnvale itself.
+    /// Naming both "Auburnvale" sent players to the wrong one.
+    #[test]
+    fn auburn_valley_names_its_two_patches_apart() {
+        let trees = Patch::Tree.locations();
+        let belladonna = Patch::Belladonna.locations();
+
+        assert!(trees.contains(&"Nemus Retreat"), "trees: {:?}", trees);
+        assert!(
+            !trees.contains(&"Auburnvale"),
+            "the tree patch is at Nemus Retreat, not Auburnvale: {:?}",
+            trees
+        );
+        assert!(
+            belladonna.contains(&"Auburnvale"),
+            "belladonna: {:?}",
+            belladonna
+        );
     }
 
     #[test]
