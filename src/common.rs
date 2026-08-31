@@ -1553,7 +1553,10 @@ mod tests {
     fn a_standalone_d_still_means_dragon() {
         assert_eq!(replace_item_abbreviations("d scim"), "dragon scimitar");
         assert_eq!(replace_item_abbreviations("d"), "dragon");
-        assert_eq!(replace_item_abbreviations("d platebody"), "dragon platebody");
+        assert_eq!(
+            replace_item_abbreviations("d platebody"),
+            "dragon platebody"
+        );
     }
 
     #[test]
