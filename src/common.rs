@@ -171,7 +171,7 @@ pub fn format_hours(hours: f64) -> String {
 
 /// Price an item trades at, preferring the buy offer and falling back to the
 /// sell offer when nothing has bought recently.
-pub fn price_of(items: &[Mapping], ge: &HashMap<u32, Price>, name: &str) -> Option<u32> {
+pub fn price_of(items: &[Mapping], ge: &HashMap<u32, Price>, name: &str) -> Option<u64> {
     let id = items
         .iter()
         .find(|item| item.name.eq_ignore_ascii_case(name))?

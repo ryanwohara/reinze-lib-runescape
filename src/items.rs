@@ -45,12 +45,12 @@ pub struct Data {
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Price {
     #[serde(skip_serializing_if = "is_none")]
-    pub high: Option<u32>,
+    pub high: Option<u64>,
     #[serde(skip_serializing_if = "is_none")]
-    pub low: Option<u32>,
+    pub low: Option<u64>,
 }
 
-fn is_none(field: &Option<u32>) -> bool {
+fn is_none(field: &Option<u64>) -> bool {
     *field == None
 }
 
@@ -123,7 +123,7 @@ pub struct GeItemPrice<'a> {
 #[serde(untagged)]
 pub enum StrOrNum<'a> {
     Str(&'a str),
-    Num(u32),
+    Num(u64),
 }
 // https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=939c50d5e1945dae3855bdf02e1e12bd
 // https://stackoverflow.com/questions/56582722/serde-json-deserialize-any-number
@@ -141,5 +141,19 @@ impl StrOrNum<'_> {
             StrOrNum::Str(s) => eval_query(s).unwrap_or_else(|_| 0.0),
             StrOrNum::Num(n) => n as f64,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn prices_above_u32_max_parse() {
+        let json = r#"{"data":{"20997":{"high":5000000000,"low":4999999999}}}"#;
+        let data: Data = serde_json::from_str(json).unwrap();
+
+        assert_eq!(data.data[&20997].high, Some(5_000_000_000));
+        assert_eq!(data.data[&20997].low, Some(4_999_999_999));
     }
 }

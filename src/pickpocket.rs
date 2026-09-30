@@ -364,7 +364,7 @@ const GE_TAX_CAP: f64 = 5_000_000.0;
 /// This is the `high` value with no fallback, which is what `-price` reports.
 /// `common::price_of` deliberately differs - it falls back to `low` - so a
 /// figure here can be checked with `-price` and agree.
-fn ge_high(items: &[Mapping], ge: &HashMap<u32, Price>, name: &str) -> Option<u32> {
+fn ge_high(items: &[Mapping], ge: &HashMap<u32, Price>, name: &str) -> Option<u64> {
     let id = items
         .iter()
         .find(|item| item.name.eq_ignore_ascii_case(name))?

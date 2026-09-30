@@ -65,8 +65,8 @@ fn burn(level: u32, cook_level: u32, stop: Stop) -> f64 {
 
 /// The tax on selling one item. Integer maths throughout: 2% of 991 is 19, not
 /// 19.82, and a float would round the wrong way on exact multiples.
-fn tax(price: u32) -> u32 {
-    (price as u64 * GE_TAX_PERCENT / 100).min(GE_TAX_CAP) as u32
+fn tax(price: u64) -> u64 {
+    (price * GE_TAX_PERCENT / 100).min(GE_TAX_CAP)
 }
 
 /// An hour of cooking, in gp. Signed: cooking often loses money.
@@ -78,7 +78,7 @@ pub struct Hourly {
     pub profit: i64,
 }
 
-fn hourly(raw: u32, cooked: u32, burn: f64) -> Hourly {
+fn hourly(raw: u64, cooked: u64, burn: f64) -> Hourly {
     let fish = FISH_PER_HOUR as f64;
     let sold = (cooked - tax(cooked)) as f64;
 
@@ -137,8 +137,8 @@ fn fish_between(
     target_xp: u32,
     fish: &Fish,
     stop: Stop,
-    raw: u32,
-    cooked: u32,
+    raw: u64,
+    cooked: u64,
 ) -> Option<Trip> {
     if xp_to_level(xp) < fish.level {
         return None;
@@ -553,8 +553,8 @@ mod tests {
 
     /// The wiki's quoted shark prices. 991 sells for 972 after tax, so a clean
     /// cook clears 240 gp and one burnt at 50% loses 246.
-    const RAW: u32 = 732;
-    const COOKED: u32 = 991;
+    const RAW: u64 = 732;
+    const COOKED: u64 = 991;
 
     #[test]
     fn burning_stops_at_and_above_the_stop_level() {

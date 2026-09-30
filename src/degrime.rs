@@ -122,7 +122,7 @@ pub struct Hourly {
     pub profit: i64,
 }
 
-fn hourly(grimy_price: u32, clean_price: u32, nature_price: u32) -> Hourly {
+fn hourly(grimy_price: u64, clean_price: u64, nature_price: u64) -> Hourly {
     let cost = HERBS_PER_HOUR as i64 * grimy_price as i64
         + NATURE_RUNES_PER_HOUR as i64 * nature_price as i64;
     let revenue = HERBS_PER_HOUR as i64 * clean_price as i64;
