@@ -1462,7 +1462,7 @@ pub fn replace_item_abbreviations(q: &str) -> String {
         (r"\bocc\b", "occult"),
         (r"^pegs$", "pegasian boots"),
         (r"\bphat\b", "partyhat"),
-        (r"\bpick\b", "pickaxe"),
+        (r"\bpick(\s|$)", "pickaxe$1"),
         (r"^p ?neck$", "phoenix necklace"),
         (r"\bpots\b", "potion"),
         (r"^p ?pot$", "prayer potion"),
@@ -1563,6 +1563,20 @@ mod tests {
     fn a_d_inside_a_word_is_left_alone() {
         assert_eq!(replace_item_abbreviations("red topaz"), "red topaz");
         assert_eq!(replace_item_abbreviations("3a"), "3rd age");
+    }
+
+    /// Queries are regexes, and `\bpick\b` matched the `pick` in `(pick)?axe`
+    /// because the parentheses count as word boundaries. That rewrote the
+    /// group to `(pickaxe)?axe`, which drops the pickaxe from the results.
+    #[test]
+    fn pick_inside_a_regex_group_is_left_alone() {
+        assert_eq!(
+            replace_item_abbreviations("3rd age (pick)?axe"),
+            "3rd age (pick)?axe"
+        );
+        assert_eq!(replace_item_abbreviations("rune pick"), "rune pickaxe");
+        assert_eq!(replace_item_abbreviations("3a pick"), "3rd age pickaxe");
+        assert_eq!(replace_item_abbreviations("pick head"), "pickaxe head");
     }
 
     #[test]
