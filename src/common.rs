@@ -1462,7 +1462,7 @@ pub fn replace_item_abbreviations(q: &str) -> String {
         (r"\bocc\b", "occult"),
         (r"^pegs$", "pegasian boots"),
         (r"\bphat\b", "partyhat"),
-        (r"\bpick(\s|$)", "pickaxe$1"),
+        (r"\bpick\b", "pickaxe"),
         (r"^p ?neck$", "phoenix necklace"),
         (r"\bpots\b", "potion"),
         (r"^p ?pot$", "prayer potion"),
@@ -1511,11 +1511,37 @@ pub fn replace_item_abbreviations(q: &str) -> String {
     for (pattern, replacement) in patterns.iter() {
         let re = Regex::new(pattern).unwrap();
         if re.is_match(&query) {
-            query = re.replace_all(&query, *replacement).to_string();
+            query = re
+                .replace_all(&query, |caps: &regex::Captures| {
+                    let matched = caps.get(0).unwrap();
+
+                    if in_regex_group(&query, matched.start(), matched.end()) {
+                        return matched.as_str().to_string();
+                    }
+
+                    let mut expanded = String::new();
+                    caps.expand(replacement, &mut expanded);
+                    expanded
+                })
+                .to_string();
         }
     }
 
     query
+}
+
+/// Whether `query[start..end]` sits against regex group syntax, as `pick` does
+/// in `(pick)?axe`. `\b` treats brackets and `|` as word boundaries, so the
+/// rules matched words inside groups and rewrote them - `(pick)?axe` became
+/// `(pickaxe)?axe` and lost the pickaxe. A group means the user is writing a
+/// regex, so its words are left as typed. This also shields the groups some
+/// rules emit, like `(granite|guthan's)`, from the rules that run after them.
+fn in_regex_group(query: &str, start: usize, end: usize) -> bool {
+    let before = query[..start].chars().next_back();
+    let after = query[end..].chars().next();
+
+    matches!(before, Some('(' | '|' | '['))
+        || matches!(after, Some(')' | '|' | ']' | '?' | '*' | '+' | '{'))
 }
 
 #[cfg(test)]
@@ -1577,6 +1603,34 @@ mod tests {
         assert_eq!(replace_item_abbreviations("rune pick"), "rune pickaxe");
         assert_eq!(replace_item_abbreviations("3a pick"), "3rd age pickaxe");
         assert_eq!(replace_item_abbreviations("pick head"), "pickaxe head");
+    }
+
+    /// The same `\b` problem hit every word rule, not just `pick`.
+    #[test]
+    fn words_inside_regex_groups_are_left_alone() {
+        assert_eq!(replace_item_abbreviations("bandos (cp)"), "bandos (cp)");
+        assert_eq!(
+            replace_item_abbreviations("rune (scim|legs)"),
+            "rune (scim|legs)"
+        );
+        assert_eq!(replace_item_abbreviations("3a (ammy)?"), "3rd age (ammy)?");
+        assert_eq!(replace_item_abbreviations("[d] bow"), "[d] bow");
+        assert_eq!(replace_item_abbreviations("rune scim+"), "rune scim+");
+    }
+
+    /// Outside a group the rules still fire, including next to other regex
+    /// syntax like `.*` and anchors.
+    #[test]
+    fn words_next_to_other_regex_syntax_still_expand() {
+        assert_eq!(
+            replace_item_abbreviations("^3a.*pick$"),
+            "^3rd age.*pickaxe$"
+        );
+        assert_eq!(replace_item_abbreviations("bandos cp"), "bandos chestplate");
+        assert_eq!(
+            replace_item_abbreviations("g maul"),
+            "(granite|guthan's) maul"
+        );
     }
 
     #[test]
