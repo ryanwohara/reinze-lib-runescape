@@ -1076,15 +1076,22 @@ pub enum Listing {
 }
 
 impl Listing {
+    /// The level to work towards: the `#` target when one is given and still
+    /// ahead of the player, otherwise the next level. Past 126 the next level
+    /// is 127, which `goal` turns into the 200m XP cap.
     pub fn next_level(&self, flags: &StatsFlags) -> u32 {
-        if flags.end > 0 {
-            if flags.end <= 126 {
-                flags.end
-            } else {
-                xp_to_level(flags.end)
-            }
+        let next = self.actual_level() + 1;
+
+        let target = match flags.end {
+            0 => return next,
+            end if end <= 126 => end,
+            end => xp_to_level(end),
+        };
+
+        if target > self.actual_level() {
+            target
         } else {
-            self.actual_level() + 1
+            next
         }
     }
 
@@ -1548,6 +1555,41 @@ fn in_regex_group(query: &str, start: usize, end: usize) -> bool {
 mod tests {
     // import names from outer (for mod tests) scope
     use super::*;
+
+    fn smithing_at(level: u32) -> Listing {
+        Listing::Entry(Entry {
+            name: HiscoreName::Smithing,
+            rank: 0,
+            level,
+            xp: level_to_xp(level),
+        })
+    }
+
+    fn ending_at(end: u32) -> StatsFlags {
+        StatsFlags {
+            end,
+            ..StatsFlags::default()
+        }
+    }
+
+    #[test]
+    fn a_target_above_the_current_level_is_kept() {
+        assert_eq!(smithing_at(48).next_level(&ending_at(60)), 60);
+    }
+
+    /// `+smith #40` at level 48 used to target 40, which is already behind
+    /// the player, so the target falls back to the next level instead.
+    #[test]
+    fn a_target_at_or_below_the_current_level_falls_back_to_the_next_level() {
+        assert_eq!(smithing_at(48).next_level(&ending_at(40)), 49);
+        assert_eq!(smithing_at(48).next_level(&ending_at(48)), 49);
+    }
+
+    /// An `#` above 126 is an XP target; one already earned falls back too.
+    #[test]
+    fn an_xp_target_already_passed_falls_back_to_the_next_level() {
+        assert_eq!(smithing_at(48).next_level(&ending_at(1_000)), 49);
+    }
 
     /// An apostrophe is not a word character, so in `d'hide` the leading `d`
     /// is a whole word and `\bd\b` matched it - turning `green d'hide` into
