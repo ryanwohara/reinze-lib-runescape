@@ -91,6 +91,7 @@ players
 price
 (pvparena|pvp|arena)\d*
 rifts?\d*
+gotr\d*
 rsn\d*
 s(oul)?w(ar)?s?\d*
 zeal\d*
@@ -215,7 +216,7 @@ pub extern "C" fn exported(context: *const PluginContext) -> *mut c_char {
             }
             "payment" | "plant" | "plants" => plant::lookup(&source),
             "pvparena" | "pvp" | "arena" => pvparena::lookup(source),
-            "rift" | "rifts" => rifts::lookup(source),
+            "rift" | "rifts" | "gotr" => rifts::lookup(source),
             "rsn" => rsn::process(source),
             "salvage" | "salvages" => salvage::lookup(&source),
             "sw" | "swar" | "soulw" | "soulwar" | "soulwars" | "zeal" => soulwars::lookup(source),
@@ -431,6 +432,7 @@ mod tests {
             "arena",
             "rift",
             "rifts",
+            "gotr",
             "rsn",
             "salvage",
             "salvages",
