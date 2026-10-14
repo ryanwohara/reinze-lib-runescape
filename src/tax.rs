@@ -74,19 +74,23 @@ pub fn tax_on(id: u32, price: u64) -> Option<u64> {
 }
 
 /// The tax on selling `count` of item `id` at `price` each - the cap applies
-/// per item, so this is one item's tax times the count - and how to show it.
+/// per item, so this is one item's tax times the count - and how to show it
+/// beside a price that already has it taken off.
 pub fn tax_note(s: &Source, id: u32, price: u64, count: u64) -> (String, u64) {
     match tax_on(id, price) {
         Some(each) => {
             let total = each * count.max(1);
-            (s.p(&format!("-{} tax", commas(total as f64, "d"))), total)
+            (
+                s.p(&format!("incl. -{} tax", commas(total as f64, "d"))),
+                total,
+            )
         }
         None => (s.p("tax exempt"), 0),
     }
 }
 
-/// The Total line under a multi-item lookup, with the summed tax when `-t`
-/// was asked for.
+/// The Total line under a multi-item lookup. With `-t`, `value` is already
+/// net of `tax`, which is shown beside it.
 pub fn total_line(s: &Source, value: f64, tax: Option<u64>) -> String {
     let line = format!(
         "{} {}{}",
@@ -99,7 +103,7 @@ pub fn total_line(s: &Source, value: f64, tax: Option<u64>) -> String {
         Some(tax) => format!(
             "{} {}",
             line,
-            s.p(&format!("-{} tax", commas(tax as f64, "d")))
+            s.p(&format!("incl. -{} tax", commas(tax as f64, "d")))
         ),
         None => line,
     }

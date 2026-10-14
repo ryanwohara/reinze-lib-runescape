@@ -54,21 +54,25 @@ pub fn lookup(s: &Source) -> Result<Vec<String>> {
             1 => item.name.to_string(),
             _ => format!("{}x {}", commas(count as f64, "d"), item.name),
         };
-        let value = item_values.high.unwrap_or(0) as f64 * count as f64;
+        let price = item_values.high.unwrap_or(0);
+        let (note, tax) = match taxed {
+            true => {
+                let (note, tax) = tax_note(s, item.id, price, count);
+                (format!(" {}", note), tax)
+            }
+            false => (String::new(), 0),
+        };
+        let value = price as f64 * count as f64 - tax as f64;
         total_value += value;
+        total_tax += tax;
 
-        let mut entry = format!(
-            "{}: {}{}",
+        let entry = format!(
+            "{}: {}{}{}",
             s.c1(&name),
             s.c2(&commas(value, "d")),
-            s.c1("gp")
+            s.c1("gp"),
+            note
         );
-
-        if taxed {
-            let (note, tax) = tax_note(s, item.id, item_values.high.unwrap_or(0), count);
-            total_tax += tax;
-            entry = format!("{} {}", entry, note);
-        }
 
         found_items.push(entry);
 

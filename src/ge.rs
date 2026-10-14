@@ -42,44 +42,45 @@ pub fn lookup(s: &Source) -> Result<Vec<String>> {
 
         let count = item.total.unwrap_or(0);
 
-        // The API abbreviates large prices ("1.2m"), so the tax on those is
-        // only as precise as the abbreviation.
-        let tax = match taxed {
-            true => {
-                let (note, tax) = tax_note(s, item.id, ge_json.current.price.num() as u64, count);
-                total_tax += tax;
-                format!(" {}", note)
-            }
-            false => String::new(),
-        };
-
-        if count == 0 {
-            total_value += ge_json.current.price.num();
-
-            found_items.push(format!(
-                "{}: {}{}{} {}",
-                s.c1(&item.name),
-                s.c2(&ge_json.current.price.str()),
-                s.c1("gp"),
-                tax,
-                s.p(price_change(&ge_json.today, count))
-            ));
-        } else {
-            let total = match eval_query(ge_json.current.price.str().replace(" ", "")) {
+        let gross = match count {
+            0 => ge_json.current.price.num(),
+            _ => match eval_query(ge_json.current.price.str().replace(" ", "")) {
                 Ok(t) => t * count as f64,
                 Err(_) => 0.0,
-            };
-            total_value += total;
+            },
+        };
 
-            found_items.push(format!(
-                "{}: {}{}{} {}",
-                s.c1(&format!("{}x {}", commas(count as f64, "d"), item.name)),
-                s.c2(&commas(total, "d")),
-                s.c1("gp"),
-                tax,
-                s.p(price_change(&ge_json.today, count))
-            ));
-        }
+        // The API abbreviates large prices ("1.2m"), so the tax on those is
+        // only as precise as the abbreviation.
+        let (note, tax) = match taxed {
+            true => {
+                let (note, tax) = tax_note(s, item.id, ge_json.current.price.num() as u64, count);
+                (format!(" {}", note), tax)
+            }
+            false => (String::new(), 0),
+        };
+        let value = gross - tax as f64;
+        total_value += value;
+        total_tax += tax;
+
+        let name = match count {
+            0 => item.name.to_string(),
+            _ => format!("{}x {}", commas(count as f64, "d"), item.name),
+        };
+        // A lone untaxed item keeps the API's own wording of its price.
+        let price = match (count, taxed) {
+            (0, false) => ge_json.current.price.str(),
+            _ => commas(value, "d"),
+        };
+
+        found_items.push(format!(
+            "{}: {}{}{} {}",
+            s.c1(&name),
+            s.c2(&price),
+            s.c1("gp"),
+            note,
+            s.p(price_change(&ge_json.today, count))
+        ));
     }
 
     let item_count = found_items.len();
