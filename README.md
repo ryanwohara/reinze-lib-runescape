@@ -99,10 +99,12 @@ caller's stored RSN — or IRC nick — when none is given.
 
 ### Economy
 
-- `-ge (item)` — Live Grand Exchange price(s). Supports regex/abbreviation search,
+- `-ge [-t] (item)` — Live Grand Exchange price(s). Supports regex/abbreviation search,
   comma-separated queries, and quantity prefixes (`5 rune scimitar`), with a
-  running total.
-- `-price (item)` — Like `-ge` but from a cached snapshot; up to 10 items.
+  running total. `-t` adds the 2% sell tax (capped at 5m per item) to each item
+  and the total, marking the wiki's tax-exempt items; refresh that list with
+  `node scripts/gen-tax-exempt.js`.
+- `-price [-t] (item)` — Like `-ge` but from a cached snapshot; up to 10 items.
 - `-alch (item)` — High and low alchemy values, optionally times a quantity
   (alias `-alchemy`); up to 10 items.
 - `-money [-l (limit)]` — High-alch "money maker" items ranked by profit after GE

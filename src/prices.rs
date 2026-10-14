@@ -1,5 +1,6 @@
 use crate::common::parse_item_db;
 use crate::items::Data;
+use crate::tax::{strip_tax_flag, tax_note, total_line};
 use anyhow::{Context, Result, bail};
 use common::commas;
 use common::source::Source;
@@ -9,12 +10,14 @@ use std::fs::read_to_string;
 
 // Scan lib/item_db.json for up to 10 items that match the query
 pub fn lookup(s: &Source) -> Result<Vec<String>> {
-    let item_db = parse_item_db(&s.query).context("failed to parse item db")?;
+    let (query, taxed) = strip_tax_flag(&s.query);
+    let item_db = parse_item_db(&query).context("failed to parse item db")?;
 
     let ge_filename = "lib/ge.json";
     let mut output = s.l("Price");
     let mut found_items: Vec<String> = vec![];
     let mut total_value = 0.0;
+    let mut total_tax = 0;
 
     let ge_file_contents = match read_to_string(ge_filename) {
         Ok(file) => file,
@@ -43,39 +46,31 @@ pub fn lookup(s: &Source) -> Result<Vec<String>> {
             }
         };
 
-        match item.total {
-            Some(0) | Some(1) => {
-                found_items.push(format!(
-                    "{}: {}{}",
-                    s.c1(&item.name),
-                    match item_values.high {
-                        Some(value) => {
-                            total_value += value as f64;
-                            s.c2(&commas(value as f64, "d"))
-                        }
-                        None => s.c2("0"),
-                    },
-                    s.c1("gp")
-                ));
-            }
-            total => {
-                let total = total.unwrap_or_else(|| 1);
+        let count = match item.total {
+            Some(0) | None => 1,
+            Some(total) => total,
+        };
+        let name = match count {
+            1 => item.name.to_string(),
+            _ => format!("{}x {}", commas(count as f64, "d"), item.name),
+        };
+        let value = item_values.high.unwrap_or(0) as f64 * count as f64;
+        total_value += value;
 
-                found_items.push(format!(
-                    "{}: {}{}",
-                    s.c1(&format!("{}x {}", commas(total as f64, "d"), item.name)),
-                    match item_values.high {
-                        Some(value) => {
-                            let multiplied_value = value as f64 * total as f64;
-                            total_value += multiplied_value;
-                            s.c2(&commas(multiplied_value, "d"))
-                        }
-                        None => s.c2("0"),
-                    },
-                    s.c1("gp")
-                ));
-            }
+        let mut entry = format!(
+            "{}: {}{}",
+            s.c1(&name),
+            s.c2(&commas(value, "d")),
+            s.c1("gp")
+        );
+
+        if taxed {
+            let (note, tax) = tax_note(s, item.id, item_values.high.unwrap_or(0), count);
+            total_tax += tax;
+            entry = format!("{} {}", entry, note);
         }
+
+        found_items.push(entry);
 
         if found_items.len() >= 10 {
             break;
@@ -87,12 +82,7 @@ pub fn lookup(s: &Source) -> Result<Vec<String>> {
 
     let mut output_vec: Vec<String> = vec![output];
     if item_count > 1 {
-        output_vec.push(format!(
-            "{} {}{}",
-            s.l("Total"),
-            s.c2(&commas(total_value, "d")),
-            s.c1("gp")
-        ));
+        output_vec.push(total_line(s, total_value, taxed.then_some(total_tax)));
     }
 
     Ok(output_vec)

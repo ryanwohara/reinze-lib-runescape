@@ -11,6 +11,7 @@ use crate::items::{Mapping, Price};
 use crate::stats::{
     Goal, StatsFlags, goal, goal_string, level_display, stats_parameters, strip_stats_parameters,
 };
+use crate::tax::tax;
 use crate::track::{MAX_LINE_LEN, pack_lines};
 use std::collections::HashMap;
 
@@ -35,11 +36,6 @@ const NEVER_STOPS_AT: f64 = 100.0;
 /// reduce burn; a player at 200M XP burns exactly as much as one at 13.03M.
 const REAL_LEVEL_CAP: f64 = 99.0;
 
-/// The Grand Exchange takes 2% of a sale, rounded down, capped per item.
-/// 1% until 29 May 2025. https://oldschool.runescape.wiki/w/Grand_Exchange
-const GE_TAX_PERCENT: u64 = 2;
-const GE_TAX_CAP: u64 = 5_000_000;
-
 /// The share of fish burnt at `level` for one setup. Burnt fish earn no XP and
 /// sell for nothing, but still cost a raw fish.
 fn burn(level: u32, cook_level: u32, stop: Stop) -> f64 {
@@ -61,12 +57,6 @@ fn burn(level: u32, cook_level: u32, stop: Stop) -> f64 {
     }
 
     MAX_BURN * (stop - level) / (stop - cook)
-}
-
-/// The tax on selling one item. Integer maths throughout: 2% of 991 is 19, not
-/// 19.82, and a float would round the wrong way on exact multiples.
-fn tax(price: u64) -> u64 {
-    (price * GE_TAX_PERCENT / 100).min(GE_TAX_CAP)
 }
 
 /// An hour of cooking, in gp. Signed: cooking often loses money.
@@ -591,26 +581,6 @@ mod tests {
         assert!((burnt - 0.375).abs() < 0.001, "got {}", burnt);
         // Still burning at 99, which is what "-" means on the wiki.
         assert!(burn(99, 80, Stop::Never) > 0.0);
-    }
-
-    #[test]
-    fn tax_is_two_percent_rounded_down() {
-        assert_eq!(tax(991), 19);
-        assert_eq!(tax(100), 2);
-        assert_eq!(tax(50), 1);
-    }
-
-    #[test]
-    fn tax_below_fifty_gp_rounds_away_to_nothing() {
-        assert_eq!(tax(49), 0);
-        assert_eq!(tax(1), 0);
-        assert_eq!(tax(0), 0);
-    }
-
-    #[test]
-    fn tax_is_capped_at_five_million() {
-        assert_eq!(tax(250_000_000), 5_000_000);
-        assert_eq!(tax(1_000_000_000), 5_000_000);
     }
 
     #[test]

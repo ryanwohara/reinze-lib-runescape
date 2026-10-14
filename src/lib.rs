@@ -40,6 +40,7 @@ mod soulwars;
 mod spell;
 mod stats;
 mod task;
+mod tax;
 mod tog;
 mod track;
 mod wiki;

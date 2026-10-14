@@ -1,5 +1,6 @@
 use super::items::{Ge, GeItemPrice};
 use crate::common::{eval_query, parse_item_db};
+use crate::tax::{strip_tax_flag, tax_note, total_line};
 use anyhow::{Context, Result};
 use common::source::Source;
 use common::{c3, c4, c5, commas};
@@ -8,12 +9,14 @@ use serde_json;
 // Scan lib/item_db.json for up to 10 items that match the query
 // and hit the OSRS Grand Exchange API to get the price of each item
 pub fn lookup(s: &Source) -> Result<Vec<String>> {
+    let (query, taxed) = strip_tax_flag(&s.query);
     let item_db =
-        parse_item_db(&s.query).map_err(|_| anyhow::anyhow!("failed to parse item database"))?;
+        parse_item_db(&query).map_err(|_| anyhow::anyhow!("failed to parse item database"))?;
 
     let mut output = s.l("Grand Exchange");
     let mut found_items: Vec<String> = vec![];
     let mut total_value = 0.0;
+    let mut total_tax = 0;
 
     for item in item_db.iter() {
         // Hit the OSRS API with the item ID
@@ -39,14 +42,26 @@ pub fn lookup(s: &Source) -> Result<Vec<String>> {
 
         let count = item.total.unwrap_or(0);
 
+        // The API abbreviates large prices ("1.2m"), so the tax on those is
+        // only as precise as the abbreviation.
+        let tax = match taxed {
+            true => {
+                let (note, tax) = tax_note(s, item.id, ge_json.current.price.num() as u64, count);
+                total_tax += tax;
+                format!(" {}", note)
+            }
+            false => String::new(),
+        };
+
         if count == 0 {
             total_value += ge_json.current.price.num();
 
             found_items.push(format!(
-                "{}: {}{} {}",
+                "{}: {}{}{} {}",
                 s.c1(&item.name),
                 s.c2(&ge_json.current.price.str()),
                 s.c1("gp"),
+                tax,
                 s.p(price_change(&ge_json.today, count))
             ));
         } else {
@@ -57,10 +72,11 @@ pub fn lookup(s: &Source) -> Result<Vec<String>> {
             total_value += total;
 
             found_items.push(format!(
-                "{}: {}{} {}",
+                "{}: {}{}{} {}",
                 s.c1(&format!("{}x {}", commas(count as f64, "d"), item.name)),
                 s.c2(&commas(total, "d")),
                 s.c1("gp"),
+                tax,
                 s.p(price_change(&ge_json.today, count))
             ));
         }
@@ -71,12 +87,7 @@ pub fn lookup(s: &Source) -> Result<Vec<String>> {
 
     let mut output_vec = vec![output];
     if item_count > 1 {
-        output_vec.push(format!(
-            "{} {}{}",
-            s.l("Total"),
-            s.c2(&commas(total_value, "d")),
-            s.c1("gp")
-        ));
+        output_vec.push(total_line(s, total_value, taxed.then_some(total_tax)));
     }
 
     Ok(output_vec)
