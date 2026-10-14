@@ -81,7 +81,7 @@ pub fn tax_note(s: &Source, id: u32, price: u64, count: u64) -> (String, u64) {
         Some(each) => {
             let total = each * count.max(1);
             (
-                s.p(&format!("incl. -{} tax", commas(total as f64, "d"))),
+                s.p(&format!("w/ -{} tax", commas(total as f64, "d"))),
                 total,
             )
         }
@@ -103,7 +103,7 @@ pub fn total_line(s: &Source, value: f64, tax: Option<u64>) -> String {
         Some(tax) => format!(
             "{} {}",
             line,
-            s.p(&format!("incl. -{} tax", commas(tax as f64, "d")))
+            s.p(&format!("w/ -{} tax", commas(tax as f64, "d")))
         ),
         None => line,
     }
