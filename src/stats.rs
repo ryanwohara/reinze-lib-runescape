@@ -493,7 +493,7 @@ pub fn lookup(s: Source) -> Result<Vec<String>> {
         let calc = if goal == Goal::Maxed {
             String::new()
         } else {
-            details_by_skill_id(skill_id as u32, &stats.flags.search)
+            details_by_skill_id(skill_id as u32, &stats.flags.search, actual_level)
                 .iter()
                 .map(|detail| detail.to_string(s, xp_difference as f64))
                 .collect::<Vec<String>>()

@@ -89,6 +89,33 @@ impl Details {
         }
     }
 
+    /// The level needed to perform the action. Combat and Hitpoints have no
+    /// requirement to fight a monster; Slayer has the task's Slayer level.
+    pub fn level(&self) -> u32 {
+        match self {
+            Details::Agility(x) => x.level,
+            Details::Construction(x) => x.level,
+            Details::Cooking(x) => x.level,
+            Details::Crafting(x) => x.level,
+            Details::Farming(x) => x.level,
+            Details::Firemaking(x) => x.level,
+            Details::Fishing(x) => x.level,
+            Details::Fletching(x) => x.level,
+            Details::Herblore(x) => x.level,
+            Details::Hunter(x) => x.level,
+            Details::Magic(x) => x.level,
+            Details::Mining(x) => x.level,
+            Details::Prayer(x) => x.level,
+            Details::Runecraft(x) => x.level,
+            Details::Sailing(x) => x.level,
+            Details::Smithing(x) => x.level,
+            Details::Thieving(x) => x.level,
+            Details::Woodcutting(x) => x.level,
+            Details::Npc(_) | Details::Hitpoints(_) => 1,
+            Details::Slayer(npc) => npc.slayer_req,
+        }
+    }
+
     #[allow(dead_code)]
     pub fn name(&self) -> String {
         if let Some(result) = skills().get(self.skill_id() as usize) {
@@ -163,9 +190,11 @@ pub enum Multipliers {
     Woodcutting(WoodcuttingMultipliers),
 }
 
-pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
+/// With no query, the skill's default actions are trimmed to the ones `level`
+/// can already do. An explicit query is shown as-is.
+pub fn details_by_skill_id(id: u32, query: &str, level: u32) -> Vec<Details> {
     if query.len() == 0 {
-        return match skill_by_id(id).as_str() {
+        let mut defaults = match skill_by_id(id).as_str() {
             "Agility" => Agility::defaults(),
             "Construction" => Construction::defaults(),
             "Cooking" => Cooking::defaults(),
@@ -191,6 +220,8 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             "Slayer" => Npc::slayer(),
             _ => vec![],
         };
+        defaults.retain(|detail| detail.level() <= level);
+        return defaults;
     }
 
     match skill_by_id(id).as_str() {
@@ -251,5 +282,35 @@ pub fn details_by_skill_id(id: u32, query: &str) -> Vec<Details> {
             .map(|x| x.slayer_details())
             .collect(),
         _ => vec![],
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn levels(skill: &str, query: &str, level: u32) -> Vec<u32> {
+        details_by_skill_id(skill_id(skill.to_string()), query, level)
+            .iter()
+            .map(|detail| detail.level())
+            .collect()
+    }
+
+    #[test]
+    fn defaults_only_include_actions_the_level_can_do() {
+        let all = levels("Agility", "", 99);
+        let some = levels("Agility", "", 60);
+        assert!(some.iter().all(|level| *level <= 60));
+        assert!(some.len() < all.len());
+    }
+
+    #[test]
+    fn defaults_are_empty_below_every_requirement() {
+        assert!(levels("Agility", "", 1).is_empty());
+    }
+
+    #[test]
+    fn a_query_ignores_the_level() {
+        assert!(levels("Agility", "ardougne", 1).contains(&90));
     }
 }
