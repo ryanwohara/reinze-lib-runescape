@@ -63,6 +63,7 @@ pub fn lookup(source: Source) -> Result<Vec<String>> {
         Whisperer,
         ToB,
         ToBHard,
+        FracturedArchive,
         ThermonuclearSmokeDevil,
         ToA,
         ToAExpert,

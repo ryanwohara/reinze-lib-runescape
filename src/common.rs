@@ -448,6 +448,7 @@ pub enum HiscoreName {
     Whisperer,
     ToB,
     ToBHard,
+    FracturedArchive,
     ThermonuclearSmokeDevil,
     ToA,
     ToAExpert,
@@ -569,6 +570,7 @@ impl HiscoreName {
             Self::Whisperer,
             Self::ToB,
             Self::ToBHard,
+            Self::FracturedArchive,
             Self::ThermonuclearSmokeDevil,
             Self::ToA,
             Self::ToAExpert,
@@ -761,6 +763,7 @@ impl Display for HiscoreName {
             Self::Whisperer => "Whisperer",
             Self::ToB => "ToB",
             Self::ToBHard => "ToB: Hard",
+            Self::FracturedArchive => "Fractured Archive",
             Self::ThermonuclearSmokeDevil => "Thermonuclear Smoke Devil",
             Self::ToA => "ToA",
             Self::ToAExpert => "ToA: Expert",
@@ -1824,7 +1827,7 @@ mod tests {
     /// which is the same layout with names attached.
     #[test]
     fn hiscore_layout_has_one_entry_per_live_line() {
-        assert_eq!(HiscoreName::all().len(), 116);
+        assert_eq!(HiscoreName::all().len(), 117);
     }
 
     #[test]
