@@ -6,7 +6,7 @@ use itertools::Itertools;
 use log::error;
 use meval::eval_str;
 use mysql::{prelude::*, *};
-use regex::Regex;
+use regex::{Regex, RegexBuilder};
 use reqwest::header::USER_AGENT;
 use std::cmp::PartialEq;
 use std::collections::HashMap;
@@ -1252,9 +1252,14 @@ pub fn parse_item_db<T>(overall_query: T) -> Result<Vec<Mapping>>
 where
     T: ToString,
 {
-    let mut found_items: Vec<Mapping> = vec![];
+    search_items(&get_item_db()?, overall_query)
+}
 
-    let item_db = get_item_db()?;
+fn search_items<T>(item_db: &[Mapping], overall_query: T) -> Result<Vec<Mapping>>
+where
+    T: ToString,
+{
+    let mut found_items: Vec<Mapping> = vec![];
 
     for query in overall_query
         .to_string()
@@ -1270,14 +1275,22 @@ where
         let regex_string = format!(r"(?i){}", replace_item_abbreviations(&query));
         let re = Regex::new(&regex_string).context("failed to create item search regex")?;
 
-        for item in item_db.iter() {
-            let matched = re.captures(&item.name);
-            if matched.is_some() {
-                let mut item_with_total = item.to_owned();
-                item_with_total.total = Some(count);
+        let mut matches: Vec<&Mapping> = item_db.iter().filter(|i| re.is_match(&i.name)).collect();
 
-                found_items.push(item_with_total);
-            }
+        // An abbreviation can expand inside a regex the user wrote out in
+        // full: `harm.+orb` becomes `harmonised orb.+orb`, which matches
+        // nothing. When the expansion finds nothing, search as typed.
+        if matches.is_empty()
+            && let Ok(raw) = Regex::new(&format!(r"(?i){}", query))
+        {
+            matches = item_db.iter().filter(|i| raw.is_match(&i.name)).collect();
+        }
+
+        for item in matches {
+            let mut item_with_total = item.to_owned();
+            item_with_total.total = Some(count);
+
+            found_items.push(item_with_total);
         }
     }
 
@@ -1519,7 +1532,10 @@ pub fn replace_item_abbreviations(q: &str) -> String {
     ];
 
     for (pattern, replacement) in patterns.iter() {
-        let re = Regex::new(pattern).unwrap();
+        let re = RegexBuilder::new(pattern)
+            .case_insensitive(true)
+            .build()
+            .unwrap();
         if re.is_match(&query) {
             query = re
                 .replace_all(&query, |caps: &regex::Captures| {
@@ -1661,6 +1677,37 @@ mod tests {
         assert_eq!(replace_item_abbreviations("3a (ammy)?"), "3rd age (ammy)?");
         assert_eq!(replace_item_abbreviations("[d] bow"), "[d] bow");
         assert_eq!(replace_item_abbreviations("rune scim+"), "rune scim+");
+    }
+
+    /// Item search is case-insensitive, but the abbreviation rules were not:
+    /// `Harm.+orb` slipped past `\bharmo?\b` and found the orb, while
+    /// `harm.+orb` was expanded to `harmonised orb.+orb` and found nothing.
+    #[test]
+    fn abbreviations_ignore_case() {
+        assert_eq!(replace_item_abbreviations("harm"), "harmonised orb");
+        assert_eq!(replace_item_abbreviations("Harm"), "harmonised orb");
+        assert_eq!(replace_item_abbreviations("SGS"), "Saradomin godsword");
+    }
+
+    #[test]
+    fn a_query_finds_the_same_items_whatever_its_case() {
+        let item_db: Vec<Mapping> = serde_json::from_str(
+            r#"[{"id":24511,"name":"Harmonised orb","members":true,"lowalch":null,"highalch":null,"limit":8,"value":null,"total":null},
+                {"id":4151,"name":"Abyssal whip","members":true,"lowalch":null,"highalch":null,"limit":70,"value":null,"total":null}]"#,
+        )
+        .unwrap();
+
+        for query in ["harm.+orb", "Harm.+orb", "HARM.+ORB"] {
+            let names: Vec<String> = search_items(&item_db, query)
+                .unwrap()
+                .into_iter()
+                .map(|item| item.name)
+                .collect();
+            assert!(
+                names.contains(&"Harmonised orb".to_string()),
+                "{query} found {names:?}"
+            );
+        }
     }
 
     /// Outside a group the rules still fire, including next to other regex
