@@ -592,6 +592,7 @@ impl HiscoreName {
     /// Searched the same way as the display name.
     pub fn aliases(&self) -> &'static [&'static str] {
         match self {
+            Self::CorruptedGauntlet => &["CG"],
             Self::FracturedArchive => &["TFA"],
             Self::CoX => &["Chambers of Xeric"],
             Self::CoXChallenge => &["Chambers of Xeric: Challenge"],
@@ -1615,6 +1616,13 @@ mod tests {
             HiscoreName::from("tombs of amascut: expert"),
             HiscoreName::ToAExpert
         );
+    }
+
+    #[test]
+    fn cg_alias_selects_corrupted_gauntlet() {
+        assert!(HiscoreName::CorruptedGauntlet.matches("cg"));
+        assert!(!HiscoreName::Gauntlet.matches("cg"));
+        assert_eq!(HiscoreName::from("CG"), HiscoreName::CorruptedGauntlet);
     }
 
     #[test]
