@@ -587,23 +587,30 @@ impl HiscoreName {
         ]
     }
 
-    /// Short names players use that the display name doesn't contain, so
-    /// substring search alone can't find the row (`tfa` vs "Fractured
-    /// Archive"). Matched exactly, case-insensitively.
+    /// Other names players use for the row that the display name doesn't
+    /// contain (`tfa` vs "Fractured Archive", "Tombs of Amascut" vs "ToA").
+    /// Searched the same way as the display name.
     pub fn aliases(&self) -> &'static [&'static str] {
         match self {
-            Self::FracturedArchive => &["tfa"],
+            Self::FracturedArchive => &["TFA"],
+            Self::ToA => &["Tombs of Amascut"],
+            Self::ToAExpert => &["Tombs of Amascut: Expert"],
             _ => &[],
         }
     }
 
-    /// Whether `query` selects this row: an exact alias, or a substring of
-    /// the display name. Case-insensitive.
+    /// Every name the row answers to: its display name, then its aliases.
+    fn names(&self) -> impl Iterator<Item = String> {
+        std::iter::once(self.to_string()).chain(self.aliases().iter().map(|a| a.to_string()))
+    }
+
+    /// Whether `query` is a substring of the display name or any alias.
+    /// Case-insensitive.
     pub fn matches(&self, query: &str) -> bool {
         let query = query.to_lowercase();
 
-        self.aliases().iter().any(|alias| *alias == query)
-            || self.to_string().to_lowercase().contains(&query)
+        self.names()
+            .any(|name| name.to_lowercase().contains(&query))
     }
 
     #[allow(dead_code)]
@@ -665,9 +672,9 @@ impl From<&str> for HiscoreName {
         let all = Self::all();
         let lower = value.to_lowercase();
 
-        // An exact alias outranks a substring hit on an earlier row.
+        // An exact name outranks a substring hit on an earlier row.
         all.iter()
-            .find(|x| x.aliases().contains(&lower.as_str()))
+            .find(|x| x.names().any(|name| name.to_lowercase() == lower))
             .or_else(|| all.iter().find(|x| x.matches(value)))
             .copied()
             .unwrap_or(Self::None)
@@ -1595,9 +1602,23 @@ mod tests {
     }
 
     #[test]
-    fn aliases_match_exactly_not_by_substring() {
-        assert!(!HiscoreName::FracturedArchive.matches("tf"));
-        assert!(!HiscoreName::FracturedArchive.matches("tfas"));
+    fn tombs_of_amascut_alias_selects_toa() {
+        assert!(HiscoreName::ToA.matches("amascut"));
+        assert!(HiscoreName::ToAExpert.matches("amascut"));
+        assert_eq!(HiscoreName::from("tombs"), HiscoreName::ToA);
+        assert_eq!(HiscoreName::from("Tombs of Amascut"), HiscoreName::ToA);
+        assert_eq!(
+            HiscoreName::from("tombs of amascut: expert"),
+            HiscoreName::ToAExpert
+        );
+    }
+
+    #[test]
+    fn an_exact_name_outranks_an_earlier_substring_hit() {
+        // "ToA" is a substring of "ToA: Expert" and vice versa isn't, but an
+        // exact hit must win regardless of order in `all()`.
+        assert_eq!(HiscoreName::from("toa"), HiscoreName::ToA);
+        assert_eq!(HiscoreName::from("tfa"), HiscoreName::FracturedArchive);
     }
 
     fn smithing_at(level: u32) -> Listing {
