@@ -587,6 +587,25 @@ impl HiscoreName {
         ]
     }
 
+    /// Short names players use that the display name doesn't contain, so
+    /// substring search alone can't find the row (`tfa` vs "Fractured
+    /// Archive"). Matched exactly, case-insensitively.
+    pub fn aliases(&self) -> &'static [&'static str] {
+        match self {
+            Self::FracturedArchive => &["tfa"],
+            _ => &[],
+        }
+    }
+
+    /// Whether `query` selects this row: an exact alias, or a substring of
+    /// the display name. Case-insensitive.
+    pub fn matches(&self, query: &str) -> bool {
+        let query = query.to_lowercase();
+
+        self.aliases().iter().any(|alias| *alias == query)
+            || self.to_string().to_lowercase().contains(&query)
+    }
+
     #[allow(dead_code)]
     pub fn index(&self) -> Option<usize> {
         Self::all().iter().position(|x| x == self)
@@ -643,18 +662,15 @@ impl HiscoreName {
 
 impl From<&str> for HiscoreName {
     fn from(value: &str) -> Self {
-        let mut all = Self::all();
+        let all = Self::all();
+        let lower = value.to_lowercase();
 
-        all.retain(|x| {
-            x.to_string()
-                .to_lowercase()
-                .contains(&value.to_string().to_lowercase())
-        });
-
-        match all.first() {
-            Some(&x) => x,
-            None => Self::None,
-        }
+        // An exact alias outranks a substring hit on an earlier row.
+        all.iter()
+            .find(|x| x.aliases().contains(&lower.as_str()))
+            .or_else(|| all.iter().find(|x| x.matches(value)))
+            .copied()
+            .unwrap_or(Self::None)
     }
 }
 
@@ -809,12 +825,7 @@ pub fn process_stats_subsection(
         source: s,
     };
 
-    categories.retain(|category| {
-        category
-            .to_string()
-            .to_lowercase()
-            .contains(&stats.flags.search.to_lowercase())
-    });
+    categories.retain(|category| category.matches(&stats.flags.search));
     stats.hiscores.retain(categories);
     stats.filter();
 
@@ -1574,6 +1585,20 @@ fn in_regex_group(query: &str, start: usize, end: usize) -> bool {
 mod tests {
     // import names from outer (for mod tests) scope
     use super::*;
+
+    #[test]
+    fn tfa_alias_selects_fractured_archive() {
+        assert!(HiscoreName::FracturedArchive.matches("tfa"));
+        assert!(HiscoreName::FracturedArchive.matches("TFA"));
+        assert!(HiscoreName::FracturedArchive.matches("archive"));
+        assert_eq!(HiscoreName::from("tfa"), HiscoreName::FracturedArchive);
+    }
+
+    #[test]
+    fn aliases_match_exactly_not_by_substring() {
+        assert!(!HiscoreName::FracturedArchive.matches("tf"));
+        assert!(!HiscoreName::FracturedArchive.matches("tfas"));
+    }
 
     fn smithing_at(level: u32) -> Listing {
         Listing::Entry(Entry {
