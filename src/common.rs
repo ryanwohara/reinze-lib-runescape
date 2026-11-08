@@ -593,6 +593,8 @@ impl HiscoreName {
     pub fn aliases(&self) -> &'static [&'static str] {
         match self {
             Self::FracturedArchive => &["TFA"],
+            Self::CoX => &["Chambers of Xeric"],
+            Self::CoXChallenge => &["Chambers of Xeric: Challenge"],
             Self::ToB => &["Theatre of Blood", "Theater of Blood"],
             Self::ToBHard => &["Theatre of Blood: Hard", "Theater of Blood: Hard"],
             Self::ToA => &["Tombs of Amascut"],
@@ -1612,6 +1614,18 @@ mod tests {
         assert_eq!(
             HiscoreName::from("tombs of amascut: expert"),
             HiscoreName::ToAExpert
+        );
+    }
+
+    #[test]
+    fn chambers_of_xeric_alias_selects_cox() {
+        assert!(HiscoreName::CoX.matches("xeric"));
+        assert!(HiscoreName::CoXChallenge.matches("chambers"));
+        assert_eq!(HiscoreName::from("chambers"), HiscoreName::CoX);
+        assert_eq!(HiscoreName::from("Chambers of Xeric"), HiscoreName::CoX);
+        assert_eq!(
+            HiscoreName::from("chambers of xeric: challenge"),
+            HiscoreName::CoXChallenge
         );
     }
 
