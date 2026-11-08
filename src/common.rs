@@ -593,6 +593,8 @@ impl HiscoreName {
     pub fn aliases(&self) -> &'static [&'static str] {
         match self {
             Self::FracturedArchive => &["TFA"],
+            Self::ToB => &["Theatre of Blood", "Theater of Blood"],
+            Self::ToBHard => &["Theatre of Blood: Hard", "Theater of Blood: Hard"],
             Self::ToA => &["Tombs of Amascut"],
             Self::ToAExpert => &["Tombs of Amascut: Expert"],
             _ => &[],
@@ -1610,6 +1612,19 @@ mod tests {
         assert_eq!(
             HiscoreName::from("tombs of amascut: expert"),
             HiscoreName::ToAExpert
+        );
+    }
+
+    #[test]
+    fn theatre_of_blood_alias_selects_tob_in_either_spelling() {
+        assert!(HiscoreName::ToB.matches("theatre"));
+        assert!(HiscoreName::ToB.matches("theater"));
+        assert!(HiscoreName::ToBHard.matches("blood"));
+        assert_eq!(HiscoreName::from("theatre"), HiscoreName::ToB);
+        assert_eq!(HiscoreName::from("Theater of Blood"), HiscoreName::ToB);
+        assert_eq!(
+            HiscoreName::from("theater of blood: hard"),
+            HiscoreName::ToBHard
         );
     }
 
