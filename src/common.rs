@@ -588,12 +588,14 @@ impl HiscoreName {
     }
 
     /// Other names players use for the row that the display name doesn't
-    /// contain (`tfa` vs "Fractured Archive", "Tombs of Amascut" vs "ToA").
-    /// Searched the same way as the display name.
+    /// contain ("Fractured Archive" vs "TFA", "Tombs of Amascut" vs "ToA").
+    /// Searched the same way as the display name, and also accepted when
+    /// reading a snapshot header, so a row whose display name changes keeps
+    /// its old name here and old snapshots still resolve.
     pub fn aliases(&self) -> &'static [&'static str] {
         match self {
             Self::CorruptedGauntlet => &["CG"],
-            Self::FracturedArchive => &["TFA"],
+            Self::FracturedArchive => &["Fractured Archive"],
             Self::CoX => &["Chambers of Xeric"],
             Self::CoXChallenge => &["Chambers of Xeric: Challenge"],
             Self::ToB => &["Theatre of Blood", "Theater of Blood"],
@@ -791,7 +793,7 @@ impl Display for HiscoreName {
             Self::Whisperer => "Whisperer",
             Self::ToB => "ToB",
             Self::ToBHard => "ToB: Hard",
-            Self::FracturedArchive => "Fractured Archive",
+            Self::FracturedArchive => "TFA",
             Self::ThermonuclearSmokeDevil => "Thermonuclear Smoke Devil",
             Self::ToA => "ToA",
             Self::ToAExpert => "ToA: Expert",
@@ -973,7 +975,7 @@ pub fn parse_snapshot_data(data: &str) -> Result<Listings> {
             .split('|')
             .map(|s| {
                 all.iter()
-                    .find(|n| n.to_string() == s)
+                    .find(|n| n.names().any(|name| name == s))
                     .copied()
                     .unwrap_or(HiscoreName::None)
             })
@@ -1599,11 +1601,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn tfa_alias_selects_fractured_archive() {
+    fn fractured_archive_displays_as_tfa_and_answers_to_its_full_name() {
+        assert_eq!(HiscoreName::FracturedArchive.to_string(), "TFA");
         assert!(HiscoreName::FracturedArchive.matches("tfa"));
-        assert!(HiscoreName::FracturedArchive.matches("TFA"));
         assert!(HiscoreName::FracturedArchive.matches("archive"));
         assert_eq!(HiscoreName::from("tfa"), HiscoreName::FracturedArchive);
+        assert_eq!(
+            HiscoreName::from("Fractured Archive"),
+            HiscoreName::FracturedArchive
+        );
     }
 
     #[test]
@@ -1927,6 +1933,26 @@ mod tests {
             listings.skill("Vardorvis").unwrap().xp() as usize,
             old_idx * 10
         );
+    }
+
+    #[test]
+    fn snapshot_header_resolves_a_row_by_its_old_display_name() {
+        // Snapshots taken before Fractured Archive displayed as "TFA" carry
+        // the old name in their header.
+        let names = HiscoreName::all();
+        let header = names
+            .iter()
+            .map(|n| match n {
+                HiscoreName::FracturedArchive => "Fractured Archive".to_string(),
+                n => n.to_string(),
+            })
+            .join("|");
+        let data = format!("{}{}\n{}", SNAPSHOT_NAMES_PREFIX, header, fake_csv(&names));
+
+        let listings = parse_snapshot_data(&data).unwrap();
+
+        let idx = HiscoreName::FracturedArchive.index().unwrap();
+        assert_eq!(listings.skill("TFA").unwrap().xp() as usize, idx * 10);
     }
 
     #[test]
